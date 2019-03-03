@@ -1,5 +1,9 @@
 book_filename: "statistical-computing"
 delete_merged_file: true
+rmd_files: [
+  "index.rmd"
+]
+before_chapter_script: "_common.R"
 language:
   ui:
     chapter_name: "Chapter "
