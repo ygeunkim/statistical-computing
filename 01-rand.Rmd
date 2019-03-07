@@ -1,0 +1,75 @@
+# Methods for Generating Random Variables {#rvar}
+
+## Introduction
+
+Most of the methods so-called *computational statistics* requires generation of random variables from specified probability distribution. In hand, we can spin wheels, roll a dice, or shuffle cards. The results are chosen randomly. However, we want the same things with computer. Here, `r`. As we know, computer cannot generate complete random numbers. Instead, we generate **pseudo-random** numbers.
+
+### Sampling from a finite population
+
+From finite population, we can sample data with or without replacement.
+
+```{r}
+sample(0:1, size = 10, replace = TRUE)
+```
+
+```{r}
+sample(1:100, size = 6, replace = FALSE)
+```
+
+## The Inverse Transform Method
+
+```{theorem, probint, name = "Probability Integral Transformation"}
+If $X$ is a continuous random variable with cdf $F_(x)$, then
+$$U \equiv F_X(X) \sim unif(0, 1)$$
+```
+
+```{proof, name = "Probability Integral Transformation"}
+Let $U \sim unif(0, 1)$. Then
+
+$$
+\begin{align}
+P(F_X^{-1}(U) \le x) & = P(\inf\{t : F_X(t) = U \} \le x) \\
+& = P(U \le F_X(x)) \\
+& = F_U(F_X(x)) \\
+& = F_X(x)
+\end{align}
+$$
+```
+
+Thus, to generate $n$ random variables $\sim F_X$,
+
+1. form of $F_X^{-1}(u)$
+2. For each $i = 1, 2, \ldots, n$:
+    a. Generate $u_i \sim unif(0, 1)$
+    b. $x_i = F_X^{-1}(u_i)$
+
+Collect $x_1, x_2, \ldots, x_n \sim F_X$.
+
+### Continuous case
+
+Denote that the *probability integral transformation* holds for a continuous variable. When generating continuous random variable, applying above algorithm might work.
+
+```{example, expon, name = "Exponential distribution"}
+If $X \sim Exp(\lambda)$, then $F_X(x) = 1 - e^{-\lambda x}$. We can derive the inverse function of cdf
+$$F_X^{-1}(u) = \frac{1}{\lambda}\ln(1 - u)$$
+```
+
+```{r}
+rand_exp <- function(n, lambda) {
+  -log(runif(n)) / lambda
+}
+```
+
+If we generate $x_1, \ldots, x_{500} \sim Exp(\lambda = 1)$,
+
+```{r}
+tibble(x = rand_exp(500, lambda = 1)) %>% 
+  ggplot() +
+  aes(x = x) +
+  geom_histogram(bins = 50)
+```
+
+
+
+
+
