@@ -70,6 +70,8 @@ tibble(x = rand_exp(500, lambda = 1)) %>%
 ```
 
 
+### Discrete case
+
 
 
 
