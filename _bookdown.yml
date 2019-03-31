@@ -1,7 +1,11 @@
 book_filename: "statistical-computing"
 delete_merged_file: true
 rmd_files: [
-  "index.rmd"
+  "index.rmd",
+  
+  "01-rand.rmd",
+  
+  "02-mc.rmd"
 ]
 before_chapter_script: "_common.R"
 language:

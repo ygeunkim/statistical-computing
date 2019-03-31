@@ -1,6 +1,9 @@
 --- 
 title: "R Lab for Statistical Computing"
-author: "Young-geun Kim"
+author: |
+  | Young-geun Kim
+  | Department of Statistics, SKKU
+  | \href{mailto: dudrms33@g.skku.edu}{dudrms33@g.skku.edu}
 date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 documentclass: book
@@ -10,6 +13,6 @@ link-citations: yes
 description: "This is a lab session for statistical computing."
 ---
 
-# Statistical Computing
+# Statistical Computing {-}
 
 Statistical computing mainly treats *random generation* methods. Additionaly, it treats useful simulation methods.
