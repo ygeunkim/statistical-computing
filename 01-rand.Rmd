@@ -2,7 +2,57 @@
 
 ## Introduction
 
-Most of the methods so-called *computational statistics* requires generation of random variables from specified probability distribution. In hand, we can spin wheels, roll a dice, or shuffle cards. The results are chosen randomly. However, we want the same things with computer. Here, `r`. As we know, computer cannot generate complete random numbers. Instead, we generate **pseudo-random** numbers.
+Most of the methods so-called *computational statistics* requires generation of random variables from specified probability distribution. In hand, we can spin wheels, roll a dice, or shuffle cards. The results are chosen randomly. However, we want the same things with computer. Here, `r`. As we know, computer cannot generate complete uniform random numbers. Instead, we generate **pseudo-random** numbers.
+
+## Pseudo-random Numbers
+
+```{definition, name = "Pseudo-random numbers"}
+Sequence of values generated deterministically which have all the appearances of being independent $unif(0, 1)$ random variables, i.e.
+
+$$x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} unif(0, 1)$$
+```
+
+
+- behave *as if* following $unif(0, 1)$
+- typically generated from an *initial seed*
+
+### Linear congruential generator
+
+Let $x_0, x_1, \ldots \in \mathbb{Z}_{+}$.
+
+1. Set $x_0$ as initial seed.
+2. Generate $x_n, n = 1, 2, \ldots$ recursively:
+    a. $x_n = (a x_{n - 1} + c) \mod m$
+    b. where $a, c \in \mathbb{Z}_{+}, m: \text{modulus}$
+3. Compute $u_n = \frac{x_n}{m} \in (0, 1)$
+
+Then $u_1, u_2, \ldots \sim unif(0, 1)$
+
+
+```{r}
+lcg <- function(n, seed, a, b, m) {
+  x <- rep(seed, n + 1)
+  for (i in 1:n) {
+    x[i + 1] <- (a * x[i] + b) %% m
+  }
+  x[-1] / m
+}
+```
+
+```{r}
+tibble(
+  x = lcg(1000, 0, 1664525, 1013904223, 2^32)
+) %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram(aes(y = ..density..), bins = 30, col = gg_hcl(1))
+```
+
+
+
+### Multiplicative congruential generator
+
+
+
 
 ### Sampling from a finite population
 
@@ -27,12 +77,12 @@ $$U \equiv F_X(X) \sim unif(0, 1)$$
 Let $U \sim unif(0, 1)$. Then
 
 $$
-\begin{align}
+\begin{aligned}
 P(F_X^{-1}(U) \le x) & = P(\inf\{t : F_X(t) = U \} \le x) \\
 & = P(U \le F_X(x)) \\
 & = F_U(F_X(x)) \\
 & = F_X(x)
-\end{align}
+\end{aligned}
 $$
 ```
 
@@ -54,8 +104,10 @@ If $X \sim Exp(\lambda)$, then $F_X(x) = 1 - e^{-\lambda x}$. We can derive the 
 $$F_X^{-1}(u) = \frac{1}{\lambda}\ln(1 - u)$$
 ```
 
+From above example \@ref(exm:expon), we just type the inverse cdf in the function to use the method.
+
 ```{r}
-rand_exp <- function(n, lambda) {
+inv_exp <- function(n, lambda) {
   -log(runif(n)) / lambda
 }
 ```
@@ -63,10 +115,9 @@ rand_exp <- function(n, lambda) {
 If we generate $x_1, \ldots, x_{500} \sim Exp(\lambda = 1)$,
 
 ```{r}
-tibble(x = rand_exp(500, lambda = 1)) %>% 
-  ggplot() +
-  aes(x = x) +
-  geom_histogram(bins = 50)
+tibble(x = inv_exp(500, lambda = 1)) %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram(aes(y = ..density..), bins = 30, col = gg_hcl(1))
 ```
 
 
