@@ -317,14 +317,94 @@ tibble(x = seq(0, 1, length.out = 101)) %>%
   )
 ```
 
-See Figure \@ref(fig:arprop). This illustrates the motivation of A-R method. Lower one is $f(x)$ and the upper one is $cg(x)$ which covers $f$. The algorithm takes random number from $Y \sim g$ in each recursive step $i$, which is represented as a line in the figure. We can see that
+See Figure \@ref(fig:arprop). This illustrates the motivation of A-R method. Lower one is $f(x)$ and the upper one is $cg(x)$ which covers $f$. We can see that
 
 $$0 < \frac{f(x)}{cg(x)} \le 1$$
 
+The algorithm takes random number from $Y \sim g$ in each recursive step $i$, which is represented as a line in the figure. At this value, the algorithm accept $Y$ as random number of $f$ if
+
+$$U \le \frac{f(Y)}{cg(Y)}$$
+
+Suppose that we choose a point at random on a line drawn in the figure \@ref(fig:arprop). If we get the red line, we accept. Otherwise, we reject. In other words, the *colored area is where we reject the given value*. The smaller the area is, the more efficient the algorithm will be.
 
 
+```{proposition, arnote, name = "Properties of A-R Method"}
+$\text{(1)}\: \frac{f(Y)}{cg(Y)} \perp\!\!\!\perp U$
 
+$\text{(2)}\: 0 < \frac{f(x)}{cg(x)} \le 1$
 
+$\text{(3)}\:$ Let $N$ be the number of iterations needed to get an acceptance. Then
+
+$$N \sim Geo(p) \quad \text{where}\: p \equiv P\bigg(U \le \frac{f(Y)}{cg(Y)}\bigg)$$
+
+and so
+
+$$
+\begin{cases}
+  P(N = n) = p(1 - p)^{n - 1}I_{\{1, 2, \ldots \}}(n) \\
+  E(N) = \text{average number of iterations} = \frac{1}{p}
+\end{cases}
+$$
+
+$\text{(4)}\: X \sim Y \mid U \le \frac{f(Y)}{cg(Y)}$, i.e.
+
+$$P\bigg(Y \le y \mid U \le \frac{f(Y)}{cg(Y)}\bigg) = F_X(y)$$
+```
+
+```{remark, areff, name = "Efficiency"}
+Efficiency of the A-R method depends on $p = P\bigg(U \le \frac{f(Y)}{cg(Y)}\bigg)$. In fact,
+
+$$E(N) = \frac{1}{p} = c$$
+
+The algorithm becomes efficient for small $c$.
+```
+
+```{proof}
+Note that
+
+$$P\bigg( U \le \frac{f(y)}{cg(y)}, Y = y \bigg) = P\bigg(Y \le \frac{g(y)}{cg(y)} \mid Y = y \bigg)P(Y = y)$$
+
+Since $U \sim unif(0, 1)$, $P\bigg(Y \le \frac{g(y)}{cg(y)} \mid Y = y \bigg) = \frac{f(y)}{cg(y)}$.
+
+By construction, $P(Y = y) = g(y)$.
+
+It follows that
+
+\begin{equation*}
+  \begin{split}
+    p = P\bigg( U \le  \frac{f(y)}{cg(y)} \bigg) & = \int_{-\infty}^{\infty} P\bigg( U \le \frac{f(y)}{cg(y)}, Y = y \bigg) dy \\
+    & = \int_{-\infty}^{\infty} \frac{f(y)}{cg(y)} g(y) dy \\
+    & = \frac{1}{c} \int_{-\infty}^{\infty}f(y)dy \\
+    & = \frac{1}{c}
+  \end{split}
+\end{equation*}
+
+Hence,
+
+$$E(N) = \frac{1}{p} = c$$
+
+We can say that the method is efficient when the acceptance rate $p$ is large, i.e. $c$ small.
+```
+
+```{corollary, argood, name = "Efficiency of A-R Method"}
+A-R method is efficient when
+
+$g(\cdot)$ is close to $f(\cdot)$ and
+
+have small $c$.
+```
+
+```{corollary, arc, name = "Choosing c"}
+To enhance the algorithm, we might choose $c$ which satisfy
+
+$$c = \max \bigg\{ \frac{f(x)}{g(x)} : x \in spt f \bigg\}$$
+```
+
+### Examples
+
+```{example, arbeta, name = "Beta(3,2)"}
+Consider $X \sim Beta(3, 2)$.
+```
 
 
 

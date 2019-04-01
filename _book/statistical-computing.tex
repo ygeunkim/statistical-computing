@@ -737,11 +737,108 @@ Collect \(x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} f(x)\).
 
 See Figure \ref{fig:arprop}. This illustrates the motivation of A-R
 method. Lower one is \(f(x)\) and the upper one is \(cg(x)\) which
-covers \(f\). The algorithm takes random number from \(Y \sim g\) in
-each recursive step \(i\), which is represented as a line in the figure.
-We can see that
+covers \(f\). We can see that
 
 \[0 < \frac{f(x)}{cg(x)} \le 1\]
+
+The algorithm takes random number from \(Y \sim g\) in each recursive
+step \(i\), which is represented as a line in the figure. At this value,
+the algorithm accept \(Y\) as random number of \(f\) if
+
+\[U \le \frac{f(Y)}{cg(Y)}\]
+
+Suppose that we choose a point at random on a line drawn in the figure
+\ref{fig:arprop}. If we get the red line, we accept. Otherwise, we
+reject. In other words, the \emph{colored area is where we reject the
+given value}. The smaller the area is, the more efficient the algorithm
+will be.
+
+\BeginKnitrBlock{proposition}[Properties of A-R Method]
+\protect\hypertarget{prp:arnote}{}{\label{prp:arnote} \iffalse (Properties
+of A-R Method) \fi{}
+}\(\text{(1)}\: \frac{f(Y)}{cg(Y)} \perp\!\!\!\perp U\)
+
+\(\text{(2)}\: 0 < \frac{f(x)}{cg(x)} \le 1\)
+
+\(\text{(3)}\:\) Let \(N\) be the number of iterations needed to get an
+acceptance. Then
+
+\[N \sim Geo(p) \quad \text{where}\: p \equiv P\bigg(U \le \frac{f(Y)}{cg(Y)}\bigg)\]
+
+and so
+
+\[
+\begin{cases}
+  P(N = n) = p(1 - p)^{n - 1}I_{\{1, 2, \ldots \}}(n) \\
+  E(N) = \text{average number of iterations} = \frac{1}{p}
+\end{cases}
+\]
+
+\(\text{(4)}\: X \sim Y \mid U \le \frac{f(Y)}{cg(Y)}\), i.e.
+
+\[P\bigg(Y \le y \mid U \le \frac{f(Y)}{cg(Y)}\bigg) = F_X(y)\]
+\EndKnitrBlock{proposition}
+
+\BeginKnitrBlock{remark}[Efficiency]
+\iffalse{} {Remark (Efficiency). } \fi{}Efficiency of the A-R method
+depends on \(p = P\bigg(U \le \frac{f(Y)}{cg(Y)}\bigg)\). In fact,
+
+\[E(N) = \frac{1}{p} = c\]
+
+The algorithm becomes efficient for small \(c\).
+\EndKnitrBlock{remark}
+
+\BeginKnitrBlock{proof}
+\iffalse{} {Proof. } \fi{}Note that
+
+\[P\bigg( U \le \frac{f(y)}{cg(y)}, Y = y \bigg) = P\bigg(Y \le \frac{g(y)}{cg(y)} \mid Y = y \bigg)P(Y = y)\]
+
+Since \(U \sim unif(0, 1)\),
+\(P\bigg(Y \le \frac{g(y)}{cg(y)} \mid Y = y \bigg) = \frac{f(y)}{cg(y)}\).
+
+By construction, \(P(Y = y) = g(y)\).
+
+It follows that
+
+\begin{equation*}
+  \begin{split}
+    p = P\bigg( U \le  \frac{f(y)}{cg(y)} \bigg) & = \int_{-\infty}^{\infty} P\bigg( U \le \frac{f(y)}{cg(y)}, Y = y \bigg) dy \\
+    & = \int_{-\infty}^{\infty} \frac{f(y)}{cg(y)} g(y) dy \\
+    & = \frac{1}{c} \int_{-\infty}^{\infty}f(y)dy \\
+    & = \frac{1}{c}
+  \end{split}
+\end{equation*}
+
+Hence,
+
+\[E(N) = \frac{1}{p} = c\]
+
+We can say that the method is efficient when the acceptance rate \(p\)
+is large, i.e. \(c\) small.
+\EndKnitrBlock{proof}
+
+\BeginKnitrBlock{corollary}[Efficiency of A-R Method]
+\protect\hypertarget{cor:argood}{}{\label{cor:argood} \iffalse (Efficiency
+of A-R Method) \fi{} }A-R method is efficient when
+
+\(g(\cdot)\) is close to \(f(\cdot)\) and
+
+have small \(c\).
+\EndKnitrBlock{corollary}
+
+\BeginKnitrBlock{corollary}[Choosing c]
+\protect\hypertarget{cor:arc}{}{\label{cor:arc} \iffalse (Choosing c) \fi{}
+}To enhance the algorithm, we might choose \(c\) which satisfy
+
+\[c = \max \bigg\{ \frac{f(x)}{g(x)} : x \in spt f \bigg\}\]
+\EndKnitrBlock{corollary}
+
+\subsection{Examples}\label{examples}
+
+\BeginKnitrBlock{example}[Beta(3,2)]
+\protect\hypertarget{exm:arbeta}{}{\label{exm:arbeta} \iffalse (Beta(3,2))
+\fi{} }Consider \(X \sim Beta(3, 2)\).
+\EndKnitrBlock{example}
 
 \chapter{Monte Carlo Integration and Variance Reduction}\label{mcint}
 
