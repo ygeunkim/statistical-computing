@@ -12,6 +12,8 @@ knitr::opts_chunk$set(
 
 # tidyverse -----------------------------------
 library(tidyverse)
+# data.table ----------------------------------
+library(data.table)
 # tools for r markdown ------------------------
 library(rmdtool)
 # assistant tools for ggplot ------------------

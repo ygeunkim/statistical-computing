@@ -126,7 +126,7 @@ Department of Statistics, SKKU\\
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-03-31}
+    \date{2019-04-01}
 
 \usepackage{booktabs}
 \usepackage{float}
@@ -165,11 +165,87 @@ Department of Statistics, SKKU\\
 \setcounter{tocdepth}{1}
 \tableofcontents
 }
-\chapter*{Statistical Computing}\label{statistical-computing}
-\addcontentsline{toc}{chapter}{Statistical Computing}
+\chapter*{Welcome}\label{welcome}
+\addcontentsline{toc}{chapter}{Welcome}
 
-Statistical computing mainly treats \emph{random generation} methods.
-Additionaly, it treats useful simulation methods.
+ Statistical computing mainly treats useful simulation methods.
+
+\section*{Statistical Computing}\label{statistical-computing}
+\addcontentsline{toc}{section}{Statistical Computing}
+
+We first look at \emph{random generation} methods. Lots of simulation
+methods are built based on this random numbers.
+
+\subsection*{Sampling from a fininte
+population}\label{sampling-from-a-fininte-population}
+\addcontentsline{toc}{subsection}{Sampling from a fininte population}
+
+Generating random numbers is like sampling. From finite population, we
+can sample data with or without replacement. For example of sampling
+with replacement, we toss coins 10 times.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{sample}\NormalTok{(}\DecValTok{0}\OperatorTok{:}\DecValTok{1}\NormalTok{, }\DataTypeTok{size =} \DecValTok{10}\NormalTok{, }\DataTypeTok{replace =} \OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+ [1] 1 0 0 1 0 1 1 0 1 1
+\end{verbatim}
+
+Sampling without replacement: Choose some lottery numbers which consist
+of 1 to 100.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{sample}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\DecValTok{100}\NormalTok{, }\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{replace =} \OtherTok{FALSE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 61 83 50 74 34 35
+\end{verbatim}
+
+\subsection*{Random generators of common probability
+distributions}\label{random-generators-of-common-probability-distributions}
+\addcontentsline{toc}{subsection}{Random generators of common
+probability distributions}
+
+\texttt{R} provides some functions which generate random numbers
+following famous distributions. Although we will learn some skills
+generating these numbers in basis levels, these functions do the same
+thing more elegantly.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{gg_curve}\NormalTok{(dbeta, }\DataTypeTok{from =} \DecValTok{0}\NormalTok{, }\DataTypeTok{to =} \DecValTok{1}\NormalTok{, }\DataTypeTok{args =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{shape1 =} \DecValTok{3}\NormalTok{, }\DataTypeTok{shape2 =} \DecValTok{2}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}
+    \DataTypeTok{data =} \KeywordTok{tibble}\NormalTok{(}
+      \DataTypeTok{rand =} \KeywordTok{rbeta}\NormalTok{(}\DecValTok{1000}\NormalTok{, }\DecValTok{3}\NormalTok{, }\DecValTok{2}\NormalTok{),}
+      \DataTypeTok{idx =} \KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DataTypeTok{length.out =} \DecValTok{1000}\NormalTok{)}
+\NormalTok{    ),}
+    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ rand, }\DataTypeTok{y =}\NormalTok{ ..density..),}
+    \DataTypeTok{position =} \StringTok{"identity"}\NormalTok{,}
+    \DataTypeTok{bins =} \DecValTok{30}\NormalTok{,}
+    \DataTypeTok{alpha =}\NormalTok{ .}\DecValTok{45}\NormalTok{,}
+    \DataTypeTok{fill =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/dbrb-1} 
+
+}
+
+\caption{Beta(3,2) random numbers}\label{fig:dbrb}
+\end{figure}
+
+Figure \ref{fig:dbrb} shows that \texttt{rbeta()} function generate
+random numbers very well. Histogram is of the random number, and the
+curve is the true beta distribution.
 
 \chapter{Methods for Generating Random Variables}\label{rvar}
 
@@ -185,7 +261,7 @@ random numbers. Instead, we generate \textbf{pseudo-random} numbers.
 \section{Pseudo-random Numbers}\label{pseudo-random-numbers}
 
 \BeginKnitrBlock{definition}[Pseudo-random numbers]
-\protect\hypertarget{def:unnamed-chunk-3}{}{\label{def:unnamed-chunk-3}
+\protect\hypertarget{def:unnamed-chunk-5}{}{\label{def:unnamed-chunk-5}
 \iffalse (Pseudo-random numbers) \fi{} }Sequence of values generated
 deterministically which have all the appearances of being independent
 \(unif(0, 1)\) random variables, i.e.
@@ -250,38 +326,84 @@ Then \(u_1, u_2, \ldots \sim unif(0, 1)\)
 \end{Highlighting}
 \end{Shaded}
 
-\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-5-1} \end{center}
+\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-7-1} \end{center}
 
 \subsection{Multiplicative congruential
 generator}\label{multiplicative-congruential-generator}
 
-\subsection{Sampling from a finite
-population}\label{sampling-from-a-finite-population}
+As we can expect from its name, this is congruential generator with
+\(c = 0\).
 
-From finite population, we can sample data with or without replacement.
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Set \(x_0\) as initial seed.
+\item
+  Generate \(x_n, n = 1, 2, \ldots\) recursively:
+
+  \begin{enumerate}
+  \def\labelenumii{\alph{enumii}.}
+  \tightlist
+  \item
+    \(x_n = a x_{n - 1} \mod m\)
+  \item
+    where \(a \in \mathbb{Z}_{+}, m: \text{modulus}\)
+  \end{enumerate}
+\item
+  Compute \(u_n = \frac{x_n}{m} \in (0, 1)\)
+\end{enumerate}
+
+Then \(u_1, u_2, \ldots \sim unif(0, 1)\)
+
+We just set \texttt{b\ =\ 0} in our \texttt{lcg()} function. The
+\textbf{seed must not be zero}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{sample}\NormalTok{(}\DecValTok{0}\OperatorTok{:}\DecValTok{1}\NormalTok{, }\DataTypeTok{size =} \DecValTok{10}\NormalTok{, }\DataTypeTok{replace =} \OtherTok{TRUE}\NormalTok{)}
+\KeywordTok{tibble}\NormalTok{(}
+  \DataTypeTok{x =} \KeywordTok{lcg}\NormalTok{(}\DecValTok{1000}\NormalTok{, }\DecValTok{5}\NormalTok{, }\DecValTok{1664525}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{2}\OperatorTok{^}\DecValTok{32}\NormalTok{)}
+\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ ..density..), }\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\DataTypeTok{col =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-8-1} \end{center}
+
+\subsection{Cycle}\label{cycle}
+
+Generate LCG \(n = 32\) with \(a = 1\), \(c = 1\), and \(m = 16\) from
+the seed \(x_0 = 0\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{lcg}\NormalTok{(}\DecValTok{32}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{16}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
- [1] 1 0 0 1 0 1 1 0 1 1
+ [1] 0.0625 0.1250 0.1875 0.2500 0.3125 0.3750 0.4375 0.5000 0.5625 0.6250
+[11] 0.6875 0.7500 0.8125 0.8750 0.9375 0.0000 0.0625 0.1250 0.1875 0.2500
+[21] 0.3125 0.3750 0.4375 0.5000 0.5625 0.6250 0.6875 0.7500 0.8125 0.8750
+[31] 0.9375 0.0000
 \end{verbatim}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{sample}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\DecValTok{100}\NormalTok{, }\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{replace =} \OtherTok{FALSE}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-[1] 61 83 50 74 34 35
-\end{verbatim}
+Observe that we have the cycle after \(m\)-th number. Against this
+problem, we give different seed from every \((im + 1)\)th random number.
 
 \section{The Inverse Transform
 Method}\label{the-inverse-transform-method}
+
+\BeginKnitrBlock{definition}[Inverse of CDF]
+\protect\hypertarget{def:icdf}{}{\label{def:icdf} \iffalse (Inverse of CDF)
+\fi{} }Since some cdf \(F_X\) is not strictly increasing, we difine
+\(F_X^{-1}(y)\) for \(0 < y < 1\) by
+
+\[F_{X}^{-1}(y) := inf \{ x : F_X(x) \ge y \}\]
+\EndKnitrBlock{definition}
+
+Using this definition, we can get the following theorem.
 
 \BeginKnitrBlock{theorem}[Probability Integral Transformation]
 \protect\hypertarget{thm:probint}{}{\label{thm:probint}
@@ -294,14 +416,14 @@ continuous random variable with cdf \(F_(x)\), then
 \iffalse{} {Proof (Probability Integral Transformation). } \fi{}Let
 \(U \sim unif(0, 1)\). Then
 
-\[
-\begin{aligned}
-P(F_X^{-1}(U) \le x) & = P(\inf\{t : F_X(t) = U \} \le x) \\
-& = P(U \le F_X(x)) \\
-& = F_U(F_X(x)) \\
-& = F_X(x)
-\end{aligned}
-\]
+\begin{equation*}
+  \begin{split}
+    P(F_X^{-1}(U) \le x) & = P(\inf\{t : F_X(t) = U \} \le x) \\
+    & = P(U \le F_X(x)) \\
+    & = F_U(F_X(x)) \\
+    & = F_X(x)
+  \end{split}
+\end{equation*}
 \EndKnitrBlock{proof}
 
 Thus, to generate \(n\) random variables \(\sim F_X\),
@@ -324,7 +446,7 @@ Thus, to generate \(n\) random variables \(\sim F_X\),
   \end{enumerate}
 \end{enumerate}
 
-Collect \(x_1, x_2, \ldots, x_n \sim F_X\).
+Collect \(x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} F_X\).
 
 \subsection{Continuous case}\label{continuous-case}
 
@@ -339,8 +461,11 @@ distribution) \fi{} }If \(X \sim Exp(\lambda)\), then
 cdf \[F_X^{-1}(u) = \frac{1}{\lambda}\ln(1 - u)\]
 \EndKnitrBlock{example}
 
-From above example \ref{exm:expon}, we just type the inverse cdf in the
-function to use the method.
+Note that
+
+\[U \sim unif(0, 1) \Leftrightarrow 1 - U \sim unif(0,1 )\]
+
+Then we just can use \(U\) instead of \(1 - U\).
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -354,15 +479,206 @@ If we generate \(x_1, \ldots, x_{500} \sim Exp(\lambda = 1)\),
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{inv_exp}\NormalTok{(}\DecValTok{500}\NormalTok{, }\DataTypeTok{lambda =} \DecValTok{1}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x)) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ ..density..), }\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\DataTypeTok{col =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{))}
+\KeywordTok{gg_curve}\NormalTok{(dexp, }\DataTypeTok{from =} \DecValTok{0}\NormalTok{, }\DataTypeTok{to =} \DecValTok{10}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}
+    \DataTypeTok{data =} \KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{inv_exp}\NormalTok{(}\DecValTok{500}\NormalTok{, }\DataTypeTok{lambda =} \DecValTok{1}\NormalTok{)),}
+    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ ..density..),}
+    \DataTypeTok{bins =} \DecValTok{30}\NormalTok{,}
+    \DataTypeTok{fill =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{),}
+    \DataTypeTok{alpha =}\NormalTok{ .}\DecValTok{5}
+\NormalTok{  )}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-10-1} \end{center}
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/cdfexp-1} 
+
+}
+
+\caption{Inverse Transformation: Exp(1)}\label{fig:cdfexp}
+\end{figure}
 
 \subsection{Discrete case}\label{discrete-case}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  For each \(i = 1, 2, \ldots, n\):
+
+  \begin{enumerate}
+  \def\labelenumii{\alph{enumii}.}
+  \tightlist
+  \item
+    Generate \(u_i \sim unif(0, 1)\)
+  \item
+    Take \(x_i\) s.t. \(F_X(x_{i - 1}) < U \le F_X(x_i)\)
+  \end{enumerate}
+\end{enumerate}
+
+Collect \(x_1, x_2, \ldots, x_n \sim F_X\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pmf <-}
+\StringTok{  }\KeywordTok{tibble}\NormalTok{(}
+    \DataTypeTok{x =} \DecValTok{0}\OperatorTok{:}\DecValTok{4}\NormalTok{,}
+    \DataTypeTok{p =} \KeywordTok{c}\NormalTok{(.}\DecValTok{1}\NormalTok{, .}\DecValTok{2}\NormalTok{, .}\DecValTok{2}\NormalTok{, .}\DecValTok{2}\NormalTok{, .}\DecValTok{3}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\BeginKnitrBlock{example}[Discrete Random Variable]
+\protect\hypertarget{exm:dismass}{}{\label{exm:dismass} \iffalse (Discrete
+Random Variable) \fi{} }Consider a discrete random variable \(X\) with a
+mass function as following.
+\EndKnitrBlock{example}
+
+\begin{tabular}{r|r}
+\hline
+x & p\\
+\hline
+0 & 0.1\\
+\hline
+1 & 0.2\\
+\hline
+2 & 0.2\\
+\hline
+3 & 0.2\\
+\hline
+4 & 0.3\\
+\hline
+\end{tabular}
+
+i.e.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pmf }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_segment}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =} \DecValTok{0}\NormalTok{, }\DataTypeTok{xend =}\NormalTok{ x, }\DataTypeTok{yend =}\NormalTok{ p)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(}\KeywordTok{p}\NormalTok{(x)))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/massfun-1} 
+
+}
+
+\caption{Probability Mass Function}\label{fig:massfun}
+\end{figure}
+
+Then we have the cdf
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pmf }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}
+    \DataTypeTok{fx =} \KeywordTok{cumsum}\NormalTok{(p),}
+    \DataTypeTok{x_end =} \KeywordTok{lead}\NormalTok{(x, }\DataTypeTok{default =} \DecValTok{5}\NormalTok{),}
+    \DataTypeTok{u =}\NormalTok{ fx,}
+    \DataTypeTok{u =} \KeywordTok{ifelse}\NormalTok{(u }\OperatorTok{==}\StringTok{ }\NormalTok{.}\DecValTok{5}\NormalTok{, .}\DecValTok{6}\NormalTok{, u),}
+    \DataTypeTok{fx1 =} \KeywordTok{lead}\NormalTok{(fx, }\DataTypeTok{default =} \DecValTok{1}\NormalTok{),}
+    \DataTypeTok{rand =}\NormalTok{ u }\OperatorTok{>}\StringTok{ }\NormalTok{fx }\OperatorTok{&}\StringTok{ }\NormalTok{u }\OperatorTok{<=}\StringTok{ }\NormalTok{fx1}
+\NormalTok{  ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_segment}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ fx, }\DataTypeTok{xend =}\NormalTok{ x_end, }\DataTypeTok{yend =}\NormalTok{ fx)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(}\KeywordTok{F}\NormalTok{(x))) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_segment}\NormalTok{(}
+    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =} \DecValTok{0}\NormalTok{, }\DataTypeTok{y =}\NormalTok{ u, }\DataTypeTok{xend =}\NormalTok{ x_end, }\DataTypeTok{yend =}\NormalTok{ u, }\DataTypeTok{colour =}\NormalTok{ rand),}
+    \DataTypeTok{linetype =} \StringTok{"dashed"}\NormalTok{,}
+    \DataTypeTok{arrow =} \KeywordTok{arrow}\NormalTok{(}\DataTypeTok{length =} \KeywordTok{unit}\NormalTok{(.}\DecValTok{5}\NormalTok{, }\StringTok{"cm"}\NormalTok{)),}
+    \DataTypeTok{show.legend =} \OtherTok{FALSE}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_segment}\NormalTok{(}
+    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x_end, }\DataTypeTok{y =}\NormalTok{ u, }\DataTypeTok{xend =}\NormalTok{ x_end, }\DataTypeTok{yend =} \DecValTok{0}\NormalTok{, }\DataTypeTok{colour =}\NormalTok{ rand),}
+    \DataTypeTok{linetype =} \StringTok{"dashed"}\NormalTok{,}
+    \DataTypeTok{arrow =} \KeywordTok{arrow}\NormalTok{(}\DataTypeTok{length =} \KeywordTok{unit}\NormalTok{(.}\DecValTok{5}\NormalTok{, }\StringTok{"cm"}\NormalTok{)),}
+    \DataTypeTok{show.legend =} \OtherTok{FALSE}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_colour_manual}\NormalTok{(}
+    \DataTypeTok{values =} \KeywordTok{c}\NormalTok{(}\StringTok{"TRUE"}\NormalTok{ =}\StringTok{ }\KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{), }\StringTok{"FALSE"}\NormalTok{ =}\StringTok{ "#00000000"}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/cdfun-1} 
+
+}
+
+\caption{CDF of the Discrete Random Variable: Illustration for discrete case}\label{fig:cdfun}
+\end{figure}
+
+Remembering the algorithm, we can implement \texttt{dplyr::case\_when()}
+here.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rcustom <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n) \{}
+  \KeywordTok{tibble}\NormalTok{(}\DataTypeTok{u =} \KeywordTok{runif}\NormalTok{(n)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{mutate}\NormalTok{(}
+      \DataTypeTok{x =} \KeywordTok{case_when}\NormalTok{(}
+\NormalTok{        u }\OperatorTok{>}\StringTok{ }\DecValTok{0} \OperatorTok{&}\StringTok{ }\NormalTok{u }\OperatorTok{<=}\StringTok{ }\NormalTok{.}\DecValTok{1} \OperatorTok{~}\StringTok{ }\DecValTok{0}\NormalTok{,}
+\NormalTok{        u }\OperatorTok{>}\StringTok{ }\NormalTok{.}\DecValTok{1} \OperatorTok{&}\StringTok{ }\NormalTok{u }\OperatorTok{<=}\StringTok{ }\NormalTok{.}\DecValTok{3} \OperatorTok{~}\StringTok{ }\DecValTok{1}\NormalTok{,}
+\NormalTok{        u }\OperatorTok{>}\StringTok{ }\NormalTok{.}\DecValTok{3} \OperatorTok{&}\StringTok{ }\NormalTok{u }\OperatorTok{<=}\StringTok{ }\NormalTok{.}\DecValTok{5} \OperatorTok{~}\StringTok{ }\DecValTok{2}\NormalTok{,}
+\NormalTok{        u }\OperatorTok{>}\StringTok{ }\NormalTok{.}\DecValTok{5} \OperatorTok{&}\StringTok{ }\NormalTok{u }\OperatorTok{<=}\StringTok{ }\NormalTok{.}\DecValTok{7} \OperatorTok{~}\StringTok{ }\DecValTok{3}\NormalTok{,}
+        \OtherTok{TRUE} \OperatorTok{~}\StringTok{ }\DecValTok{4}
+\NormalTok{      )}
+\NormalTok{    ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{select}\NormalTok{(x) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{pull}\NormalTok{()}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{tibble}\NormalTok{(}
+  \DataTypeTok{x =} \KeywordTok{rcustom}\NormalTok{(}\DecValTok{100}\NormalTok{)}
+\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ ..ndensity..), }\DataTypeTok{binwidth =}\NormalTok{ .}\DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/randmass-1} 
+
+}
+
+\caption{Generated discrete random numbers}\label{fig:randmass}
+\end{figure}
+
+See Figure \ref{fig:massfun} and \ref{fig:randmass}. Comparing the two,
+the result can be said okay.
+
+\subsection{Problems with inverse
+transformation}\label{problems-with-inverse-transformation}
+
+Examples \ref{exm:expon} and \ref{exm:dismass}. We could generate these
+random numbers because we aware of
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  analytical \(F_X\)
+\item
+  \(F^{-1}\)
+\end{enumerate}
+
+In practice, however, not all distribution have analytical \(F\).
+Numerical computing might be possible, but it is not efficient. There
+are other approaches.
+
+\section{The Acceptance-Rejection
+Method}\label{the-acceptance-rejection-method}
 
 \chapter{Monte Carlo Integration and Variance Reduction}\label{mcint}
 

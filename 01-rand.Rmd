@@ -51,22 +51,46 @@ tibble(
 
 ### Multiplicative congruential generator
 
+As we can expect from its name, this is congruential generator with $c = 0$.
 
+1. Set $x_0$ as initial seed.
+2. Generate $x_n, n = 1, 2, \ldots$ recursively:
+    a. $x_n = a x_{n - 1} \mod m$
+    b. where $a \in \mathbb{Z}_{+}, m: \text{modulus}$
+3. Compute $u_n = \frac{x_n}{m} \in (0, 1)$
 
+Then $u_1, u_2, \ldots \sim unif(0, 1)$
 
-### Sampling from a finite population
-
-From finite population, we can sample data with or without replacement.
+We just set `b = 0` in our `lcg()` function. The **seed must not be zero**.
 
 ```{r}
-sample(0:1, size = 10, replace = TRUE)
+tibble(
+  x = lcg(1000, 5, 1664525, 0, 2^32)
+) %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram(aes(y = ..density..), bins = 30, col = gg_hcl(1))
 ```
 
+### Cycle
+
+Generate LCG $n = 32$ with $a = 1$, $c = 1$, and $m = 16$ from the seed $x_0 = 0$.
+
 ```{r}
-sample(1:100, size = 6, replace = FALSE)
+lcg(32, 0, 1, 1, 16)
 ```
+
+Observe that we have the cycle after $m$-th number. Against this problem, we give different seed from every $(im + 1)$th random number.
+
 
 ## The Inverse Transform Method
+
+```{definition, icdf, name = "Inverse of CDF"}
+Since some cdf $F_X$ is not strictly increasing, we difine $F_X^{-1}(y)$ for $0 < y < 1$ by
+
+$$F_{X}^{-1}(y) := inf \{ x : F_X(x) \ge y \}$$
+```
+
+Using this definition, we can get the following theorem.
 
 ```{theorem, probint, name = "Probability Integral Transformation"}
 If $X$ is a continuous random variable with cdf $F_(x)$, then
@@ -76,14 +100,14 @@ $$U \equiv F_X(X) \sim unif(0, 1)$$
 ```{proof, name = "Probability Integral Transformation"}
 Let $U \sim unif(0, 1)$. Then
 
-$$
-\begin{aligned}
-P(F_X^{-1}(U) \le x) & = P(\inf\{t : F_X(t) = U \} \le x) \\
-& = P(U \le F_X(x)) \\
-& = F_U(F_X(x)) \\
-& = F_X(x)
-\end{aligned}
-$$
+\begin{equation*}
+  \begin{split}
+    P(F_X^{-1}(U) \le x) & = P(\inf\{t : F_X(t) = U \} \le x) \\
+    & = P(U \le F_X(x)) \\
+    & = F_U(F_X(x)) \\
+    & = F_X(x)
+  \end{split}
+\end{equation*}
 ```
 
 Thus, to generate $n$ random variables $\sim F_X$,
@@ -93,7 +117,7 @@ Thus, to generate $n$ random variables $\sim F_X$,
     a. Generate $u_i \sim unif(0, 1)$
     b. $x_i = F_X^{-1}(u_i)$
 
-Collect $x_1, x_2, \ldots, x_n \sim F_X$.
+Collect $x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} F_X$.
 
 ### Continuous case
 
@@ -104,7 +128,11 @@ If $X \sim Exp(\lambda)$, then $F_X(x) = 1 - e^{-\lambda x}$. We can derive the 
 $$F_X^{-1}(u) = \frac{1}{\lambda}\ln(1 - u)$$
 ```
 
-From above example \@ref(exm:expon), we just type the inverse cdf in the function to use the method.
+Note that
+
+$$U \sim unif(0, 1) \Leftrightarrow 1 - U \sim unif(0,1 )$$
+
+Then we just can use $U$ instead of $1 - U$.
 
 ```{r}
 inv_exp <- function(n, lambda) {
@@ -114,14 +142,127 @@ inv_exp <- function(n, lambda) {
 
 If we generate $x_1, \ldots, x_{500} \sim Exp(\lambda = 1)$,
 
-```{r}
-tibble(x = inv_exp(500, lambda = 1)) %>% 
-  ggplot(aes(x = x)) +
-  geom_histogram(aes(y = ..density..), bins = 30, col = gg_hcl(1))
+```{r cdfexp, fig.cap="Inverse Transformation: Exp(1)"}
+gg_curve(dexp, from = 0, to = 10) +
+  geom_histogram(
+    data = tibble(x = inv_exp(500, lambda = 1)),
+    aes(x = x, y = ..density..),
+    bins = 30,
+    fill = gg_hcl(1),
+    alpha = .5
+  )
 ```
 
 
 ### Discrete case
+
+1. For each $i = 1, 2, \ldots, n$:
+    a. Generate $u_i \sim unif(0, 1)$
+    b. Take $x_i$ s.t. $F_X(x_{i - 1}) < U \le F_X(x_i)$
+
+Collect $x_1, x_2, \ldots, x_n \sim F_X$.
+
+```{r}
+pmf <-
+  tibble(
+    x = 0:4,
+    p = c(.1, .2, .2, .2, .3)
+  )
+```
+
+```{example, dismass, name = "Discrete Random Variable"}
+Consider a discrete random variable $X$ with a mass function as following.
+```
+
+```{r, echo=FALSE}
+knitr::kable(pmf)
+```
+
+i.e.
+
+```{r massfun, fig.cap="Probability Mass Function"}
+pmf %>% 
+  ggplot() +
+  geom_segment(aes(x = x, y = 0, xend = x, yend = p)) +
+  ylab(expression(p(x)))
+```
+
+Then we have the cdf
+
+```{r cdfun, fig.cap="CDF of the Discrete Random Variable: Illustration for discrete case"}
+pmf %>% 
+  mutate(
+    fx = cumsum(p),
+    x_end = lead(x, default = 5),
+    u = fx,
+    u = ifelse(u == .5, .6, u),
+    fx1 = lead(fx, default = 1),
+    rand = u > fx & u <= fx1
+  ) %>% 
+  ggplot() +
+  geom_segment(aes(x = x, y = fx, xend = x_end, yend = fx)) +
+  ylab(expression(F(x))) +
+  geom_segment(
+    aes(x = 0, y = u, xend = x_end, yend = u, colour = rand),
+    linetype = "dashed",
+    arrow = arrow(length = unit(.5, "cm")),
+    show.legend = FALSE
+  ) +
+  geom_segment(
+    aes(x = x_end, y = u, xend = x_end, yend = 0, colour = rand),
+    linetype = "dashed",
+    arrow = arrow(length = unit(.5, "cm")),
+    show.legend = FALSE
+  ) +
+  scale_colour_manual(
+    values = c("TRUE" = gg_hcl(1), "FALSE" = "#00000000")
+  )
+```
+
+
+Remembering the algorithm, we can implement `dplyr::case_when()` here.
+
+```{r}
+rcustom <- function(n) {
+  tibble(u = runif(n)) %>% 
+    mutate(
+      x = case_when(
+        u > 0 & u <= .1 ~ 0,
+        u > .1 & u <= .3 ~ 1,
+        u > .3 & u <= .5 ~ 2,
+        u > .5 & u <= .7 ~ 3,
+        TRUE ~ 4
+      )
+    ) %>% 
+    select(x) %>% 
+    pull()
+}
+```
+
+```{r randmass, fig.cap="Generated discrete random numbers"}
+tibble(
+  x = rcustom(100)
+) %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram(aes(y = ..ndensity..), binwidth = .1)
+```
+
+See Figure \@ref(fig:massfun) and \@ref(fig:randmass). Comparing the two, the result can be said okay.
+
+### Problems with inverse transformation
+
+Examples \@ref(exm:expon) and \@ref(exm:dismass). We could generate these random numbers because we aware of
+
+1. analytical $F_X$
+2. $F^{-1}$
+
+In practice, however, not all distribution have analytical $F$. Numerical computing might be possible, but it is not efficient. There are other approaches.
+
+
+## The Acceptance-Rejection Method
+
+
+
 
 
 
