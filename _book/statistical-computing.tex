@@ -529,27 +529,20 @@ Collect \(x_1, x_2, \ldots, x_n \sim F_X\).
 \end{Highlighting}
 \end{Shaded}
 
+\begin{longtable}[]{@{}lrrrrr@{}}
+\caption{\label{tab:exdis}Example of a Discrete Random
+Variable}\tabularnewline
+\toprule
+x & 0.0 & 1.0 & 2.0 & 3.0 & 4.0\tabularnewline
+p & 0.1 & 0.2 & 0.2 & 0.2 & 0.3\tabularnewline
+\bottomrule
+\end{longtable}
+
 \BeginKnitrBlock{example}[Discrete Random Variable]
 \protect\hypertarget{exm:dismass}{}{\label{exm:dismass} \iffalse (Discrete
 Random Variable) \fi{} }Consider a discrete random variable \(X\) with a
-mass function as following.
+mass function as in Table \ref{tab:exdis}.
 \EndKnitrBlock{example}
-
-\begin{tabular}{r|r}
-\hline
-x & p\\
-\hline
-0 & 0.1\\
-\hline
-1 & 0.2\\
-\hline
-2 & 0.2\\
-\hline
-3 & 0.2\\
-\hline
-4 & 0.3\\
-\hline
-\end{tabular}
 
 i.e.
 
@@ -679,6 +672,76 @@ are other approaches.
 
 \section{The Acceptance-Rejection
 Method}\label{the-acceptance-rejection-method}
+
+Acceptance-rejection method does not require analytical form of cdf.
+What we need is our \emph{target} density (or mass) function and
+\emph{proposal} density (or mass) function. Target function is what we
+want to generate. Propsal function is of any random variable that is
+\emph{easy to generate random numbers}. From this approach, we can
+generate any distribution while computation is not efficient.
+
+\begin{longtable}[]{@{}cc@{}}
+\toprule
+pdf or pmf & target or proposal\tabularnewline
+\midrule
+\endhead
+\(f\) & target\tabularnewline
+\(g\) & proposal - easy to generate random numbers\tabularnewline
+\bottomrule
+\end{longtable}
+
+First of all, \(g\) should satisfy that
+
+\[spt f \subseteq spt g\]
+
+Next, for some (pre-specified) \(c > 0\)
+
+\[\forall x \in spt f : \frac{f(x)}{g(x)} \le c\]
+
+\subsection{A-R algorithm}\label{a-r-algorithm}
+
+For \(i = 1, \ldots, n\)
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \(Y \sim g(Y)\)
+\item
+  \(U \sim unif(0, 1) \perp\!\!\!\perp Y\)
+\item
+  Accept-Reject step
+
+  \begin{enumerate}
+  \def\labelenumii{\alph{enumii}.}
+  \tightlist
+  \item
+    Accept: \(U \le \frac{f(Y)}{cg(Y)} \Rightarrow x_i = Y\)
+  \item
+    Reject: otherwise, go to step 1
+  \end{enumerate}
+\end{enumerate}
+
+Collect \(x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} f(x)\).
+
+\subsection{Efficiency}\label{efficiency}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/arprop-1} 
+
+}
+
+\caption{Property of AR method}\label{fig:arprop}
+\end{figure}
+
+See Figure \ref{fig:arprop}. This illustrates the motivation of A-R
+method. Lower one is \(f(x)\) and the upper one is \(cg(x)\) which
+covers \(f\). The algorithm takes random number from \(Y \sim g\) in
+each recursive step \(i\), which is represented as a line in the figure.
+We can see that
+
+\[0 < \frac{f(x)}{cg(x)} \le 1\]
 
 \chapter{Monte Carlo Integration and Variance Reduction}\label{mcint}
 

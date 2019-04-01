@@ -170,12 +170,14 @@ pmf <-
   )
 ```
 
-```{example, dismass, name = "Discrete Random Variable"}
-Consider a discrete random variable $X$ with a mass function as following.
+```{r, exdis, echo=FALSE}
+pmf %>% 
+  t() %>% 
+  knitr::kable(format = "pandoc", col.names = NULL, caption = "Example of a Discrete Random Variable")
 ```
 
-```{r, echo=FALSE}
-knitr::kable(pmf)
+```{example, dismass, name = "Discrete Random Variable"}
+Consider a discrete random variable $X$ with a mass function as in Table \@ref(tab:exdis).
 ```
 
 i.e.
@@ -260,6 +262,71 @@ In practice, however, not all distribution have analytical $F$. Numerical comput
 
 
 ## The Acceptance-Rejection Method
+
+Acceptance-rejection method does not require analytical form of cdf. What we need is our *target* density (or mass) function and *proposal* density (or mass) function. Target function is what we want to generate. Propsal function is of any random variable that is *easy to generate random numbers*. From this approach, we can generate any distribution while computation is not efficient.
+
+|pdf or pmf|target or proposal|  
+|:--------:|:--:|  
+| $f$ | target|  
+| $g$ | proposal - easy to generate random numbers |  
+
+First of all, $g$ should satisfy that
+
+$$spt f \subseteq spt g$$
+
+Next, for some (pre-specified) $c > 0$
+
+$$\forall x \in spt f : \frac{f(x)}{g(x)} \le c$$
+
+### A-R algorithm
+
+For $i = 1, \ldots, n$
+
+1. $Y \sim g(Y)$
+2. $U \sim unif(0, 1) \perp\!\!\!\perp Y$
+3. Accept-Reject step
+    a. Accept: $U \le \frac{f(Y)}{cg(Y)} \Rightarrow x_i = Y$
+    b. Reject: otherwise, go to step 1
+
+Collect $x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} f(x)$.
+
+### Efficiency
+
+```{r arprop, echo=FALSE, fig.cap="Property of AR method"}
+illust_g <- function(x) {
+  dbeta(x, shape1 = 3, shape2 = 2) * 2
+}
+#--------------------------------------
+tibble(x = seq(0, 1, length.out = 101)) %>% 
+  mutate(
+    fx = dbeta(x, shape1 = 3, shape2 = 2),
+    cgx = illust_g(x) - fx
+  ) %>% 
+  gather(-x, key = "density", value = "value") %>% 
+  mutate(density = factor(density, levels = c("cgx", "fx"))) %>% 
+  ggplot(aes(x = x)) +
+  geom_area(aes(y = value, fill = density, colour = density), position = "stack", alpha = .5) +
+  geom_segment(aes(x = .3, y = 0, xend = .3, yend = illust_g(.3)), linetype = "dashed") +
+  geom_segment(aes(x = .3, y = 0, xend = .3, yend = dbeta(.3, shape1 = 3, shape2 = 2)), col = I("red")) +
+  scale_fill_manual(
+    values = c("fx" = NA, "cgx" = gg_hcl(1))
+  ) +
+  labs(
+    x = "y",
+    y = "density"
+  )
+```
+
+See Figure \@ref(fig:arprop). This illustrates the motivation of A-R method. Lower one is $f(x)$ and the upper one is $cg(x)$ which covers $f$. The algorithm takes random number from $Y \sim g$ in each recursive step $i$, which is represented as a line in the figure. We can see that
+
+$$0 < \frac{f(x)}{cg(x)} \le 1$$
+
+
+
+
+
+
+
 
 
 
