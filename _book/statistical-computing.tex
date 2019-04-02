@@ -1,4 +1,4 @@
-\documentclass[]{book}
+\documentclass[openany]{book}
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
@@ -126,7 +126,7 @@ Department of Statistics, SKKU\\
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-04-01}
+    \date{2019-04-02}
 
 \usepackage{booktabs}
 \usepackage{float}
@@ -835,10 +835,231 @@ have small \(c\).
 
 \subsection{Examples}\label{examples}
 
-\BeginKnitrBlock{example}[Beta(3,2)]
-\protect\hypertarget{exm:arbeta}{}{\label{exm:arbeta} \iffalse (Beta(3,2))
-\fi{} }Consider \(X \sim Beta(3, 2)\).
+\BeginKnitrBlock{example}[Beta(a,b)]
+\protect\hypertarget{exm:arbeta}{}{\label{exm:arbeta} \iffalse (Beta(a,b))
+\fi{} }Let \(X \sim Beta(a, b)\). Then the pdf of \(X\) is given by
+
+\[f(x) = \frac{1}{B(a, b)}x^{a - 1}(1 - x)^{b - 1}I_{(0, 1)}(x)\]
 \EndKnitrBlock{example}
+
+\BeginKnitrBlock{solution}[Generating Beta(a,b) with A-R method]
+\iffalse{} {Solution (Generating Beta(a,b) with A-R method). }
+\fi{}Consider proposal density \(g(x) = I_{(0, 1)}(x)\), i.e.
+\(unif(0, 1)\).
+
+To determine the optimal \(c\) s.t.
+
+\[c = \max \bigg\{ \frac{f(x)}{g(x)} : x \in (0, 1) \bigg\}\]
+
+find the maximum of
+
+\[\frac{f(x)}{g(x)} = \frac{1}{B(a, b)}x^{a - 1}(1 - x)^{b - 1}\]
+
+Solve
+
+\begin{equation*}
+  \begin{split}
+    \frac{d}{dx}\bigg(\frac{f(x)}{g(x)}\bigg) & = \frac{1}{B(a, b)}\Big( (a-1)x^{a-2}(1 - x)^{b - 1} - (b - 1)x^{a - 1}(1 - x)^{b - 2} \Big) \\
+    & = \frac{x^{a - 2}(1 - x)^{b - 2}}{B(a, b)} \Big( (a - 1)(1 - x) - (b - 1)x \Big) \\
+    & = \frac{x^{a - 2}(1 - x)^{b - 2}}{B(a, b)} \big( a - 1 - (a + b - 2)x \big) \quad = 0
+  \end{split}
+\end{equation*}
+
+It follows that
+
+\[\frac{f(x)}{g(x)} \le \frac{f(\frac{a - 1}{a + b - 2})}{g(\frac{a - 1}{a + b - 2})} = c\]
+
+if \(\frac{a - 1}{a + b - 2} \neq 0, 1\)
+\EndKnitrBlock{solution}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ar_beta <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n, a, b) \{}
+\NormalTok{  opt_x <-}\StringTok{ }\NormalTok{(a }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{/}\StringTok{ }\NormalTok{(a }\OperatorTok{+}\StringTok{ }\NormalTok{b }\OperatorTok{-}\StringTok{ }\DecValTok{2}\NormalTok{)}
+\NormalTok{  opt_c <-}\StringTok{ }\KeywordTok{dbeta}\NormalTok{(opt_x, }\DataTypeTok{shape1 =}\NormalTok{ a, }\DataTypeTok{shape2 =}\NormalTok{ b) }\OperatorTok{/}\StringTok{ }\KeywordTok{dunif}\NormalTok{(opt_x)}
+\NormalTok{  X <-}\StringTok{ }\OtherTok{NULL}
+\NormalTok{  N <-}\StringTok{ }\DecValTok{0}
+  \ControlFlowTok{while}\NormalTok{ (N }\OperatorTok{<=}\StringTok{ }\NormalTok{n) \{}
+\NormalTok{    Y <-}\StringTok{ }\KeywordTok{runif}\NormalTok{(n)}
+\NormalTok{    U <-}\StringTok{ }\KeywordTok{runif}\NormalTok{(n)}
+\NormalTok{    X <-}\StringTok{ }\KeywordTok{c}\NormalTok{(X, Y[U }\OperatorTok{<=}\StringTok{ }\KeywordTok{dbeta}\NormalTok{(Y, }\DataTypeTok{shape1 =}\NormalTok{ a, }\DataTypeTok{shape2 =}\NormalTok{ b) }\OperatorTok{/}\StringTok{ }\NormalTok{opt_c])}
+\NormalTok{    N <-}\StringTok{ }\KeywordTok{length}\NormalTok{(X)}
+    \ControlFlowTok{if}\NormalTok{ ( N }\OperatorTok{>}\StringTok{ }\NormalTok{n ) X <-}\StringTok{ }\NormalTok{X[}\DecValTok{1}\OperatorTok{:}\NormalTok{n]}
+\NormalTok{  \}}
+\NormalTok{  X}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Now we try to compare this A-R function to \texttt{R} \texttt{rbeta}
+function.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{gen_beta <-}
+\StringTok{  }\KeywordTok{tibble}\NormalTok{(}
+    \DataTypeTok{ar_rand =} \KeywordTok{ar_beta}\NormalTok{(}\DecValTok{1000}\NormalTok{, }\DecValTok{3}\NormalTok{, }\DecValTok{2}\NormalTok{),}
+    \DataTypeTok{sam =} \KeywordTok{rbeta}\NormalTok{(}\DecValTok{1000}\NormalTok{, }\DecValTok{3}\NormalTok{, }\DecValTok{2}\NormalTok{)}
+\NormalTok{  ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{gather}\NormalTok{(}\DataTypeTok{key =} \StringTok{"den"}\NormalTok{, }\DataTypeTok{value =} \StringTok{"value"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{gg_curve}\NormalTok{(dbeta, }\DataTypeTok{from =} \DecValTok{0}\NormalTok{, }\DataTypeTok{to =} \DecValTok{1}\NormalTok{, }\DataTypeTok{args =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{shape1 =} \DecValTok{3}\NormalTok{, }\DataTypeTok{shape2 =} \DecValTok{2}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}
+    \DataTypeTok{data =}\NormalTok{ gen_beta,}
+    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ value, }\DataTypeTok{y =}\NormalTok{ ..density.., }\DataTypeTok{fill =}\NormalTok{ den),}
+    \DataTypeTok{position =} \StringTok{"identity"}\NormalTok{,}
+    \DataTypeTok{bins =} \DecValTok{30}\NormalTok{,}
+    \DataTypeTok{alpha =}\NormalTok{ .}\DecValTok{45}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_discrete}\NormalTok{(}
+    \DataTypeTok{name =} \StringTok{"random number"}\NormalTok{,}
+    \DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"AR"}\NormalTok{, }\StringTok{"rbeta"}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/betahis-1} 
+
+}
+
+\caption{Beta(3,2) Random numbers from each function}\label{fig:betahis}
+\end{figure}
+
+In the Figure \ref{fig:betahis}, the both histograms are very close to
+the true density curve. To see more statistically, we can draw a Q-Q
+plot.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{gen_beta }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{sample =}\NormalTok{ value)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{stat_qq_line}\NormalTok{(}
+    \DataTypeTok{distribution =}\NormalTok{ stats}\OperatorTok{::}\NormalTok{qbeta,}
+    \DataTypeTok{dparams =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{shape1 =} \DecValTok{3}\NormalTok{, }\DataTypeTok{shape2 =} \DecValTok{2}\NormalTok{),}
+    \DataTypeTok{col =} \KeywordTok{I}\NormalTok{(}\StringTok{"grey70"}\NormalTok{),}
+    \DataTypeTok{size =} \FloatTok{3.5}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{stat_qq}\NormalTok{(}
+    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ den),}
+    \DataTypeTok{distribution =}\NormalTok{ stats}\OperatorTok{::}\NormalTok{qbeta,}
+    \DataTypeTok{dparams =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{shape1 =} \DecValTok{3}\NormalTok{, }\DataTypeTok{shape2 =} \DecValTok{2}\NormalTok{)}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_colour_discrete}\NormalTok{(}
+    \DataTypeTok{name =} \StringTok{"random number"}\NormalTok{,}
+    \DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"AR"}\NormalTok{, }\StringTok{"rbeta"}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/betaqq-1} 
+
+}
+
+\caption{Q-Q plot for Beta(3,2) random numbers}\label{fig:betaqq}
+\end{figure}
+
+See Figure \ref{fig:betaqq}. We have got series of numbers that are
+sticked to the beta distribution line.
+
+\BeginKnitrBlock{example}[A-R Method for Discrete case]
+\protect\hypertarget{exm:ardiscrete}{}{\label{exm:ardiscrete} \iffalse (A-R
+Method for Discrete case) \fi{} }A-R method can be also implemented to
+discrete case such as Example \ref{exm:dismass}.
+\EndKnitrBlock{example}
+
+\begin{longtable}[]{@{}lrrrrr@{}}
+\caption{\label{tab:exdis2}Example of a Discrete Random
+Variable}\tabularnewline
+\toprule
+x & 0.0 & 1.0 & 2.0 & 3.0 & 4.0\tabularnewline
+p & 0.1 & 0.2 & 0.2 & 0.2 & 0.3\tabularnewline
+\bottomrule
+\end{longtable}
+
+\BeginKnitrBlock{solution}[Generating discrete random numbers using A-R methods]
+\iffalse{} {Solution (Generating discrete random numbers using A-R
+methods). } \fi{}Consider proposal
+\(g(x) \sim \text{Discrete unif}(0, 1, 2, 3, 4)\), i.e.
+
+\[g(0) = g(1) = \cdots = g(4) = 0.2\]
+
+Then we set
+
+\[c = \max\bigg\{ \frac{p(x)}{g(x)} : x = 0, \ldots, 4 \bigg\} = \max\Big\{ 0.5, 1, 1.5 \Big\} = 1.5\]
+\EndKnitrBlock{solution}
+
+\section{Transfomation Methods}\label{transfomation-methods}
+
+\section{Sums and Mixtures}\label{sums-and-mixtures}
+
+\subsection{Sums}\label{sums}
+
+\subsection{Convolutions and mixtures}\label{convolutions-and-mixtures}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(foreach)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mix_norm <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n, p1, mean1, sd1, mean2, sd2) \{}
+\NormalTok{  x1 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(n, }\DataTypeTok{mean =}\NormalTok{ mean1, }\DataTypeTok{sd =}\NormalTok{ sd1)}
+\NormalTok{  x2 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(n, }\DataTypeTok{mean =}\NormalTok{ mean2, }\DataTypeTok{sd =}\NormalTok{ sd2)}
+\NormalTok{  k <-}\StringTok{ }\KeywordTok{as.integer}\NormalTok{(}\KeywordTok{runif}\NormalTok{(n) }\OperatorTok{>}\StringTok{ }\NormalTok{p1)}
+\NormalTok{  k }\OperatorTok{*}\StringTok{ }\NormalTok{x1 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{k) }\OperatorTok{*}\StringTok{ }\NormalTok{x2}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mixture <-}
+\StringTok{  }\KeywordTok{foreach}\NormalTok{(}\DataTypeTok{p1 =} \DecValTok{0}\OperatorTok{:}\DecValTok{10} \OperatorTok{/}\StringTok{ }\DecValTok{10}\NormalTok{, }\DataTypeTok{.combine =}\NormalTok{ bind_rows) }\OperatorTok{%do%}\StringTok{ }\NormalTok{\{}
+    \KeywordTok{tibble}\NormalTok{(}
+      \DataTypeTok{value =} \KeywordTok{mix_norm}\NormalTok{(}\DataTypeTok{n =} \DecValTok{1000}\NormalTok{, }\DataTypeTok{p1 =}\NormalTok{ p1, }\DataTypeTok{mean1 =} \DecValTok{0}\NormalTok{, }\DataTypeTok{sd1 =} \DecValTok{1}\NormalTok{, }\DataTypeTok{mean2 =} \DecValTok{3}\NormalTok{, }\DataTypeTok{sd2 =} \DecValTok{1}\NormalTok{),}
+      \DataTypeTok{key =} \KeywordTok{rep}\NormalTok{(p1, }\DecValTok{1000}\NormalTok{)}
+\NormalTok{    )}
+\NormalTok{  \}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mixture }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ value, }\DataTypeTok{colour =} \KeywordTok{factor}\NormalTok{(key))) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{stat_density}\NormalTok{(}\DataTypeTok{geom =} \StringTok{"line"}\NormalTok{, }\DataTypeTok{position =} \StringTok{"identity"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_colour_discrete}\NormalTok{(}
+    \DataTypeTok{name =} \KeywordTok{expression}\NormalTok{(p[}\DecValTok{1}\NormalTok{]),}
+    \DataTypeTok{labels =} \DecValTok{0}\OperatorTok{:}\DecValTok{10} \OperatorTok{/}\StringTok{ }\DecValTok{10}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"x"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-20-1} \end{center}
+
+\section{Multivariate Normal Random
+Vector}\label{multivariate-normal-random-vector}
+
+\section{Stochastic Processes}\label{stochastic-processes}
+
+\subsection{Homogeneous poisson
+process}\label{homogeneous-poisson-process}
+
+\subsection{Nonhomogeneous poisson
+process}\label{nonhomogeneous-poisson-process}
+
+\subsection{Symmetric random walk}\label{symmetric-random-walk}
 
 \chapter{Monte Carlo Integration and Variance Reduction}\label{mcint}
 

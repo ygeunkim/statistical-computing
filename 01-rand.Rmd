@@ -402,9 +402,187 @@ $$c = \max \bigg\{ \frac{f(x)}{g(x)} : x \in spt f \bigg\}$$
 
 ### Examples
 
-```{example, arbeta, name = "Beta(3,2)"}
-Consider $X \sim Beta(3, 2)$.
+```{example, arbeta, name = "Beta(a,b)"}
+Let $X \sim Beta(a, b)$. Then the pdf of $X$ is given by
+
+$$f(x) = \frac{1}{B(a, b)}x^{a - 1}(1 - x)^{b - 1}I_{(0, 1)}(x)$$
 ```
+
+```{solution, arbetasol, name = "Generating Beta(a,b) with A-R method"}
+Consider proposal density $g(x) = I_{(0, 1)}(x)$, i.e. $unif(0, 1)$.
+
+To determine the optimal $c$ s.t.
+
+$$c = \max \bigg\{ \frac{f(x)}{g(x)} : x \in (0, 1) \bigg\}$$
+
+find the maximum of
+
+$$\frac{f(x)}{g(x)} = \frac{1}{B(a, b)}x^{a - 1}(1 - x)^{b - 1}$$
+
+Solve
+
+\begin{equation*}
+  \begin{split}
+    \frac{d}{dx}\bigg(\frac{f(x)}{g(x)}\bigg) & = \frac{1}{B(a, b)}\Big( (a-1)x^{a-2}(1 - x)^{b - 1} - (b - 1)x^{a - 1}(1 - x)^{b - 2} \Big) \\
+    & = \frac{x^{a - 2}(1 - x)^{b - 2}}{B(a, b)} \Big( (a - 1)(1 - x) - (b - 1)x \Big) \\
+    & = \frac{x^{a - 2}(1 - x)^{b - 2}}{B(a, b)} \big( a - 1 - (a + b - 2)x \big) \quad = 0
+  \end{split}
+\end{equation*}
+
+It follows that
+
+$$\frac{f(x)}{g(x)} \le \frac{f(\frac{a - 1}{a + b - 2})}{g(\frac{a - 1}{a + b - 2})} = c$$
+
+if $\frac{a - 1}{a + b - 2} \neq 0, 1$
+```
+
+
+```{r}
+ar_beta <- function(n, a, b) {
+  opt_x <- (a - 1) / (a + b - 2)
+  opt_c <- dbeta(opt_x, shape1 = a, shape2 = b) / dunif(opt_x)
+  X <- NULL
+  N <- 0
+  while (N <= n) {
+    Y <- runif(n)
+    U <- runif(n)
+    X <- c(X, Y[U <= dbeta(Y, shape1 = a, shape2 = b) / opt_c])
+    N <- length(X)
+    if ( N > n ) X <- X[1:n]
+  }
+  X
+}
+```
+
+Now we try to compare this A-R function to `R` `rbeta` function.
+
+```{r}
+gen_beta <-
+  tibble(
+    ar_rand = ar_beta(1000, 3, 2),
+    sam = rbeta(1000, 3, 2)
+  ) %>% 
+  gather(key = "den", value = "value")
+```
+
+
+```{r betahis, fig.cap="Beta(3,2) Random numbers from each function"}
+gg_curve(dbeta, from = 0, to = 1, args = list(shape1 = 3, shape2 = 2)) +
+  geom_histogram(
+    data = gen_beta,
+    aes(x = value, y = ..density.., fill = den),
+    position = "identity",
+    bins = 30,
+    alpha = .45
+  ) +
+  scale_fill_discrete(
+    name = "random number",
+    labels = c("AR", "rbeta")
+  )
+```
+
+In the Figure \@ref(fig:betahis), the both histograms are very close to the true density curve. To see more statistically, we can draw a Q-Q plot.
+
+```{r betaqq, fig.cap="Q-Q plot for Beta(3,2) random numbers"}
+gen_beta %>% 
+  ggplot(aes(sample = value)) +
+  stat_qq_line(
+    distribution = stats::qbeta,
+    dparams = list(shape1 = 3, shape2 = 2),
+    col = I("grey70"),
+    size = 3.5
+  ) +
+  stat_qq(
+    aes(colour = den),
+    distribution = stats::qbeta,
+    dparams = list(shape1 = 3, shape2 = 2)
+  ) +
+  scale_colour_discrete(
+    name = "random number",
+    labels = c("AR", "rbeta")
+  )
+```
+
+See Figure \@ref(fig:betaqq). We have got series of numbers that are sticked to the beta distribution line.
+
+
+```{example, ardiscrete, name = "A-R Method for Discrete case"}
+A-R method can be also implemented to discrete case such as Example \@ref(exm:dismass).
+```
+
+```{r, exdis2, echo=FALSE}
+pmf %>% 
+  t() %>% 
+  knitr::kable(format = "pandoc", col.names = NULL, caption = "Example of a Discrete Random Variable")
+```
+
+```{solution, ardiscretesol, name = "Generating discrete random numbers using A-R methods"}
+Consider proposal $g(x) \sim \text{Discrete unif}(0, 1, 2, 3, 4)$, i.e.
+
+$$g(0) = g(1) = \cdots = g(4) = 0.2$$
+
+Then we set
+
+$$c = \max\bigg\{ \frac{p(x)}{g(x)} : x = 0, \ldots, 4 \bigg\} = \max\Big\{ 0.5, 1, 1.5 \Big\} = 1.5$$
+```
+
+
+## Transfomation Methods
+
+
+## Sums and Mixtures
+
+### Sums
+
+### Convolutions and mixtures
+
+```{r, message=FALSE}
+library(foreach)
+```
+
+```{r}
+mix_norm <- function(n, p1, mean1, sd1, mean2, sd2) {
+  x1 <- rnorm(n, mean = mean1, sd = sd1)
+  x2 <- rnorm(n, mean = mean2, sd = sd2)
+  k <- as.integer(runif(n) > p1)
+  k * x1 + (1 - k) * x2
+}
+```
+
+```{r}
+mixture <-
+  foreach(p1 = 0:10 / 10, .combine = bind_rows) %do% {
+    tibble(
+      value = mix_norm(n = 1000, p1 = p1, mean1 = 0, sd1 = 1, mean2 = 3, sd2 = 1),
+      key = rep(p1, 1000)
+    )
+  }
+```
+
+```{r}
+mixture %>% 
+  ggplot(aes(x = value, colour = factor(key))) +
+  stat_density(geom = "line", position = "identity") +
+  scale_colour_discrete(
+    name = expression(p[1]),
+    labels = 0:10 / 10
+  ) +
+  xlab("x")
+```
+
+
+## Multivariate Normal Random Vector
+
+
+## Stochastic Processes
+
+### Homogeneous poisson process
+
+### Nonhomogeneous poisson process
+
+### Symmetric random walk
+
+
 
 
 
