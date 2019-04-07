@@ -48,7 +48,6 @@ tibble(
 ```
 
 
-
 ### Multiplicative congruential generator
 
 As we can expect from its name, this is congruential generator with $c = 0$.
@@ -130,7 +129,7 @@ $$F_X^{-1}(u) = \frac{1}{\lambda}\ln(1 - u)$$
 
 Note that
 
-$$U \sim unif(0, 1) \Leftrightarrow 1 - U \sim unif(0,1 )$$
+$$U \sim unif(0, 1) \Leftrightarrow 1 - U \sim unif(0, 1)$$
 
 Then we just can use $U$ instead of $1 - U$.
 
@@ -182,7 +181,7 @@ Consider a discrete random variable $X$ with a mass function as in Table \@ref(t
 
 i.e.
 
-```{r massfun, fig.cap="Probability Mass Function"}
+```{r massfun, echo=FALSE, fig.cap="Probability Mass Function"}
 pmf %>% 
   ggplot() +
   geom_segment(aes(x = x, y = 0, xend = x, yend = p)) +
@@ -191,7 +190,7 @@ pmf %>%
 
 Then we have the cdf
 
-```{r cdfun, fig.cap="CDF of the Discrete Random Variable: Illustration for discrete case"}
+```{r cdfun, echo=FALSE, fig.cap="CDF of the Discrete Random Variable: Illustration for discrete case"}
 pmf %>% 
   mutate(
     fx = cumsum(p),

@@ -1,1 +1,151 @@
 # Monte Carlo Integration and Variance Reduction {#mcint}
+
+## Monte Carlo Integration
+
+Consider integration problem of a integrable function $g(x)$. We want to compute
+
+$$\int_a^b g(x) dx$$
+
+For instance, $g(x) = e^{x^2}$
+
+```{example, mcex}
+$$\int_0^1 e^{x^2} dx$$
+```
+
+It seems tricky to compute the integral \@ref(exm:mcex) analytically even though possible. So we implement *simulation* concept here, based on the following theorems.
+
+```{theorem, wlaw, name = "Weak Law of Large Numbers"}
+Suppose that $X_1, \ldots, X_n \iid (\mu, \sigma^2 < \infty)$. Then
+
+$$\frac{1}{n}\sum_{i = 1}^n X_i \stackrel{p}{\rightarrow} \mu$$
+
+Let $g$ be a measurable function. Then
+
+$$\frac{1}{n}\sum_{i = 1}^n g(X_i) \stackrel{p}{\rightarrow} g(\mu)$$
+```
+
+```{theorem, slaw, name = "Strong Law of Large Numbers"}
+Suppose that $X_1, \ldots, X_n \iid (\mu, \sigma^2 < \infty)$. Then
+
+$$\frac{1}{n}\sum_{i = 1}^n X_i \stackrel{a.s.}{\rightarrow} \mu$$
+
+Let $g$ be a measurable function. Then
+
+$$\frac{1}{n}\sum_{i = 1}^n g(X_i) \stackrel{a.s.}{\rightarrow} g(\mu)$$
+```
+
+### Simple Monte Carlo estimator
+
+Suppose that we have a distribution $f(x)$. Consider
+
+\begin{equation}
+  I \equiv \int_{spt f} g(x)f(x) dx
+  (\#eq:muint)
+\end{equation}
+
+By *the Strong law of large numbers* \@ref(thm:slaw),
+
+$$\frac{1}{n}\sum_{i = 1}^n g(X_i) \stackrel{a.s.}{\rightarrow} E\Big[g(X)\Big] = I$$
+
+```{theorem, mcint, name = "Monte Carlo Integration"}
+Consider integration \@ref(eq:muint). This can be approximated via appropriate pdf $f(x)$ by
+
+$$\hat\theta_M = \frac{1}{M} \sum_{i = 1}^M g(X_i)$$
+```
+
+Go back to Example \@ref(exm:mcex).
+
+```{solution}
+\begin{equation*}
+  \begin{split}
+    I & \equiv \int_0^1 e^{x^2} dx \\
+    & = \int_0^1 \frac{e^{x^2}}{f(x)}f(x) dx \qquad f(x) = \frac{e^x}{e - 1} : pdf \\
+    & = \int_0^1 (e - 1)\exp(x^2 - x)f(x)dx \\
+    & \approx \frac{1}{M} \sum_{m = 1}^M (e - 1)\exp(X_m^2 - X_m)
+  \end{split}
+\end{equation*}
+
+Then generate $X_1, \ldots, X_M \sim f(x)$.
+
+Let $F(X_1), \ldots, F(X_M) \iid unif(0, 1)$ where
+
+$$F(x) = \int_0^x f(t)dt = \frac{e^x - 1}{e - 1}$$
+
+i.e. $U_1 = \frac{e^{X_1} - 1}{e - 1}, \ldots, U_M = \frac{e^{X_M} - 1}{e - 1} \iid unif(0, 1)$. Hence,
+
+$$X_m = \ln (1 + (e - 1) U_m)$$
+```
+
+i.e.
+
+1. $u_1, \ldots, u_M \iid unif(0,1)$
+2. $x_i = \ln (1 + (e - 1) u_i)$
+
+```{r}
+x <- log(1 + (exp(1) - 1) * runif(10000))
+mean((exp(1) - 1) * exp(x^2 - x))
+```
+
+This method is also helpful solving high-dimensional problem.
+
+```{example, mcex2, name = "Higher dimensional problem"}
+$$\int_0^1 \int_0^1 e^{(x_1 + x_2)^2} dx_1 dx_2$$
+```
+
+```{solution}
+\begin{equation*}
+  \begin{split}
+    I & \equiv \int_0^1 \int_0^1 e^{(x_1 + x_2)^2} dx_1 dx_2 \\
+    & = \int_0^1\int_0^1 \frac{e^{(x_1 + x_2)^2}}{f(x_1, x_2)}f(x_1, x_2) dx_1dx_2 \qquad f(x) = \frac{e^{(x_1 + x_2)}}{(e - 1)^2} = \frac{e^{x_1}}{e - 1} + \frac{e^{x_2}}{e - 1} \\
+    & = \int_0^1\int_0^1 (e - 1)^2\exp((x_1 + x_2)^2 - x_1 - x_2)f(x_1, x_2)dx_1dx_2 \\
+    & \approx \frac{1}{M} \sum_{m = 1}^M (e - 1)^2\exp((X_{1m} + X_{2m})^2 - X_{1m} - X_{2m})
+  \end{split}
+\end{equation*}
+```
+
+Hence,
+
+1. $u_{1m}, u_{2m} \sim unif(0,1), \quad m = 1, \ldots, M$
+2. $x_{jm} = \ln(1 + (e - 1)u_{jm}), \quad j = 1, 2, \quad m = 1, \ldots, M$
+
+```{r}
+tibble(
+  x1 = log(1 + (exp(1) - 1) * runif(10000)),
+  x2 = log(1 + (exp(1) - 1) * runif(10000))
+) %>% 
+  summarise(int = mean((exp(1) - 1)^2 * exp((x1 + x2)^2 - x1 - x2)))
+```
+
+### Standard error
+
+
+## Variance and Efficiency
+
+### Variance
+
+### Efficiency
+
+
+## Variance Reduction
+
+
+## Antithetic Variables
+
+
+## Control Variates
+
+
+## Importance Sampling
+
+
+
+
+
+
+
+
+
+
+
+
+
