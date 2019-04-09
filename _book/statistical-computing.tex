@@ -126,11 +126,14 @@ Department of Statistics, SKKU\\
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-04-07}
+    \date{2019-04-10}
 
 \usepackage{booktabs}
 \usepackage{float}
 \usepackage{pdfpages}
+\usepackage{hyperref}
+\usepackage[boxruled, linesnumbered]{algorithm2e}
+\IncMargin{1.5em}
 
 \newcommand{\iid}{\stackrel{iid}{\sim}}
 \newcommand{\indep}{\stackrel{indep}{\sim}}
@@ -268,29 +271,22 @@ Most of the methods so-called \emph{computational statistics} requires generatio
 \hypertarget{linear-congruential-generator}{%
 \subsection{Linear congruential generator}\label{linear-congruential-generator}}
 
-Let \(x_0, x_1, \ldots \in \mathbb{Z}_{+}\).
+Then \(u_1, u_2, \ldots, u_n \sim unif(0, 1)\)
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  Set \(x_0\) as initial seed.
-\item
-  Generate \(x_n, n = 1, 2, \ldots\) recursively:
-
-  \begin{enumerate}
-  \def\labelenumii{\alph{enumii}.}
-  \tightlist
-  \item
-    \(x_n = (a x_{n - 1} + c) \mod m\)
-  \item
-    where \(a, c \in \mathbb{Z}_{+}, m: \text{modulus}\)
-  \end{enumerate}
-\item
-  Compute \(u_n = \frac{x_n}{m} \in (0, 1)\)
-\end{enumerate}
-
-Then \(u_1, u_2, \ldots \sim unif(0, 1)\)
+\begin{algorithm}[H]
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$x_0, x_1, \ldots, x_n \in \mathbb{Z}_{+}$}
+  Initialize $x_0$\;
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $x_i = (a x_{i - 1} + c) \mod m$
+    where $a, c \in \mathbb{Z}_{+}, m: \text{modulus}$\;
+  }
+  $u_i = \frac{x_i}{m} \in (0, 1)$\;
+  \Output{$u_1, u_2, \ldots, u_n \sim unif(0, 1)$}
+  \caption{Linear congruential generator}
+\end{algorithm}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -321,27 +317,20 @@ Then \(u_1, u_2, \ldots \sim unif(0, 1)\)
 
 As we can expect from its name, this is congruential generator with \(c = 0\).
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  Set \(x_0\) as initial seed.
-\item
-  Generate \(x_n, n = 1, 2, \ldots\) recursively:
-
-  \begin{enumerate}
-  \def\labelenumii{\alph{enumii}.}
-  \tightlist
-  \item
-    \(x_n = a x_{n - 1} \mod m\)
-  \item
-    where \(a \in \mathbb{Z}_{+}, m: \text{modulus}\)
-  \end{enumerate}
-\item
-  Compute \(u_n = \frac{x_n}{m} \in (0, 1)\)
-\end{enumerate}
-
-Then \(u_1, u_2, \ldots \sim unif(0, 1)\)
+\begin{algorithm}[H]
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$x_0, x_1, \ldots, x_n \in \mathbb{Z}_{+}$}
+  Initialize $x_0$\;
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $x_i = a x_{i - 1} \mod m$
+    where $a \in \mathbb{Z}_{+}, m: \text{modulus}$\;
+  }
+  $u_i = \frac{x_i}{m} \in (0, 1)$\;
+  \Output{$u_1, u_2, \ldots, u_n \sim unif(0, 1)$}
+  \caption{Multiplicative congruential generator}
+\end{algorithm}
 
 We just set \texttt{b\ =\ 0} in our \texttt{lcg()} function. The \textbf{seed must not be zero}.
 
@@ -405,25 +394,18 @@ Using this definition, we can get the following theorem.
 
 Thus, to generate \(n\) random variables \(\sim F_X\),
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  form of \(F_X^{-1}(u)\)
-\item
-  For each \(i = 1, 2, \ldots, n\):
-
-  \begin{enumerate}
-  \def\labelenumii{\alph{enumii}.}
-  \tightlist
-  \item
-    Generate \(u_i \sim unif(0, 1)\)
-  \item
-    \(x_i = F_X^{-1}(u_i)\)
-  \end{enumerate}
-\end{enumerate}
-
-Collect \(x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} F_X\).
+\begin{algorithm}[H]
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{analytical form of $F_X^{-1}$}
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $u_i \iid unif(0, 1)$\;
+    $x_i = F_X^{-1}(u_i)$\;
+  }
+  \Output{$x_1, x_2, \ldots, x_n \iid F_X$}
+  \caption{Inverse transformation method}
+\end{algorithm}
 
 \hypertarget{continuous-case}{%
 \subsection{Continuous case}\label{continuous-case}}
@@ -476,23 +458,18 @@ If we generate \(x_1, \ldots, x_{500} \sim Exp(\lambda = 1)\),
 \hypertarget{discrete-case}{%
 \subsection{Discrete case}\label{discrete-case}}
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  For each \(i = 1, 2, \ldots, n\):
-
-  \begin{enumerate}
-  \def\labelenumii{\alph{enumii}.}
-  \tightlist
-  \item
-    Generate \(u_i \sim unif(0, 1)\)
-  \item
-    Take \(x_i\) s.t. \(F_X(x_{i - 1}) < U \le F_X(x_i)\)
-  \end{enumerate}
-\end{enumerate}
-
-Collect \(x_1, x_2, \ldots, x_n \sim F_X\).
+\begin{algorithm}[H]
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{analytical form of $F_X$}
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $u_i \iid unif(0, 1)$\;
+    Take $x_i$ s.t. $F_X(x_{i - 1}) < U \le F_X(x_i)$\;
+  }
+  \Output{$x_1, x_2, \ldots, x_n \iid F_X$}
+  \caption{Inverse transformation method in discrete case}
+\end{algorithm}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -623,29 +600,23 @@ Next, for some (pre-specified) \(c > 0\)
 \hypertarget{a-r-algorithm}{%
 \subsection{A-R algorithm}\label{a-r-algorithm}}
 
-For \(i = 1, \ldots, n\)
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  \(Y \sim g(Y)\)
-\item
-  \(U \sim unif(0, 1) \perp\!\!\!\perp Y\)
-\item
-  Accept-Reject step
-
-  \begin{enumerate}
-  \def\labelenumii{\alph{enumii}.}
-  \tightlist
-  \item
-    Accept: \(U \le \frac{f(Y)}{cg(Y)} \Rightarrow x_i = Y\)
-  \item
-    Reject: otherwise, go to step 1
-  \end{enumerate}
-\end{enumerate}
-
-Collect \(x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} f(x)\).
+\begin{algorithm}[H] \label{alg:aralg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{proposal density $g(x)$}
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $Y \sim g(Y)$\;
+    $U \sim unif(0, 1) \perp\!\!\!\perp Y$\;
+    \eIf{$U \le \frac{f(Y)}{cg(Y)}$}{
+      Accept $x_i = Y$\;
+    }{
+      go to line 2\;
+    }
+  }
+  \Output{$x_1, x_2, \ldots, x_n \iid f(x)$}
+  \caption{Acceptance-rejection algorithm}
+\end{algorithm}
 
 \hypertarget{efficiency}{%
 \subsection{Efficiency}\label{efficiency}}

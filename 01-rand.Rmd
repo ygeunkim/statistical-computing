@@ -18,16 +18,30 @@ $$x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} unif(0, 1)$$
 
 ### Linear congruential generator
 
-Let $x_0, x_1, \ldots \in \mathbb{Z}_{+}$.
+<!-- Let $x_0, x_1, \ldots, x_n \in \mathbb{Z}_{+}$. -->
 
-1. Set $x_0$ as initial seed.
-2. Generate $x_n, n = 1, 2, \ldots$ recursively:
-    a. $x_n = (a x_{n - 1} + c) \mod m$
-    b. where $a, c \in \mathbb{Z}_{+}, m: \text{modulus}$
-3. Compute $u_n = \frac{x_n}{m} \in (0, 1)$
+<!-- 1. Set $x_0$ as initial seed. -->
+<!-- 2. Generate $x_n, n = 1, 2, \ldots$ recursively: -->
+<!--     a. $x_n = (a x_{n - 1} + c) \mod m$ -->
+<!--     b. where $a, c \in \mathbb{Z}_{+}, m: \text{modulus}$ -->
+<!-- 3. Compute $u_n = \frac{x_n}{m} \in (0, 1)$ -->
 
-Then $u_1, u_2, \ldots \sim unif(0, 1)$
+Then $u_1, u_2, \ldots, u_n \sim unif(0, 1)$
 
+\begin{algorithm}[H]
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$x_0, x_1, \ldots, x_n \in \mathbb{Z}_{+}$}
+  Initialize $x_0$\;
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $x_i = (a x_{i - 1} + c) \mod m$
+    where $a, c \in \mathbb{Z}_{+}, m: \text{modulus}$\;
+  }
+  $u_i = \frac{x_i}{m} \in (0, 1)$\;
+  \Output{$u_1, u_2, \ldots, u_n \sim unif(0, 1)$}
+  \caption{Linear congruential generator}
+\end{algorithm}
 
 ```{r}
 lcg <- function(n, seed, a, b, m) {
@@ -52,13 +66,28 @@ tibble(
 
 As we can expect from its name, this is congruential generator with $c = 0$.
 
-1. Set $x_0$ as initial seed.
-2. Generate $x_n, n = 1, 2, \ldots$ recursively:
-    a. $x_n = a x_{n - 1} \mod m$
-    b. where $a \in \mathbb{Z}_{+}, m: \text{modulus}$
-3. Compute $u_n = \frac{x_n}{m} \in (0, 1)$
+<!-- 1. Set $x_0$ as initial seed. -->
+<!-- 2. Generate $x_n, n = 1, 2, \ldots$ recursively: -->
+<!--     a. $x_n = a x_{n - 1} \mod m$ -->
+<!--     b. where $a \in \mathbb{Z}_{+}, m: \text{modulus}$ -->
+<!-- 3. Compute $u_n = \frac{x_n}{m} \in (0, 1)$ -->
 
-Then $u_1, u_2, \ldots \sim unif(0, 1)$
+<!-- Then $u_1, u_2, \ldots, u_n \sim unif(0, 1)$ -->
+
+\begin{algorithm}[H]
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$x_0, x_1, \ldots, x_n \in \mathbb{Z}_{+}$}
+  Initialize $x_0$\;
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $x_i = a x_{i - 1} \mod m$
+    where $a \in \mathbb{Z}_{+}, m: \text{modulus}$\;
+  }
+  $u_i = \frac{x_i}{m} \in (0, 1)$\;
+  \Output{$u_1, u_2, \ldots, u_n \sim unif(0, 1)$}
+  \caption{Multiplicative congruential generator}
+\end{algorithm}
 
 We just set `b = 0` in our `lcg()` function. The **seed must not be zero**.
 
@@ -111,12 +140,23 @@ Let $U \sim unif(0, 1)$. Then
 
 Thus, to generate $n$ random variables $\sim F_X$,
 
-1. form of $F_X^{-1}(u)$
-2. For each $i = 1, 2, \ldots, n$:
-    a. Generate $u_i \sim unif(0, 1)$
-    b. $x_i = F_X^{-1}(u_i)$
+<!-- 1. form of $F_X^{-1}(u)$ -->
+<!-- 2. For each $i = 1, 2, \ldots, n$: -->
+<!--     a. Generate $u_i \sim unif(0, 1)$ -->
+<!--     b. $x_i = F_X^{-1}(u_i)$ -->
 
-Collect $x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} F_X$.
+\begin{algorithm}[H]
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{analytical form of $F_X^{-1}$}
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $u_i \iid unif(0, 1)$\;
+    $x_i = F_X^{-1}(u_i)$\;
+  }
+  \Output{$x_1, x_2, \ldots, x_n \iid F_X$}
+  \caption{Inverse transformation method}
+\end{algorithm}
 
 ### Continuous case
 
@@ -155,11 +195,24 @@ gg_curve(dexp, from = 0, to = 10) +
 
 ### Discrete case
 
-1. For each $i = 1, 2, \ldots, n$:
-    a. Generate $u_i \sim unif(0, 1)$
-    b. Take $x_i$ s.t. $F_X(x_{i - 1}) < U \le F_X(x_i)$
+<!-- 1. For each $i = 1, 2, \ldots, n$: -->
+<!--     a. Generate $u_i \sim unif(0, 1)$ -->
+<!--     b. Take $x_i$ s.t. $F_X(x_{i - 1}) < U \le F_X(x_i)$ -->
 
-Collect $x_1, x_2, \ldots, x_n \sim F_X$.
+<!-- Collect $x_1, x_2, \ldots, x_n \sim F_X$. -->
+
+\begin{algorithm}[H]
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{analytical form of $F_X$}
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $u_i \iid unif(0, 1)$\;
+    Take $x_i$ s.t. $F_X(x_{i - 1}) < U \le F_X(x_i)$\;
+  }
+  \Output{$x_1, x_2, \ldots, x_n \iid F_X$}
+  \caption{Inverse transformation method in discrete case}
+\end{algorithm}
 
 ```{r}
 pmf <-
@@ -279,15 +332,33 @@ $$\forall x \in spt f : \frac{f(x)}{g(x)} \le c$$
 
 ### A-R algorithm
 
-For $i = 1, \ldots, n$
+<!-- For $i = 1, \ldots, n$ -->
 
-1. $Y \sim g(Y)$
-2. $U \sim unif(0, 1) \perp\!\!\!\perp Y$
-3. Accept-Reject step
-    a. Accept: $U \le \frac{f(Y)}{cg(Y)} \Rightarrow x_i = Y$
-    b. Reject: otherwise, go to step 1
+<!-- 1. $Y \sim g(Y)$ -->
+<!-- 2. $U \sim unif(0, 1) \perp\!\!\!\perp Y$ -->
+<!-- 3. Accept-Reject step -->
+<!--     a. Accept: $U \le \frac{f(Y)}{cg(Y)} \Rightarrow x_i = Y$ -->
+<!--     b. Reject: otherwise, go to step 1 -->
 
-Collect $x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} f(x)$.
+<!-- Collect $x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} f(x)$. -->
+
+\begin{algorithm}[H] \label{alg:aralg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{proposal density $g(x)$}
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $Y \sim g(Y)$\;
+    $U \sim unif(0, 1) \perp\!\!\!\perp Y$\;
+    \eIf{$U \le \frac{f(Y)}{cg(Y)}$}{
+      Accept $x_i = Y$\;
+    }{
+      go to line 2\;
+    }
+  }
+  \Output{$x_1, x_2, \ldots, x_n \iid f(x)$}
+  \caption{Acceptance-rejection algorithm}
+\end{algorithm}
 
 ### Efficiency
 
