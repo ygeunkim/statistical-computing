@@ -1,4 +1,4 @@
-\documentclass[openany]{book}
+\documentclass[]{book}
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
@@ -119,14 +119,14 @@
   \title{R Lab for Statistical Computing}
     \pretitle{\vspace{\droptitle}\centering\huge}
   \posttitle{\par}
-    \author{Young-geun Kim\\
-Department of Statistics, SKKU\\
-\href{mailto: dudrms33@g.skku.edu}{dudrms33@g.skku.edu}}
+    \author{\href{https://github.com/ygeunkim}{Young-geun Kim}\\
+\href{https://stat.skku.edu/stat/index.jsp}{Department of Statistics}, \href{https://www.skku.edu/skku/index.do}{SKKU}\\
+\href{mailto:dudrms33@g.skku.edu}{\nolinkurl{dudrms33@g.skku.edu}}}
     \preauthor{\centering\large\emph}
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-04-10}
+    \date{11 Apr, 2019}
 
 \usepackage{booktabs}
 \usepackage{float}
@@ -181,6 +181,14 @@ Department of Statistics, SKKU\\
 
 Statistical computing mainly treats useful simulation methods.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(tidyverse)}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{tidyverse} package family will be used in every chapter. Loading step is in \texttt{\_common.R}, so it is not included in the text. Sometimes \texttt{data.table} library will be called for efficiency.
+
 \hypertarget{statistical-computing}{%
 \section*{Statistical Computing}\label{statistical-computing}}
 \addcontentsline{toc}{section}{Statistical Computing}
@@ -196,7 +204,7 @@ Generating random numbers is like sampling. From finite population, we can sampl
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sample}\NormalTok{(}\DecValTok{0}\OperatorTok{:}\DecValTok{1}\NormalTok{, }\DataTypeTok{size =} \DecValTok{10}\NormalTok{, }\DataTypeTok{replace =} \OtherTok{TRUE}\NormalTok{)}
-\NormalTok{ [}\DecValTok{1}\NormalTok{] }\DecValTok{1} \DecValTok{0} \DecValTok{0} \DecValTok{1} \DecValTok{0} \DecValTok{1} \DecValTok{1} \DecValTok{0} \DecValTok{1} \DecValTok{1}
+\CommentTok{#>  [1] 1 0 0 1 0 1 1 0 1 1}
 \end{Highlighting}
 \end{Shaded}
 
@@ -205,7 +213,7 @@ Sampling without replacement: Choose some lottery numbers which consist of 1 to 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sample}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\DecValTok{100}\NormalTok{, }\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{replace =} \OtherTok{FALSE}\NormalTok{)}
-\NormalTok{[}\DecValTok{1}\NormalTok{] }\DecValTok{61} \DecValTok{83} \DecValTok{50} \DecValTok{74} \DecValTok{34} \DecValTok{35}
+\CommentTok{#> [1] 61 83 50 74 34 35}
 \end{Highlighting}
 \end{Shaded}
 
@@ -255,7 +263,7 @@ Most of the methods so-called \emph{computational statistics} requires generatio
 \section{Pseudo-random Numbers}\label{pseudo-random-numbers}}
 
 \BeginKnitrBlock{definition}[Pseudo-random numbers]
-\protect\hypertarget{def:unnamed-chunk-5}{}{\label{def:unnamed-chunk-5} \iffalse (Pseudo-random numbers) \fi{} }Sequence of values generated deterministically which have all the appearances of being independent \(unif(0, 1)\) random variables, i.e.
+\protect\hypertarget{def:unnamed-chunk-6}{}{\label{def:unnamed-chunk-6} \iffalse (Pseudo-random numbers) \fi{} }Sequence of values generated deterministically which have all the appearances of being independent \(unif(0, 1)\) random variables, i.e.
 
 \[x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} unif(0, 1)\]
 \EndKnitrBlock{definition}
@@ -273,15 +281,14 @@ Most of the methods so-called \emph{computational statistics} requires generatio
 
 Then \(u_1, u_2, \ldots, u_n \sim unif(0, 1)\)
 
-\begin{algorithm}[H]
+\begin{algorithm}[H] \label{alg:alglcg}
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
-  \Input{$x_0, x_1, \ldots, x_n \in \mathbb{Z}_{+}$}
+  \Input{$a, c \in \mathbb{Z}_{+}$ and modulus $m$}
   Initialize $x_0$\;
   \For{$i \leftarrow 1$ \KwTo $n$}{
-    $x_i = (a x_{i - 1} + c) \mod m$
-    where $a, c \in \mathbb{Z}_{+}, m: \text{modulus}$\;
+    $x_i = (a x_{i - 1} + c) \mod m$\;
   }
   $u_i = \frac{x_i}{m} \in (0, 1)$\;
   \Output{$u_1, u_2, \ldots, u_n \sim unif(0, 1)$}
@@ -310,22 +317,21 @@ Then \(u_1, u_2, \ldots, u_n \sim unif(0, 1)\)
 \end{Highlighting}
 \end{Shaded}
 
-\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-7-1} \end{center}
+\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-8-1} \end{center}
 
 \hypertarget{multiplicative-congruential-generator}{%
 \subsection{Multiplicative congruential generator}\label{multiplicative-congruential-generator}}
 
 As we can expect from its name, this is congruential generator with \(c = 0\).
 
-\begin{algorithm}[H]
+\begin{algorithm}[H] \label{alg:algmcg}
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
-  \Input{$x_0, x_1, \ldots, x_n \in \mathbb{Z}_{+}$}
+  \Input{$a, \in \mathbb{Z}_{+}$ and modulus $m$}
   Initialize $x_0$\;
   \For{$i \leftarrow 1$ \KwTo $n$}{
-    $x_i = a x_{i - 1} \mod m$
-    where $a \in \mathbb{Z}_{+}, m: \text{modulus}$\;
+    $x_i = a x_{i - 1} \mod m$\;
   }
   $u_i = \frac{x_i}{m} \in (0, 1)$\;
   \Output{$u_1, u_2, \ldots, u_n \sim unif(0, 1)$}
@@ -344,7 +350,7 @@ We just set \texttt{b\ =\ 0} in our \texttt{lcg()} function. The \textbf{seed mu
 \end{Highlighting}
 \end{Shaded}
 
-\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-8-1} \end{center}
+\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-9-1} \end{center}
 
 \hypertarget{cycle}{%
 \subsection{Cycle}\label{cycle}}
@@ -354,10 +360,10 @@ Generate LCG \(n = 32\) with \(a = 1\), \(c = 1\), and \(m = 16\) from the seed 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{lcg}\NormalTok{(}\DecValTok{32}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{16}\NormalTok{)}
-\NormalTok{ [}\DecValTok{1}\NormalTok{] }\FloatTok{0.0625} \FloatTok{0.1250} \FloatTok{0.1875} \FloatTok{0.2500} \FloatTok{0.3125} \FloatTok{0.3750} \FloatTok{0.4375} \FloatTok{0.5000} \FloatTok{0.5625} \FloatTok{0.6250}
-\NormalTok{[}\DecValTok{11}\NormalTok{] }\FloatTok{0.6875} \FloatTok{0.7500} \FloatTok{0.8125} \FloatTok{0.8750} \FloatTok{0.9375} \FloatTok{0.0000} \FloatTok{0.0625} \FloatTok{0.1250} \FloatTok{0.1875} \FloatTok{0.2500}
-\NormalTok{[}\DecValTok{21}\NormalTok{] }\FloatTok{0.3125} \FloatTok{0.3750} \FloatTok{0.4375} \FloatTok{0.5000} \FloatTok{0.5625} \FloatTok{0.6250} \FloatTok{0.6875} \FloatTok{0.7500} \FloatTok{0.8125} \FloatTok{0.8750}
-\NormalTok{[}\DecValTok{31}\NormalTok{] }\FloatTok{0.9375} \FloatTok{0.0000}
+\CommentTok{#>  [1] 0.0625 0.1250 0.1875 0.2500 0.3125 0.3750 0.4375 0.5000 0.5625 0.6250}
+\CommentTok{#> [11] 0.6875 0.7500 0.8125 0.8750 0.9375 0.0000 0.0625 0.1250 0.1875 0.2500}
+\CommentTok{#> [21] 0.3125 0.3750 0.4375 0.5000 0.5625 0.6250 0.6875 0.7500 0.8125 0.8750}
+\CommentTok{#> [31] 0.9375 0.0000}
 \end{Highlighting}
 \end{Shaded}
 
@@ -392,9 +398,9 @@ Using this definition, we can get the following theorem.
 \end{equation*}
 \EndKnitrBlock{proof}
 
-Thus, to generate \(n\) random variables \(\sim F_X\),
+Thus, to generate \(n\) random variables \(\sim F_X\), we can use \emph{uniform random numbers}.
 
-\begin{algorithm}[H]
+\begin{algorithm}[H] \label{alg:alginv1}
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
@@ -406,6 +412,8 @@ Thus, to generate \(n\) random variables \(\sim F_X\),
   \Output{$x_1, x_2, \ldots, x_n \iid F_X$}
   \caption{Inverse transformation method}
 \end{algorithm}
+
+Note that in \texttt{R}, vectorized operation would be better, i.e.~generate \texttt{runif(n)} and plug it into given inverse cdf.
 
 \hypertarget{continuous-case}{%
 \subsection{Continuous case}\label{continuous-case}}
@@ -458,7 +466,7 @@ If we generate \(x_1, \ldots, x_{500} \sim Exp(\lambda = 1)\),
 \hypertarget{discrete-case}{%
 \subsection{Discrete case}\label{discrete-case}}
 
-\begin{algorithm}[H]
+\begin{algorithm}[H] \label{alg:alginv2}
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
@@ -470,16 +478,6 @@ If we generate \(x_1, \ldots, x_{500} \sim Exp(\lambda = 1)\),
   \Output{$x_1, x_2, \ldots, x_n \iid F_X$}
   \caption{Inverse transformation method in discrete case}
 \end{algorithm}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{pmf <-}
-\StringTok{  }\KeywordTok{tibble}\NormalTok{(}
-    \DataTypeTok{x =} \DecValTok{0}\OperatorTok{:}\DecValTok{4}\NormalTok{,}
-    \DataTypeTok{p =} \KeywordTok{c}\NormalTok{(.}\DecValTok{1}\NormalTok{, }\FloatTok{.2}\NormalTok{, }\FloatTok{.2}\NormalTok{, }\FloatTok{.2}\NormalTok{, }\FloatTok{.3}\NormalTok{)}
-\NormalTok{  )}
-\end{Highlighting}
-\end{Shaded}
 
 \begin{longtable}[]{@{}lrrrrr@{}}
 \caption{\label{tab:exdis}Example of a Discrete Random Variable}\tabularnewline
@@ -597,21 +595,18 @@ Next, for some (pre-specified) \(c > 0\)
 
 \[\forall x \in spt f : \frac{f(x)}{g(x)} \le c\]
 
-\hypertarget{a-r-algorithm}{%
-\subsection{A-R algorithm}\label{a-r-algorithm}}
-
-\begin{algorithm}[H] \label{alg:aralg}
+\begin{algorithm}[H] \label{alg:algar}
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
-  \Input{proposal density $g(x)$}
+  \Input{target $f$, proposal $g$, and $c$}
   \For{$i \leftarrow 1$ \KwTo $n$}{
-    $Y \sim g(Y)$\;
-    $U \sim unif(0, 1) \perp\!\!\!\perp Y$\;
+    $Y \sim g(y)$\; \label{alg:argoto}
+    $U \sim unif(0, 1) \ind Y$\;
     \eIf{$U \le \frac{f(Y)}{cg(Y)}$}{
       Accept $x_i = Y$\;
     }{
-      go to line 2\;
+      go to Line \ref{alg:argoto}\;
     }
   }
   \Output{$x_1, x_2, \ldots, x_n \iid f(x)$}
@@ -641,26 +636,20 @@ The algorithm takes random number from \(Y \sim g\) in each recursive step \(i\)
 Suppose that we choose a point at random on a line drawn in the figure \ref{fig:arprop}. If we get the red line, we accept. Otherwise, we reject. In other words, the \emph{colored area is where we reject the given value}. The smaller the area is, the more efficient the algorithm will be.
 
 \BeginKnitrBlock{proposition}[Properties of A-R Method]
-\protect\hypertarget{prp:arnote}{}{\label{prp:arnote} \iffalse (Properties of A-R Method) \fi{} }\(\text{(1)}\: \frac{f(Y)}{cg(Y)} \perp\!\!\!\perp U\)
+\protect\hypertarget{prp:arnote}{}{\label{prp:arnote} \iffalse (Properties of A-R Method) \fi{} }See Figure \ref{fig:arprop}.
 
-\(\text{(2)}\: 0 < \frac{f(x)}{cg(x)} \le 1\)
-
-\(\text{(3)}\:\) Let \(N\) be the number of iterations needed to get an acceptance. Then
-
-\[N \sim Geo(p) \quad \text{where}\: p \equiv P\bigg(U \le \frac{f(Y)}{cg(Y)}\bigg)\]
-
-and so
-
-\[
+\begin{enumerate}
+  \item $\frac{f(Y)}{cg(Y)} \perp\!\!\!\perp U$
+  \item $0 < \frac{f(x)}{cg(x)} \le 1$
+  \item Let $N$ be the number of iterations needed to get an acceptance. Then $$N \sim Geo(p) \quad \text{where}\: p \equiv P\bigg(U \le \frac{f(Y)}{cg(Y)}\bigg)$$ and so
+$$
 \begin{cases}
   P(N = n) = p(1 - p)^{n - 1}I_{\{1, 2, \ldots \}}(n) \\
   E(N) = \text{average number of iterations} = \frac{1}{p}
 \end{cases}
-\]
-
-\(\text{(4)}\: X \sim Y \mid U \le \frac{f(Y)}{cg(Y)}\), i.e.
-
-\[P\bigg(Y \le y \mid U \le \frac{f(Y)}{cg(Y)}\bigg) = F_X(y)\]
+$$
+  \item $X \sim Y \mid U \le \frac{f(Y)}{cg(Y)}$, i.e. $$P\bigg(Y \le y \mid U \le \frac{f(Y)}{cg(Y)}\bigg) = F_X(y)$$
+\end{enumerate}
 \EndKnitrBlock{proposition}
 
 \BeginKnitrBlock{remark}[Efficiency]
@@ -868,20 +857,305 @@ Then we set
 \hypertarget{transfomation-methods}{%
 \section{Transfomation Methods}\label{transfomation-methods}}
 
+\hypertarget{continuous}{%
+\subsection{Continuous}\label{continuous}}
+
+\BeginKnitrBlock{proposition}[Transformation between continuous random variables]
+\protect\hypertarget{prp:trans1}{}{\label{prp:trans1} \iffalse (Transformation between continuous random variables) \fi{} }Relation between random variables enables generating target numbers from the others.
+
+\begin{enumerate}
+  \item $Z_1, \ldots, Z_n \iid N(0, 1) \Rightarrow \sum Z_i^2 \sim \chi^2(n)$
+  \item $Y_1 \sim \chi^2(m) \ind Y_2 \sim \chi^2(n) \Rightarrow \frac{Y_1 / m}{Y_2 / n} \sim F(m, n)$
+  \item $Z \sim N(0, 1) \ind Y \sim \chi^2(n) \Rightarrow \frac{Z}{\sqrt{Y / n}} \sim t(n)$
+  \item $Y_1, \ldots, Y_n \iid Exp(\lambda) \Rightarrow \sum Y_i^2 Gamma(n, \lambda)$
+  \item $U \sim unif(0, 1) \Rightarrow (b - a)U + a \sim unif(a, b)$
+  \item $U \sim Gamma(r, \lambda) \ind V \sim Gamma(s, \lambda) \Rightarrow \frac{U}{U + V} \sim Beta(r, s)$
+  \item $Z \sim N(0, 1) \Rightarrow \mu + \sigma Z \sim N(\mu, \sigma^2)$
+  \item $Y \sim N(\mu, \sigma^2) \Rightarrow e^Y \sim LogNormal(\mu, \sigma^2)$
+\end{enumerate}
+\EndKnitrBlock{proposition}
+
+\BeginKnitrBlock{example}[Generating Beta(a, b) using rgamma]
+\protect\hypertarget{exm:transbeta}{}{\label{exm:transbeta} \iffalse (Generating Beta(a, b) using rgamma) \fi{} }From Proposition \ref{prp:trans1}, we can generate \(Beta(a,b)\) random numbers using \(Gamma(a, 1)\) and \(Gamma(b, 1)\).
+\EndKnitrBlock{example}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{trans_beta <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n, shape1, shape2) \{}
+\NormalTok{  u <-}\StringTok{ }\KeywordTok{rgamma}\NormalTok{(n, }\DataTypeTok{shape =}\NormalTok{ shape1, }\DataTypeTok{rate =} \DecValTok{1}\NormalTok{)}
+\NormalTok{  v <-}\StringTok{ }\KeywordTok{rgamma}\NormalTok{(n, }\DataTypeTok{shape =}\NormalTok{ shape2, }\DataTypeTok{rate =} \DecValTok{1}\NormalTok{)}
+\NormalTok{  u }\OperatorTok{/}\StringTok{ }\NormalTok{(u }\OperatorTok{+}\StringTok{ }\NormalTok{v)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/tbetafig-1} 
+
+}
+
+\caption{Beta(3,2) Random numbers from each function, including transformation method}\label{fig:tbetafig}
+\end{figure}
+
+\hypertarget{box-muller-transformation}{%
+\subsection{Box-Muller transformation}\label{box-muller-transformation}}
+
+Denote that Gaussian cdf has no closed form of \(F_X^{-1}\). Using polar coordiantes, we can generate Normal random numers.
+
+\BeginKnitrBlock{theorem}[Box-Muller transformation]
+\protect\hypertarget{thm:bmnorm}{}{\label{thm:bmnorm} \iffalse (Box-Muller transformation) \fi{} }Let \(U_1, U_2 \iid unif(0,1)\). Then
+
+\[
+\begin{cases}
+  Z_1 = \sqrt{-2 \ln U_2} \cos(2\pi U_1) \\
+  Z_2 = \sqrt{-2 \ln U_2} \sin(2\pi U_1)
+\end{cases}
+\]
+\EndKnitrBlock{theorem}
+
+\BeginKnitrBlock{proof}
+\iffalse{} {Proof. } \fi{}Write
+
+\[
+(Z_1, Z_2)^T \sim N\bigg( \begin{bmatrix}
+  0 \\
+  0
+\end{bmatrix}, \begin{bmatrix}
+  1 & 0 \\
+  0 & 1
+\end{bmatrix} \bigg)
+\]
+
+Then the joint pdf is given by
+
+\[f_{Z_1, Z_2}(x_1, x_2) = \frac{1}{2\pi}\exp\bigg(-\frac{x_1^2 + x_2^2}{2}\bigg)\]
+
+Consider polar coordiate transformation \((R, \theta)\): \(x_1 = R\cos\theta\) and \(x_2 = R\sin\theta\).
+
+Since it is also random vector,
+
+\begin{equation*}
+  \begin{split}
+    f_{R, \theta}(r, \theta) & = f_{Z_1, Z_2}(x_1, x_2)\lvert J \rvert \\
+    & = \frac{1}{2\pi}\exp\bigg(-\frac{x_1^2 + x_2^2}{2}\bigg)\left\lvert\begin{array}{cc}
+      \frac{\partial x_1}{\partial r} & \frac{\partial x_1}{\partial \theta} \\
+      \frac{\partial x_2}{\partial r} & \frac{\partial x_2}{\partial \theta}
+    \end{array}\right\rvert \\
+    & = \frac{1}{2\pi}\exp\bigg(-\frac{r^2}{2}\bigg)\left\lvert\begin{array}{cc}
+      \frac{\partial x_1}{\partial r} & \frac{\partial x_1}{\partial \theta} \\
+      \frac{\partial x_2}{\partial r} & \frac{\partial x_2}{\partial \theta}
+    \end{array}\right\rvert \\
+    & = \frac{r}{2\pi}\exp\bigg(-\frac{r^2}{2}\bigg)
+  \end{split}
+\end{equation*}
+
+Then each marginal density function can be computed as
+
+\begin{equation*}
+  \begin{split}
+    f_{\theta}(\theta) & = \int_0^\infty \frac{r}{2\pi}\exp\bigg(-\frac{r^2}{2}\bigg) dr \\
+    & = \frac{1}{2\pi} I_{(0, 2\pi)}(\theta) \\
+    & \stackrel{d}{=} unif(0, 2\pi)
+  \end{split}
+\end{equation*}
+
+\begin{equation*}
+  \begin{split}
+    f_R(r) & = \int_0^\theta \frac{r}{2\pi}\exp\bigg(-\frac{r^2}{2}\bigg) d\theta \\
+    & = r \exp\bigg(-\frac{r^2}{2}\bigg) I_{(0, \infty)}(r)
+  \end{split}
+\end{equation*}
+
+Thus,
+
+\[f_{R,\theta} = f_{\theta}f_R \Rightarrow R \ind \theta\]
+
+It follows from inverse transformation theorem that
+
+\[Z_1 = R\cos\theta = \sqrt{-2 \ln U_2} \cos(2\pi U_1)\]
+
+and that
+
+\[Z_2 = R\sin\theta = \sqrt{-2 \ln U_2} \sin(2\pi U_1)\]
+
+where \(U_1, U_2 \iid unif(0, 1)\)
+\EndKnitrBlock{proof}
+
+\begin{algorithm}[H] \label{alg:algbm}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $U_1, U_2 \iid unif(0,1)$\;
+    $z_{2i - 1} = \sqrt{-2\ln U_2}\cos(2\pi U_1)$\;
+    $z_{2i} = \sqrt{-2\ln U_2}\sin(2\pi U_1)$\;
+  }
+  \Output{$z_1, \ldots, z_n \iid N(0,1)$}
+  \caption{Box-Muller transformation}
+\end{algorithm}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{bmnorm <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n, }\DataTypeTok{mean =} \DecValTok{0}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{1}\NormalTok{) \{}
+\NormalTok{  n_bm <-}\StringTok{ }\KeywordTok{ceiling}\NormalTok{(n }\OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{)}
+  \KeywordTok{tibble}\NormalTok{(}
+    \DataTypeTok{theta =} \KeywordTok{runif}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ n_bm, }\DataTypeTok{max =} \DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{pi),}
+    \DataTypeTok{R =} \KeywordTok{sqrt}\NormalTok{(}\OperatorTok{-}\DecValTok{2} \OperatorTok{*}\StringTok{ }\KeywordTok{log}\NormalTok{(}\KeywordTok{runif}\NormalTok{(n_bm)))}
+\NormalTok{  ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{mutate}\NormalTok{(}
+      \DataTypeTok{x1 =}\NormalTok{ R }\OperatorTok{*}\StringTok{ }\KeywordTok{cos}\NormalTok{(theta),}
+      \DataTypeTok{x2 =}\NormalTok{ R }\OperatorTok{*}\StringTok{ }\KeywordTok{sin}\NormalTok{(theta)}
+\NormalTok{    ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{gather}\NormalTok{(x1, x2, }\DataTypeTok{key =} \StringTok{"key"}\NormalTok{, }\DataTypeTok{value =} \StringTok{"value"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{value =}\NormalTok{ mean }\OperatorTok{+}\StringTok{ }\NormalTok{sd }\OperatorTok{*}\StringTok{ }\NormalTok{value) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{select}\NormalTok{(value) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{pull}\NormalTok{()}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{gg_curve}\NormalTok{(dnorm, }\DataTypeTok{from =} \DecValTok{0}\NormalTok{, }\DataTypeTok{to =} \DecValTok{6}\NormalTok{, }\DataTypeTok{args =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{mean =} \DecValTok{3}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}
+    \DataTypeTok{data =} \KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{bmnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{, }\DataTypeTok{mean =} \DecValTok{3}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{1}\NormalTok{)),}
+    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ ..density..),}
+    \DataTypeTok{bins =} \DecValTok{30}\NormalTok{,}
+    \DataTypeTok{fill =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{),}
+    \DataTypeTok{alpha =} \FloatTok{.5}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/boxnorm-1} 
+
+}
+
+\caption{Normal random numbers by Box-Muller transformation}\label{fig:boxnorm}
+\end{figure}
+
+\hypertarget{discrete}{%
+\subsection{Discrete}\label{discrete}}
+
+\BeginKnitrBlock{proposition}[Transformation between discrete random variables]
+\protect\hypertarget{prp:trans2}{}{\label{prp:trans2} \iffalse (Transformation between discrete random variables) \fi{} }Relation between random variables enables generating target numbers from the others.
+
+\begin{enumerate}
+  \item $Y_1, \ldots, Y_n \iid Bernoulli(p) \Rightarrow \sum Y_i^2 \sim B(n, p)$
+  \item $U \sim unif(0,1) \Rightarrow X_i = \lfloor mU \rfloor + 1$
+  \item $X = \text{the number of events occurring in 1 unit of time} \sim Poisson(\lambda)$
+\end{enumerate}
+\EndKnitrBlock{proposition}
+
+\BeginKnitrBlock{proposition}[Bernoulli process]
+\protect\hypertarget{prp:trans3}{}{\label{prp:trans3} \iffalse (Bernoulli process) \fi{} }Let \(X_1, X_2, \ldots \iid Bernoulli(p)\).
+
+\begin{enumerate}
+  \item $N = \text{the number of trials until we see a success, i.e.} X_N = 1 \Rightarrow N \sim Geo(p)$
+  \item $Y_1, \ldots, Y_r \iid Geo(p) \Rightarrow \sum\limits_{i = 1}^r Y_i = \text{the number of trials until we see r successes} \sim NegBin(r, p)$
+\end{enumerate}
+\EndKnitrBlock{proposition}
+
+\BeginKnitrBlock{proposition}[Count process]
+\protect\hypertarget{prp:trans4}{}{\label{prp:trans4} \iffalse (Count process) \fi{} }Let \(Y_1, Y_2, \ldots \iid Exp(\lambda)\) be interarrival times. Then
+
+\[X = \max\{ n : \sum Y_i \le 1 \} = \text{the number of events occurring in 1 unit of time} \sim Poisson(\lambda)\]
+\EndKnitrBlock{proposition}
+
 \hypertarget{sums-and-mixtures}{%
 \section{Sums and Mixtures}\label{sums-and-mixtures}}
 
-\hypertarget{sums}{%
-\subsection{Sums}\label{sums}}
+\hypertarget{convolutions}{%
+\subsection{Convolutions}\label{convolutions}}
 
-\hypertarget{convolutions-and-mixtures}{%
-\subsection{Convolutions and mixtures}\label{convolutions-and-mixtures}}
+\BeginKnitrBlock{definition}[Convolution]
+\protect\hypertarget{def:conv}{}{\label{def:conv} \iffalse (Convolution) \fi{} }Let \(X_1, \ldots, X_n\) be independent and identically distributed and let \(S = X_1 + \cdots X_n\). Then the distribution of \(S\) is called the \(n\)-fold convolution of \(X\) and denoted by \(F_X^{*(n)}\).
+\EndKnitrBlock{definition}
+
+In the last chapter, we have already seen a bunch of random variables that can be generated by summing the other.
+
+\BeginKnitrBlock{example}[Chisquare]
+\protect\hypertarget{exm:rchi}{}{\label{exm:rchi} \iffalse (Chisquare) \fi{} }Let \(Z_1, \ldots, Z_n \iid N(0, 1)\). We know from Proposition \ref{prp:trans1} that
+
+\[V = \sum_{i = 1}^n Z_i \sim \chi^2(n)\]
+\EndKnitrBlock{example}
+
+Building a \texttt{n} \(\times\) \texttt{df} matrix can be a good strategy here. After that, \texttt{rowSums} or \texttt{colSums} ends the generation work.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{conv_chisq <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n, df) \{}
+\NormalTok{  X <-}
+\StringTok{    }\KeywordTok{matrix}\NormalTok{(}\KeywordTok{rnorm}\NormalTok{(n }\OperatorTok{*}\StringTok{ }\NormalTok{df), }\DataTypeTok{nrow =}\NormalTok{ n, }\DataTypeTok{ncol =}\NormalTok{ df)}\OperatorTok{^}\DecValTok{2}
+  \KeywordTok{rowSums}\NormalTok{(X)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{gg_curve}\NormalTok{(dchisq, }\DataTypeTok{from =} \DecValTok{0}\NormalTok{, }\DataTypeTok{to =} \DecValTok{15}\NormalTok{, }\DataTypeTok{args =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{df =} \DecValTok{5}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}
+    \DataTypeTok{data =} \KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{conv_chisq}\NormalTok{(}\DecValTok{1000}\NormalTok{, }\DataTypeTok{df =} \DecValTok{5}\NormalTok{)),}
+    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ ..density..),}
+    \DataTypeTok{bins =} \DecValTok{30}\NormalTok{,}
+    \DataTypeTok{fill =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{),}
+    \DataTypeTok{alpha =} \FloatTok{.5}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/convchi-1} 
+
+}
+
+\caption{$\chi^2$ random numbers from Normal sums}\label{fig:convchi}
+\end{figure}
+
+\hypertarget{mixtures}{%
+\subsection{Mixtures}\label{mixtures}}
+
+\BeginKnitrBlock{definition}[Discrete mixture]
+\protect\hypertarget{def:mixprob1}{}{\label{def:mixprob1} \iffalse (Discrete mixture) \fi{} }A random variable \(X\) is a discrete mixture if the distribution of \(X\) is a weighted sum
+
+\[F_X(x) = \sum \theta_i F_{X_i}(x)\]
+
+where constants \(\theta_i\) are called the mixing weights or mixing probabilities.
+\EndKnitrBlock{definition}
+
+\BeginKnitrBlock{definition}[Continuous mixture]
+\protect\hypertarget{def:mixprob2}{}{\label{def:mixprob2} \iffalse (Continuous mixture) \fi{} }A random variable \(X\) is a continuous mixture if the distribution of \(X\) is a weighted sum
+
+\[F_X(x) = \int_\infty^\infty F_{X \mid Y = y} (x) f_Y(y) dy\]
+\EndKnitrBlock{definition}
+
+\BeginKnitrBlock{example}[Mixture of several Normal distributions]
+\protect\hypertarget{exm:gaussmix}{}{\label{exm:gaussmix} \iffalse (Mixture of several Normal distributions) \fi{} }Generate a random sample of size \(1000\) from a normal location mixture with components of the mixture \(N(0,1)\) and \(N(3,1)\), i.e.
+
+\[F_X = p_1 F_{X_1} + (1 - p_1) F_{X_2}\]
+\EndKnitrBlock{example}
+
+For easy combining samples, we use \texttt{foreach} library.
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(foreach)}
 \end{Highlighting}
 \end{Shaded}
+
+As in A-R method, Bernoullin splitting would be used.
+
+\[
+\begin{cases}
+  F_{X_1} & U > p_1 \\
+  F_{X_2} & \text{otherwise}
+\end{cases}
+\]
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -893,6 +1167,8 @@ Then we set
 \NormalTok{\}}
 \end{Highlighting}
 \end{Shaded}
+
+Try various \(p_1\), from 0.1 to 1
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -919,13 +1195,232 @@ Then we set
 \end{Highlighting}
 \end{Shaded}
 
-\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-20-1} \end{center}
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/bimodal-1} 
+
+}
+
+\caption{Mixture normal random number for each mixing probability}\label{fig:bimodal}
+\end{figure}
 
 \hypertarget{multivariate-normal-random-vector}{%
 \section{Multivariate Normal Random Vector}\label{multivariate-normal-random-vector}}
 
+\BeginKnitrBlock{definition}[Multivariate normal random vector]
+\protect\hypertarget{def:mvn}{}{\label{def:mvn} \iffalse (Multivariate normal random vector) \fi{} }A random vector \(\mathbf{X} = (X_1, \ldots, X_p)^T\) follows multivariate normal distribution if
+
+\[f(\mathbf{x}) = \frac{1}{(2\pi)^{\frac{p}{2}\lvert \Sigma \rvert}} \exp \bigg[ -\frac{1}{2}(\mathbf{x} \boldsymbol\mu)^T \Sigma^{-1}(\mathbf{x} \boldsymbol\mu) \bigg]\]
+\EndKnitrBlock{definition}
+
+\BeginKnitrBlock{remark}
+\iffalse{} {Remark. } \fi{}Let \(\mathbf{Z} \sim MVN(\mathbf{0}, I)\). Then
+
+\begin{equation}
+  \Sigma^{\frac{1}{2}}\mathbf{Z} + \boldsymbol\mu \sim MVN(\boldsymbol\mu, \Sigma)
+  \label{eq:stdmvn}
+\end{equation}
+\EndKnitrBlock{remark}
+
+From this remark, we get to generate \emph{standard normal random vector}.
+
+\hypertarget{spectral-decomposition-method}{%
+\subsection{Spectral decomposition method}\label{spectral-decomposition-method}}
+
+Note that covariance matrix is symmetric.
+
+\BeginKnitrBlock{theorem}[Spectral decomposition]
+\protect\hypertarget{thm:covspec}{}{\label{thm:covspec} \iffalse (Spectral decomposition) \fi{} }Suppose that \(\Sigma\) is symmetric. Then
+
+\[\Sigma = P \Lambda P^T\]
+
+where \((\mathbf{v}_j, \lambda_j)\) corresponding eigenvector-eigenvalue
+
+\[
+\begin{cases}
+  P = \begin{bmatrix} \mathbf{v}_1 & \cdots & \mathbf{v}_p \end{bmatrix} \in \R^{p \times p} \:\text{orthogonal} \\
+  \Lambda = diag(\lambda_1, \ldots, \lambda_p)
+\end{cases}
+\]
+\EndKnitrBlock{theorem}
+
+\BeginKnitrBlock{corollary}
+\protect\hypertarget{cor:specsqrt}{}{\label{cor:specsqrt} }Suppose that \(\Sigma\) is symmetric. Then
+
+\[\Sigma^{\frac{1}{2}} = P \Lambda^{\frac{1}{2}} P^T\]
+
+where \(\Lambda^{\frac{1}{2}} = diag(\sqrt{\lambda_1}, \ldots, \sqrt{\lambda_p})\)
+\EndKnitrBlock{corollary}
+
+\texttt{eigen()} performs spectral decomposition. \texttt{\$values} has eigenvalues and \texttt{\$vectors} has eigenvectors. We first generate matrix that consists of standard normal random vector:
+
+\[
+\begin{bmatrix}
+  Z_{11} & Z_{12} & \cdots & Z_{1p} \\
+  Z_{21} & Z_{22} & \cdots & Z_{2p} \\
+  \vdots & \vdots & \vdots & \vdots \\
+  Z_{n1} & Z_{n2} & \cdots & Z_{np}
+\end{bmatrix}
+\]
+
+Denote that each observation is row. To use Equation \eqref{eq:stdmvn}, we should multiply \(\Sigma^{\frac{1}{2}}\) behind this matrix, not in front of. \(\boldsymbol\mu\) matrix should be also made to matrix, in form of
+
+\[
+\begin{bmatrix}
+  \mu_{11} & \mu_{12} & \cdots & \mu_{1p} \\
+  \mu_{11} & \mu_{22} & \cdots & \mu_{1p} \\
+  \vdots & \vdots & \vdots & \vdots \\
+  \mu_{11} & Z_{n2} & \cdots & \mu_{1p}
+\end{bmatrix} \in \R^{n \times p}
+\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rmvn_eigen <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n, mu, sig) \{}
+\NormalTok{  d <-}\StringTok{ }\KeywordTok{length}\NormalTok{(mu)}
+\NormalTok{  ev <-}\StringTok{ }\KeywordTok{eigen}\NormalTok{(sig, }\DataTypeTok{symmetric =} \OtherTok{TRUE}\NormalTok{)}
+\NormalTok{  lambda <-}\StringTok{ }\NormalTok{ev}\OperatorTok{$}\NormalTok{values}
+\NormalTok{  P <-}\StringTok{ }\NormalTok{ev}\OperatorTok{$}\NormalTok{vectors}
+\NormalTok{  sig2 <-}\StringTok{ }\NormalTok{P }\OperatorTok{%*%}\StringTok{ }\KeywordTok{diag}\NormalTok{(}\KeywordTok{sqrt}\NormalTok{(lambda)) }\OperatorTok{%*%}\StringTok{ }\KeywordTok{t}\NormalTok{(P)}
+\NormalTok{  Z <-}\StringTok{ }\KeywordTok{matrix}\NormalTok{(}\KeywordTok{rnorm}\NormalTok{(n }\OperatorTok{*}\StringTok{ }\NormalTok{d), }\DataTypeTok{nrow =}\NormalTok{ n, }\DataTypeTok{ncol =}\NormalTok{ d)}
+\NormalTok{  X <-}\StringTok{ }\NormalTok{Z }\OperatorTok{%*%}\StringTok{ }\NormalTok{sig2 }\OperatorTok{+}\StringTok{ }\KeywordTok{matrix}\NormalTok{(mu, }\DataTypeTok{nrow =}\NormalTok{ n, }\DataTypeTok{ncol =}\NormalTok{ d, }\DataTypeTok{byrow =} \OtherTok{TRUE}\NormalTok{)}
+  \KeywordTok{colnames}\NormalTok{(X) <-}\StringTok{ }\KeywordTok{paste0}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\DecValTok{1}\OperatorTok{:}\NormalTok{d)}
+\NormalTok{  X }\OperatorTok{%>%}\StringTok{ }\KeywordTok{tbl_df}\NormalTok{()}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# mean vector -------------------------------}
+\NormalTok{mu <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{2}\NormalTok{)}
+\CommentTok{# symmetric matrix --------------------------}
+\NormalTok{sig <-}\StringTok{ }\KeywordTok{matrix}\NormalTok{(}\KeywordTok{numeric}\NormalTok{(}\DecValTok{9}\NormalTok{), }\DataTypeTok{nrow =} \DecValTok{3}\NormalTok{, }\DataTypeTok{ncol =} \DecValTok{3}\NormalTok{)}
+\KeywordTok{diag}\NormalTok{(sig) <-}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{3}\NormalTok{)}
+\NormalTok{sig[}\KeywordTok{lower.tri}\NormalTok{(sig)] <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\OperatorTok{-}\NormalTok{.}\DecValTok{5}\NormalTok{, }\FloatTok{.5}\NormalTok{, }\FloatTok{-.5}\NormalTok{) }\OperatorTok{*}\StringTok{ }\DecValTok{2}
+\NormalTok{sig <-}\StringTok{ }\NormalTok{(sig }\OperatorTok{+}\StringTok{ }\KeywordTok{t}\NormalTok{(sig)) }\OperatorTok{/}\StringTok{ }\DecValTok{2}
+\end{Highlighting}
+\end{Shaded}
+
+Generate
+
+\[\mathbf{X}_i \sim MVN\bigg((0, 1, 2), \begin{bmatrix} 1&-0.5&0.5 \\ -0.5&1&-0.5 \\ 0.5&-0.5&1 \\ \end{bmatrix}\bigg)\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(mvn3 <-}\StringTok{ }\KeywordTok{rmvn_eigen}\NormalTok{(}\DecValTok{1000}\NormalTok{, }\DataTypeTok{mu =}\NormalTok{ mu, }\DataTypeTok{sig =}\NormalTok{ sig))}
+\CommentTok{#> # A tibble: 1,000 x 3}
+\CommentTok{#>         x1       x2    x3}
+\CommentTok{#>      <dbl>    <dbl> <dbl>}
+\CommentTok{#>  1 -0.168   1.41    1.80 }
+\CommentTok{#>  2  1.39   -0.00942 2.40 }
+\CommentTok{#>  3 -0.710   1.30    1.37 }
+\CommentTok{#>  4  0.0314  2.04    1.80 }
+\CommentTok{#>  5  0.177   0.568   1.71 }
+\CommentTok{#>  6 -0.960   1.23    1.61 }
+\CommentTok{#>  7 -1.01    1.28    0.106}
+\CommentTok{#>  8  0.272   0.0842  2.12 }
+\CommentTok{#>  9  0.148   1.63    2.53 }
+\CommentTok{#> 10 -1.24    1.53    1.28 }
+\CommentTok{#> # ... with 990 more rows}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mvn3 }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{GGally}\OperatorTok{::}\KeywordTok{ggpairs}\NormalTok{(}
+    \DataTypeTok{lower =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{continuous =}\NormalTok{ GGally}\OperatorTok{::}\KeywordTok{wrap}\NormalTok{(gg_scatter, }\DataTypeTok{size =} \DecValTok{1}\NormalTok{))}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/mvneigen-1} 
+
+}
+
+\caption{Multivariate normal random vector - spectral decomposition method}\label{fig:mvneigen}
+\end{figure}
+
+\hypertarget{singular-value-decomposition}{%
+\subsection{Singular value decomposition}\label{singular-value-decomposition}}
+
+SVD can be said to be a kind of generalization of spectral decomposition. This method can be used for any matrix, i.e.~non-symmetric matrix. For \(\Sigma\), SVD and spectral decomposition is equivalent. However, SVD does not account for symmetric property, so this method is less efficient compared to spectral decomposition.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rmvn_svd <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n, mu, sig) \{}
+\NormalTok{  d <-}\StringTok{ }\KeywordTok{length}\NormalTok{(mu)}
+\NormalTok{  S <-}\StringTok{ }\KeywordTok{svd}\NormalTok{(sig)}
+\NormalTok{  sig2 <-}\StringTok{ }\NormalTok{S}\OperatorTok{$}\NormalTok{u }\OperatorTok{%*%}\StringTok{ }\KeywordTok{diag}\NormalTok{(}\KeywordTok{sqrt}\NormalTok{(S}\OperatorTok{$}\NormalTok{d)) }\OperatorTok{%*%}\StringTok{ }\KeywordTok{t}\NormalTok{(S}\OperatorTok{$}\NormalTok{v)}
+\NormalTok{  Z <-}\StringTok{ }\KeywordTok{matrix}\NormalTok{(}\KeywordTok{rnorm}\NormalTok{(n }\OperatorTok{*}\StringTok{ }\NormalTok{d), }\DataTypeTok{nrow =}\NormalTok{ n, }\DataTypeTok{ncol =}\NormalTok{ d)}
+\NormalTok{  X <-}\StringTok{ }\NormalTok{Z }\OperatorTok{%*%}\StringTok{ }\NormalTok{sig2 }\OperatorTok{+}\StringTok{ }\KeywordTok{matrix}\NormalTok{(mu, }\DataTypeTok{nrow =}\NormalTok{ n, }\DataTypeTok{ncol =}\NormalTok{ d, }\DataTypeTok{byrow =} \OtherTok{TRUE}\NormalTok{)}
+  \KeywordTok{colnames}\NormalTok{(X) <-}\StringTok{ }\KeywordTok{paste0}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\DecValTok{1}\OperatorTok{:}\NormalTok{d)}
+\NormalTok{  X }\OperatorTok{%>%}\StringTok{ }\KeywordTok{tbl_df}\NormalTok{()}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/mvnsvd-1} 
+
+}
+
+\caption{Multivariate normal random vector - svd}\label{fig:mvnsvd}
+\end{figure}
+
+\hypertarget{choleski-decomposition}{%
+\subsection{Choleski decomposition}\label{choleski-decomposition}}
+
+\BeginKnitrBlock{theorem}[Cholesky decomposition]
+\protect\hypertarget{thm:covchol}{}{\label{thm:covchol} \iffalse (Cholesky decomposition) \fi{} }Suppose that \(\Sigma\) is symmetric and positive definite. Then
+
+\[\Sigma = Q^T Q\]
+
+where \(Q\) is an upper triangular matrix.
+\EndKnitrBlock{theorem}
+
+\BeginKnitrBlock{corollary}
+\protect\hypertarget{cor:mvnchol2}{}{\label{cor:mvnchol2} }Suppose that \(\Sigma\) is symmetric and positive definite. For cholesky decomposition \ref{thm:mvnchol}, define
+
+\[\Sigma^{\frac{1}{2}} = Q\]
+\EndKnitrBlock{corollary}
+
+\texttt{chol()} computes cholesky decomposition. In \texttt{R}, it gives upper triangular \(Q\). Since some statements cholesky decomposition by \(\Sigma = LL^T\) with lower triangular matrix, try not to confuse.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rmvn_chol <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n, mu, sig) \{}
+\NormalTok{  d <-}\StringTok{ }\KeywordTok{length}\NormalTok{(mu)}
+\NormalTok{  sig2 <-}\StringTok{ }\KeywordTok{chol}\NormalTok{(sig)}
+\NormalTok{  Z <-}\StringTok{ }\KeywordTok{matrix}\NormalTok{(}\KeywordTok{rnorm}\NormalTok{(n }\OperatorTok{*}\StringTok{ }\NormalTok{d), }\DataTypeTok{nrow =}\NormalTok{ n, }\DataTypeTok{ncol =}\NormalTok{ d)}
+\NormalTok{  X <-}\StringTok{ }\NormalTok{Z }\OperatorTok{%*%}\StringTok{ }\NormalTok{sig2 }\OperatorTok{+}\StringTok{ }\KeywordTok{matrix}\NormalTok{(mu, }\DataTypeTok{nrow =}\NormalTok{ n, }\DataTypeTok{ncol =}\NormalTok{ d, }\DataTypeTok{byrow =} \OtherTok{TRUE}\NormalTok{)}
+  \KeywordTok{colnames}\NormalTok{(X) <-}\StringTok{ }\KeywordTok{paste0}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\DecValTok{1}\OperatorTok{:}\NormalTok{d)}
+\NormalTok{  X }\OperatorTok{%>%}\StringTok{ }\KeywordTok{tbl_df}\NormalTok{()}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/mvnchol-1} 
+
+}
+
+\caption{Multivariate normal random vector - cholesky decomposition}\label{fig:mvnchol}
+\end{figure}
+
 \hypertarget{stochastic-processes}{%
 \section{Stochastic Processes}\label{stochastic-processes}}
+
+\BeginKnitrBlock{definition}[Stochastic process]
+\protect\hypertarget{def:stoc}{}{\label{def:stoc} \iffalse (Stochastic process) \fi{} }A stochastic process is a collection \(\{ X(t) : t \in T \}\) of random variables indexed by the set \(T\). The index set \(T\) could be discrete or continous.
+
+A State space is called te set of possible values that \(X(t)\) can take.
+\EndKnitrBlock{definition}
 
 \hypertarget{homogeneous-poisson-process}{%
 \subsection{Homogeneous poisson process}\label{homogeneous-poisson-process}}
@@ -1032,7 +1527,7 @@ i.e.
 \begin{Highlighting}[]
 \NormalTok{x <-}\StringTok{ }\KeywordTok{log}\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{exp}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\KeywordTok{runif}\NormalTok{(}\DecValTok{10000}\NormalTok{))}
 \KeywordTok{mean}\NormalTok{((}\KeywordTok{exp}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\KeywordTok{exp}\NormalTok{(x}\OperatorTok{^}\DecValTok{2} \OperatorTok{-}\StringTok{ }\NormalTok{x))}
-\NormalTok{[}\DecValTok{1}\NormalTok{] }\FloatTok{1.46}
+\CommentTok{#> [1] 1.46}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1071,10 +1566,10 @@ Hence,
   \DataTypeTok{x2 =} \KeywordTok{log}\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{exp}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\KeywordTok{runif}\NormalTok{(}\DecValTok{10000}\NormalTok{))}
 \NormalTok{) }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{int =} \KeywordTok{mean}\NormalTok{((}\KeywordTok{exp}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{)}\OperatorTok{^}\DecValTok{2} \OperatorTok{*}\StringTok{ }\KeywordTok{exp}\NormalTok{((x1 }\OperatorTok{+}\StringTok{ }\NormalTok{x2)}\OperatorTok{^}\DecValTok{2} \OperatorTok{-}\StringTok{ }\NormalTok{x1 }\OperatorTok{-}\StringTok{ }\NormalTok{x2)))}
-\CommentTok{# A tibble: 1 x 1}
-\NormalTok{    int}
-  \OperatorTok{<}\NormalTok{dbl}\OperatorTok{>}
-\DecValTok{1}  \FloatTok{4.95}
+\CommentTok{#> # A tibble: 1 x 1}
+\CommentTok{#>     int}
+\CommentTok{#>   <dbl>}
+\CommentTok{#> 1  4.95}
 \end{Highlighting}
 \end{Shaded}
 

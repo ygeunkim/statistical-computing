@@ -1,7 +1,7 @@
 set.seed(1011)
 
 knitr::opts_chunk$set(
-  comment = NA,
+  comment = "#>",
   collapse = TRUE,
   out.width = "70%",
   fig.align = "center",

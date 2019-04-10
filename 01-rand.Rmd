@@ -28,15 +28,14 @@ $$x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} unif(0, 1)$$
 
 Then $u_1, u_2, \ldots, u_n \sim unif(0, 1)$
 
-\begin{algorithm}[H]
+\begin{algorithm}[H] \label{alg:alglcg}
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
-  \Input{$x_0, x_1, \ldots, x_n \in \mathbb{Z}_{+}$}
+  \Input{$a, c \in \mathbb{Z}_{+}$ and modulus $m$}
   Initialize $x_0$\;
   \For{$i \leftarrow 1$ \KwTo $n$}{
-    $x_i = (a x_{i - 1} + c) \mod m$
-    where $a, c \in \mathbb{Z}_{+}, m: \text{modulus}$\;
+    $x_i = (a x_{i - 1} + c) \mod m$\;
   }
   $u_i = \frac{x_i}{m} \in (0, 1)$\;
   \Output{$u_1, u_2, \ldots, u_n \sim unif(0, 1)$}
@@ -74,15 +73,14 @@ As we can expect from its name, this is congruential generator with $c = 0$.
 
 <!-- Then $u_1, u_2, \ldots, u_n \sim unif(0, 1)$ -->
 
-\begin{algorithm}[H]
+\begin{algorithm}[H] \label{alg:algmcg}
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
-  \Input{$x_0, x_1, \ldots, x_n \in \mathbb{Z}_{+}$}
+  \Input{$a, \in \mathbb{Z}_{+}$ and modulus $m$}
   Initialize $x_0$\;
   \For{$i \leftarrow 1$ \KwTo $n$}{
-    $x_i = a x_{i - 1} \mod m$
-    where $a \in \mathbb{Z}_{+}, m: \text{modulus}$\;
+    $x_i = a x_{i - 1} \mod m$\;
   }
   $u_i = \frac{x_i}{m} \in (0, 1)$\;
   \Output{$u_1, u_2, \ldots, u_n \sim unif(0, 1)$}
@@ -138,14 +136,14 @@ Let $U \sim unif(0, 1)$. Then
 \end{equation*}
 ```
 
-Thus, to generate $n$ random variables $\sim F_X$,
+Thus, to generate $n$ random variables $\sim F_X$, we can use *uniform random numbers*.
 
 <!-- 1. form of $F_X^{-1}(u)$ -->
 <!-- 2. For each $i = 1, 2, \ldots, n$: -->
 <!--     a. Generate $u_i \sim unif(0, 1)$ -->
 <!--     b. $x_i = F_X^{-1}(u_i)$ -->
 
-\begin{algorithm}[H]
+\begin{algorithm}[H] \label{alg:alginv1}
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
@@ -157,6 +155,8 @@ Thus, to generate $n$ random variables $\sim F_X$,
   \Output{$x_1, x_2, \ldots, x_n \iid F_X$}
   \caption{Inverse transformation method}
 \end{algorithm}
+
+Note that in `R`, vectorized operation would be better, i.e. generate `runif(n)` and plug it into given inverse cdf.
 
 ### Continuous case
 
@@ -201,7 +201,7 @@ gg_curve(dexp, from = 0, to = 10) +
 
 <!-- Collect $x_1, x_2, \ldots, x_n \sim F_X$. -->
 
-\begin{algorithm}[H]
+\begin{algorithm}[H] \label{alg:alginv2}
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
@@ -214,7 +214,7 @@ gg_curve(dexp, from = 0, to = 10) +
   \caption{Inverse transformation method in discrete case}
 \end{algorithm}
 
-```{r}
+```{r, echo=FALSE}
 pmf <-
   tibble(
     x = 0:4,
@@ -330,8 +330,6 @@ Next, for some (pre-specified) $c > 0$
 
 $$\forall x \in spt f : \frac{f(x)}{g(x)} \le c$$
 
-### A-R algorithm
-
 <!-- For $i = 1, \ldots, n$ -->
 
 <!-- 1. $Y \sim g(Y)$ -->
@@ -342,18 +340,18 @@ $$\forall x \in spt f : \frac{f(x)}{g(x)} \le c$$
 
 <!-- Collect $x_1, x_2, \ldots, x_n \stackrel{iid}{\sim} f(x)$. -->
 
-\begin{algorithm}[H] \label{alg:aralg}
+\begin{algorithm}[H] \label{alg:algar}
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
-  \Input{proposal density $g(x)$}
+  \Input{target $f$, proposal $g$, and $c$}
   \For{$i \leftarrow 1$ \KwTo $n$}{
-    $Y \sim g(Y)$\;
-    $U \sim unif(0, 1) \perp\!\!\!\perp Y$\;
+    $Y \sim g(y)$\; \label{alg:argoto}
+    $U \sim unif(0, 1) \ind Y$\;
     \eIf{$U \le \frac{f(Y)}{cg(Y)}$}{
       Accept $x_i = Y$\;
     }{
-      go to line 2\;
+      go to Line \ref{alg:argoto}\;
     }
   }
   \Output{$x_1, x_2, \ldots, x_n \iid f(x)$}
@@ -399,26 +397,20 @@ Suppose that we choose a point at random on a line drawn in the figure \@ref(fig
 
 
 ```{proposition, arnote, name = "Properties of A-R Method"}
-$\text{(1)}\: \frac{f(Y)}{cg(Y)} \perp\!\!\!\perp U$
+See Figure \@ref(fig:arprop).
 
-$\text{(2)}\: 0 < \frac{f(x)}{cg(x)} \le 1$
-
-$\text{(3)}\:$ Let $N$ be the number of iterations needed to get an acceptance. Then
-
-$$N \sim Geo(p) \quad \text{where}\: p \equiv P\bigg(U \le \frac{f(Y)}{cg(Y)}\bigg)$$
-
-and so
-
+\begin{enumerate}
+  \item $\frac{f(Y)}{cg(Y)} \perp\!\!\!\perp U$
+  \item $0 < \frac{f(x)}{cg(x)} \le 1$
+  \item Let $N$ be the number of iterations needed to get an acceptance. Then $$N \sim Geo(p) \quad \text{where}\: p \equiv P\bigg(U \le \frac{f(Y)}{cg(Y)}\bigg)$$ and so
 $$
 \begin{cases}
   P(N = n) = p(1 - p)^{n - 1}I_{\{1, 2, \ldots \}}(n) \\
   E(N) = \text{average number of iterations} = \frac{1}{p}
 \end{cases}
 $$
-
-$\text{(4)}\: X \sim Y \mid U \le \frac{f(Y)}{cg(Y)}$, i.e.
-
-$$P\bigg(Y \le y \mid U \le \frac{f(Y)}{cg(Y)}\bigg) = F_X(y)$$
+  \item $X \sim Y \mid U \le \frac{f(Y)}{cg(Y)}$, i.e. $$P\bigg(Y \le y \mid U \le \frac{f(Y)}{cg(Y)}\bigg) = F_X(y)$$
+\end{enumerate}
 ```
 
 ```{remark, areff, name = "Efficiency"}
@@ -599,16 +591,285 @@ $$c = \max\bigg\{ \frac{p(x)}{g(x)} : x = 0, \ldots, 4 \bigg\} = \max\Big\{ 0.5,
 
 ## Transfomation Methods
 
+### Continuous
+
+```{proposition, trans1, name = "Transformation between continuous random variables"}
+Relation between random variables enables generating target numbers from the others.
+
+\begin{enumerate}
+  \item $Z_1, \ldots, Z_n \iid N(0, 1) \Rightarrow \sum Z_i^2 \sim \chi^2(n)$
+  \item $Y_1 \sim \chi^2(m) \ind Y_2 \sim \chi^2(n) \Rightarrow \frac{Y_1 / m}{Y_2 / n} \sim F(m, n)$
+  \item $Z \sim N(0, 1) \ind Y \sim \chi^2(n) \Rightarrow \frac{Z}{\sqrt{Y / n}} \sim t(n)$
+  \item $Y_1, \ldots, Y_n \iid Exp(\lambda) \Rightarrow \sum Y_i^2 Gamma(n, \lambda)$
+  \item $U \sim unif(0, 1) \Rightarrow (b - a)U + a \sim unif(a, b)$
+  \item $U \sim Gamma(r, \lambda) \ind V \sim Gamma(s, \lambda) \Rightarrow \frac{U}{U + V} \sim Beta(r, s)$
+  \item $Z \sim N(0, 1) \Rightarrow \mu + \sigma Z \sim N(\mu, \sigma^2)$
+  \item $Y \sim N(\mu, \sigma^2) \Rightarrow e^Y \sim LogNormal(\mu, \sigma^2)$
+\end{enumerate}
+```
+
+```{example, transbeta, name = "Generating Beta(a, b) using rgamma"}
+From Proposition \@ref(prp:trans1), we can generate $Beta(a,b)$ random numbers using $Gamma(a, 1)$ and $Gamma(b, 1)$.
+```
+
+```{r}
+trans_beta <- function(n, shape1, shape2) {
+  u <- rgamma(n, shape = shape1, rate = 1)
+  v <- rgamma(n, shape = shape2, rate = 1)
+  u / (u + v)
+}
+```
+
+```{r tbetafig, echo=FALSE, fig.cap="Beta(3,2) Random numbers from each function, including transformation method"}
+gen_beta2 <-
+  tibble(
+    ar_rand = ar_beta(1000, 3, 2),
+    tran = trans_beta(1000, 3, 2),
+    sam = rbeta(1000, 3, 2)
+  ) %>% 
+  gather(key = "den", value = "value")
+#---------------------------------------
+gg_curve(dbeta, from = 0, to = 1, args = list(shape1 = 3, shape2 = 2)) +
+  geom_histogram(
+    data = gen_beta2,
+    aes(x = value, y = ..density.., fill = den),
+    position = "identity",
+    bins = 30,
+    alpha = .3
+  ) +
+  scale_fill_discrete(
+    name = "random number",
+    labels = c("AR", "rbeta", "Transformation")
+  )
+```
+
+### Box-Muller transformation
+
+Denote that Gaussian cdf has no closed form of $F_X^{-1}$. Using polar coordiantes, we can generate Normal random numers.
+
+```{theorem, bmnorm, name = "Box-Muller transformation"}
+Let $U_1, U_2 \iid unif(0,1)$. Then
+
+$$
+\begin{cases}
+  Z_1 = \sqrt{-2 \ln U_2} \cos(2\pi U_1) \\
+  Z_2 = \sqrt{-2 \ln U_2} \sin(2\pi U_1)
+\end{cases}
+$$
+```
+
+```{proof}
+Write
+
+$$
+(Z_1, Z_2)^T \sim N\bigg( \begin{bmatrix}
+  0 \\
+  0
+\end{bmatrix}, \begin{bmatrix}
+  1 & 0 \\
+  0 & 1
+\end{bmatrix} \bigg)
+$$
+
+Then the joint pdf is given by
+
+$$f_{Z_1, Z_2}(x_1, x_2) = \frac{1}{2\pi}\exp\bigg(-\frac{x_1^2 + x_2^2}{2}\bigg)$$
+
+Consider polar coordiate transformation $(R, \theta)$: $x_1 = R\cos\theta$ and $x_2 = R\sin\theta$.
+
+Since it is also random vector,
+
+\begin{equation*}
+  \begin{split}
+    f_{R, \theta}(r, \theta) & = f_{Z_1, Z_2}(x_1, x_2)\lvert J \rvert \\
+    & = \frac{1}{2\pi}\exp\bigg(-\frac{x_1^2 + x_2^2}{2}\bigg)\left\lvert\begin{array}{cc}
+      \frac{\partial x_1}{\partial r} & \frac{\partial x_1}{\partial \theta} \\
+      \frac{\partial x_2}{\partial r} & \frac{\partial x_2}{\partial \theta}
+    \end{array}\right\rvert \\
+    & = \frac{1}{2\pi}\exp\bigg(-\frac{r^2}{2}\bigg)\left\lvert\begin{array}{cc}
+      \frac{\partial x_1}{\partial r} & \frac{\partial x_1}{\partial \theta} \\
+      \frac{\partial x_2}{\partial r} & \frac{\partial x_2}{\partial \theta}
+    \end{array}\right\rvert \\
+    & = \frac{r}{2\pi}\exp\bigg(-\frac{r^2}{2}\bigg)
+  \end{split}
+\end{equation*}
+
+Then each marginal density function can be computed as
+
+\begin{equation*}
+  \begin{split}
+    f_{\theta}(\theta) & = \int_0^\infty \frac{r}{2\pi}\exp\bigg(-\frac{r^2}{2}\bigg) dr \\
+    & = \frac{1}{2\pi} I_{(0, 2\pi)}(\theta) \\
+    & \stackrel{d}{=} unif(0, 2\pi)
+  \end{split}
+\end{equation*}
+
+\begin{equation*}
+  \begin{split}
+    f_R(r) & = \int_0^\theta \frac{r}{2\pi}\exp\bigg(-\frac{r^2}{2}\bigg) d\theta \\
+    & = r \exp\bigg(-\frac{r^2}{2}\bigg) I_{(0, \infty)}(r)
+  \end{split}
+\end{equation*}
+
+Thus,
+
+$$f_{R,\theta} = f_{\theta}f_R \Rightarrow R \ind \theta$$
+
+It follows from inverse transformation theorem that
+
+$$Z_1 = R\cos\theta = \sqrt{-2 \ln U_2} \cos(2\pi U_1)$$
+
+and that
+
+$$Z_2 = R\sin\theta = \sqrt{-2 \ln U_2} \sin(2\pi U_1)$$
+
+where $U_1, U_2 \iid unif(0, 1)$
+```
+
+\begin{algorithm}[H] \label{alg:algbm}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    $U_1, U_2 \iid unif(0,1)$\;
+    $z_{2i - 1} = \sqrt{-2\ln U_2}\cos(2\pi U_1)$\;
+    $z_{2i} = \sqrt{-2\ln U_2}\sin(2\pi U_1)$\;
+  }
+  \Output{$z_1, \ldots, z_n \iid N(0,1)$}
+  \caption{Box-Muller transformation}
+\end{algorithm}
+
+```{r}
+bmnorm <- function(n, mean = 0, sd = 1) {
+  n_bm <- ceiling(n / 2)
+  tibble(
+    theta = runif(n = n_bm, max = 2 * pi),
+    R = sqrt(-2 * log(runif(n_bm)))
+  ) %>% 
+    mutate(
+      x1 = R * cos(theta),
+      x2 = R * sin(theta)
+    ) %>% 
+    gather(x1, x2, key = "key", value = "value") %>% 
+    mutate(value = mean + sd * value) %>% 
+    select(value) %>% 
+    pull()
+}
+```
+
+```{r boxnorm, fig.cap="Normal random numbers by Box-Muller transformation"}
+gg_curve(dnorm, from = 0, to = 6, args = list(mean = 3, sd = 1)) +
+  geom_histogram(
+    data = tibble(x = bmnorm(1000, mean = 3, sd = 1)),
+    aes(x = x, y = ..density..),
+    bins = 30,
+    fill = gg_hcl(1),
+    alpha = .5
+  )
+```
+
+### Discrete
+
+```{proposition, trans2, name = "Transformation between discrete random variables"}
+Relation between random variables enables generating target numbers from the others.
+
+\begin{enumerate}
+  \item $Y_1, \ldots, Y_n \iid Bernoulli(p) \Rightarrow \sum Y_i^2 \sim B(n, p)$
+  \item $U \sim unif(0,1) \Rightarrow X_i = \lfloor mU \rfloor + 1$
+  \item $X = \text{the number of events occurring in 1 unit of time} \sim Poisson(\lambda)$
+\end{enumerate}
+```
+
+```{proposition, trans3, name = "Bernoulli process"}
+Let $X_1, X_2, \ldots \iid Bernoulli(p)$.
+
+\begin{enumerate}
+  \item $N = \text{the number of trials until we see a success, i.e.} X_N = 1 \Rightarrow N \sim Geo(p)$
+  \item $Y_1, \ldots, Y_r \iid Geo(p) \Rightarrow \sum\limits_{i = 1}^r Y_i = \text{the number of trials until we see r successes} \sim NegBin(r, p)$
+\end{enumerate}
+```
+
+```{proposition, trans4, name = "Count process"}
+Let $Y_1, Y_2, \ldots \iid Exp(\lambda)$ be interarrival times. Then
+
+$$X = \max\{ n : \sum Y_i \le 1 \} = \text{the number of events occurring in 1 unit of time} \sim Poisson(\lambda)$$
+```
+
 
 ## Sums and Mixtures
 
-### Sums
+### Convolutions
 
-### Convolutions and mixtures
+```{definition, conv, name = "Convolution"}
+Let $X_1, \ldots, X_n$ be independent and identically distributed and let $S = X_1 + \cdots X_n$. Then the distribution of $S$ is called the $n$-fold convolution of $X$ and denoted by $F_X^{*(n)}$.
+```
+
+In the last chapter, we have already seen a bunch of random variables that can be generated by summing the other.
+
+```{example, rchi, name = "Chisquare"}
+Let $Z_1, \ldots, Z_n \iid N(0, 1)$. We know from Proposition \@ref(prp:trans1) that
+
+$$V = \sum_{i = 1}^n Z_i \sim \chi^2(n)$$
+```
+
+Building a `n` $\times$ `df` matrix can be a good strategy here. After that, `rowSums` or `colSums` ends the generation work.
+
+```{r}
+conv_chisq <- function(n, df) {
+  X <-
+    matrix(rnorm(n * df), nrow = n, ncol = df)^2
+  rowSums(X)
+}
+```
+
+```{r convchi, fig.cap="$\\chi^2$ random numbers from Normal sums"}
+gg_curve(dchisq, from = 0, to = 15, args = list(df = 5)) +
+  geom_histogram(
+    data = tibble(x = conv_chisq(1000, df = 5)),
+    aes(x = x, y = ..density..),
+    bins = 30,
+    fill = gg_hcl(1),
+    alpha = .5
+  )
+```
+
+### Mixtures
+
+```{definition, mixprob1, name = "Discrete mixture"}
+A random variable $X$ is a discrete mixture if the distribution of $X$ is a weighted sum
+
+$$F_X(x) = \sum \theta_i F_{X_i}(x)$$
+
+where constants $\theta_i$ are called the mixing weights or mixing probabilities.
+```
+
+```{definition, mixprob2, name = "Continuous mixture"}
+A random variable $X$ is a continuous mixture if the distribution of $X$ is a weighted sum
+
+$$F_X(x) = \int_\infty^\infty F_{X \mid Y = y} (x) f_Y(y) dy$$
+```
+
+
+```{example, gaussmix, name = "Mixture of several Normal distributions"}
+Generate a random sample of size $1000$ from a normal location mixture with components of the mixture $N(0,1)$ and $N(3,1)$, i.e.
+
+$$F_X = p_1 F_{X_1} + (1 - p_1) F_{X_2}$$
+```
+
+For easy combining samples, we use `foreach` library.
 
 ```{r, message=FALSE}
 library(foreach)
 ```
+
+As in A-R method, Bernoullin splitting would be used.
+
+$$
+\begin{cases}
+  F_{X_1} & U > p_1 \\
+  F_{X_2} & \text{otherwise}
+\end{cases}
+$$
 
 ```{r}
 mix_norm <- function(n, p1, mean1, sd1, mean2, sd2) {
@@ -618,6 +879,8 @@ mix_norm <- function(n, p1, mean1, sd1, mean2, sd2) {
   k * x1 + (1 - k) * x2
 }
 ```
+
+Try various $p_1$, from 0.1 to 1
 
 ```{r}
 mixture <-
@@ -629,7 +892,7 @@ mixture <-
   }
 ```
 
-```{r}
+```{r bimodal, fig.cap="Mixture normal random number for each mixing probability"}
 mixture %>% 
   ggplot(aes(x = value, colour = factor(key))) +
   stat_density(geom = "line", position = "identity") +
@@ -643,8 +906,179 @@ mixture %>%
 
 ## Multivariate Normal Random Vector
 
+```{definition, mvn, name = "Multivariate normal random vector"}
+A random vector $\mathbf{X} = (X_1, \ldots, X_p)^T$ follows multivariate normal distribution if
+
+$$f(\mathbf{x}) = \frac{1}{(2\pi)^{\frac{p}{2}\lvert \Sigma \rvert}} \exp \bigg[ -\frac{1}{2}(\mathbf{x} \boldsymbol\mu)^T \Sigma^{-1}(\mathbf{x} \boldsymbol\mu) \bigg]$$
+```
+
+```{remark}
+Let $\mathbf{Z} \sim MVN(\mathbf{0}, I)$. Then
+
+\begin{equation}
+  \Sigma^{\frac{1}{2}}\mathbf{Z} + \boldsymbol\mu \sim MVN(\boldsymbol\mu, \Sigma)
+  (\#eq:stdmvn)
+\end{equation}
+```
+
+From this remark, we get to generate *standard normal random vector*.
+
+### Spectral decomposition method
+
+Note that covariance matrix is symmetric.
+
+```{theorem, covspec, name = "Spectral decomposition"}
+Suppose that $\Sigma$ is symmetric. Then
+
+$$\Sigma = P \Lambda P^T$$
+
+where $(\mathbf{v}_j, \lambda_j)$ corresponding eigenvector-eigenvalue
+
+$$
+\begin{cases}
+  P = \begin{bmatrix} \mathbf{v}_1 & \cdots & \mathbf{v}_p \end{bmatrix} \in \R^{p \times p} \:\text{orthogonal} \\
+  \Lambda = diag(\lambda_1, \ldots, \lambda_p)
+\end{cases}
+$$
+```
+
+```{corollary, specsqrt}
+Suppose that $\Sigma$ is symmetric. Then
+
+$$\Sigma^{\frac{1}{2}} = P \Lambda^{\frac{1}{2}} P^T$$
+
+where $\Lambda^{\frac{1}{2}} = diag(\sqrt{\lambda_1}, \ldots, \sqrt{\lambda_p})$
+```
+
+`eigen()` performs spectral decomposition. `$values` has eigenvalues and `$vectors` has eigenvectors. We first generate matrix that consists of standard normal random vector:
+
+$$
+\begin{bmatrix}
+  Z_{11} & Z_{12} & \cdots & Z_{1p} \\
+  Z_{21} & Z_{22} & \cdots & Z_{2p} \\
+  \vdots & \vdots & \vdots & \vdots \\
+  Z_{n1} & Z_{n2} & \cdots & Z_{np}
+\end{bmatrix}
+$$
+
+Denote that each observation is row. To use Equation \@ref(eq:stdmvn), we should multiply $\Sigma^{\frac{1}{2}}$ behind this matrix, not in front of. $\boldsymbol\mu$ matrix should be also made to matrix, in form of
+
+$$
+\begin{bmatrix}
+  \mu_{11} & \mu_{12} & \cdots & \mu_{1p} \\
+  \mu_{11} & \mu_{22} & \cdots & \mu_{1p} \\
+  \vdots & \vdots & \vdots & \vdots \\
+  \mu_{11} & Z_{n2} & \cdots & \mu_{1p}
+\end{bmatrix} \in \R^{n \times p}
+$$
+
+```{r}
+rmvn_eigen <- function(n, mu, sig) {
+  d <- length(mu)
+  ev <- eigen(sig, symmetric = TRUE)
+  lambda <- ev$values
+  P <- ev$vectors
+  sig2 <- P %*% diag(sqrt(lambda)) %*% t(P)
+  Z <- matrix(rnorm(n * d), nrow = n, ncol = d)
+  X <- Z %*% sig2 + matrix(mu, nrow = n, ncol = d, byrow = TRUE)
+  colnames(X) <- paste0("x", 1:d)
+  X %>% tbl_df()
+}
+```
+
+```{r}
+# mean vector -------------------------------
+mu <- c(0, 1, 2)
+# symmetric matrix --------------------------
+sig <- matrix(numeric(9), nrow = 3, ncol = 3)
+diag(sig) <- rep(1, 3)
+sig[lower.tri(sig)] <- c(-.5, .5, -.5) * 2
+sig <- (sig + t(sig)) / 2
+```
+
+Generate
+
+$$\mathbf{X}_i \sim MVN\bigg((`r mu`), `r sig`\bigg)$$
+
+```{r}
+(mvn3 <- rmvn_eigen(1000, mu = mu, sig = sig))
+```
+
+```{r mvneigen, fig.cap="Multivariate normal random vector - spectral decomposition method"}
+mvn3 %>% 
+  GGally::ggpairs(
+    lower = list(continuous = GGally::wrap(gg_scatter, size = 1))
+  )
+```
+
+### Singular value decomposition
+
+SVD can be said to be a kind of generalization of spectral decomposition. This method can be used for any matrix, i.e. non-symmetric matrix. For $\Sigma$, SVD and spectral decomposition is equivalent. However, SVD does not account for symmetric property, so this method is less efficient compared to spectral decomposition.
+
+```{r}
+rmvn_svd <- function(n, mu, sig) {
+  d <- length(mu)
+  S <- svd(sig)
+  sig2 <- S$u %*% diag(sqrt(S$d)) %*% t(S$v)
+  Z <- matrix(rnorm(n * d), nrow = n, ncol = d)
+  X <- Z %*% sig2 + matrix(mu, nrow = n, ncol = d, byrow = TRUE)
+  colnames(X) <- paste0("x", 1:d)
+  X %>% tbl_df()
+}
+```
+
+```{r mvnsvd, echo=FALSE, fig.cap="Multivariate normal random vector - svd"}
+rmvn_svd(1000, mu = mu, sig = sig) %>% 
+  GGally::ggpairs(
+    lower = list(continuous = GGally::wrap(gg_scatter, size = 1))
+  )
+```
+
+### Choleski decomposition
+
+```{theorem, covchol, name = "Cholesky decomposition"}
+Suppose that $\Sigma$ is symmetric and positive definite. Then
+
+$$\Sigma = Q^T Q$$
+
+where $Q$ is an upper triangular matrix.
+```
+
+```{corollary, mvnchol2}
+Suppose that $\Sigma$ is symmetric and positive definite. For cholesky decomposition \@ref(thm:mvnchol), define
+
+$$\Sigma^{\frac{1}{2}} = Q$$
+```
+
+`chol()` computes cholesky decomposition. In `R`, it gives upper triangular $Q$. Since some statements cholesky decomposition by $\Sigma = LL^T$ with lower triangular matrix, try not to confuse.
+
+```{r}
+rmvn_chol <- function(n, mu, sig) {
+  d <- length(mu)
+  sig2 <- chol(sig)
+  Z <- matrix(rnorm(n * d), nrow = n, ncol = d)
+  X <- Z %*% sig2 + matrix(mu, nrow = n, ncol = d, byrow = TRUE)
+  colnames(X) <- paste0("x", 1:d)
+  X %>% tbl_df()
+}
+```
+
+```{r mvnchol, echo=FALSE, fig.cap="Multivariate normal random vector - cholesky decomposition"}
+rmvn_chol(1000, mu = mu, sig = sig) %>% 
+  GGally::ggpairs(
+    lower = list(continuous = GGally::wrap(gg_scatter, size = 1))
+  )
+```
+
 
 ## Stochastic Processes
+
+```{definition, stoc, name = "Stochastic process"}
+A stochastic process is a collection $\{ X(t) : t \in T \}$ of random variables indexed by the set $T$. The index set $T$ could be discrete or continous.
+
+A State space is called te set of possible values that $X(t)$ can take.
+```
+
 
 ### Homogeneous poisson process
 

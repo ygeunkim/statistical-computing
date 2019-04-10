@@ -1,13 +1,12 @@
 --- 
 title: "R Lab for Statistical Computing"
 author: |
-  | Young-geun Kim
-  | Department of Statistics, SKKU
-  | \href{mailto: dudrms33@g.skku.edu}{dudrms33@g.skku.edu}
-date: "`r Sys.Date()`"
+  | [Young-geun Kim](https://github.com/ygeunkim)
+  | [Department of Statistics](https://stat.skku.edu/stat/index.jsp), [SKKU](https://www.skku.edu/skku/index.do)
+  | [dudrms33@g.skku.edu](mailto:dudrms33@g.skku.edu)
+date: "`r format(Sys.time(), '%d %b, %Y')`"
 site: bookdown::bookdown_site
 documentclass: book
-classoption: openany
 bibliography: [book.bib, packages.bib]
 biblio-style: apalike
 link-citations: yes
@@ -17,6 +16,12 @@ description: "This is a lab session for statistical computing."
 # Welcome {-}
 
 <img src="cover.png" width="250" height="375" alt="Cover image" align="right" style="margin: 0 1em 0 1em" /></a> Statistical computing mainly treats useful simulation methods.
+
+```{r, eval=FALSE}
+library(tidyverse)
+```
+
+`tidyverse` package family will be used in every chapter. Loading step is in `_common.R`, so it is not included in the text. Sometimes `data.table` library will be called for efficiency.
 
 ## Statistical Computing {-}
 
