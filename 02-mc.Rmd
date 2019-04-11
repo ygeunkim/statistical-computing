@@ -4,15 +4,25 @@
 
 Consider integration problem of a integrable function $g(x)$. We want to compute
 
-$$\int_a^b g(x) dx$$
+$$\theta \equiv \int_a^b g(x) dx$$
 
-For instance, $g(x) = e^{x^2}$
+<!-- For instance, $g(x) = e^{x^2}$ -->
 
-```{example, mcex}
-$$\int_0^1 e^{x^2} dx$$
+<!-- ```{example, mcex} -->
+<!-- $$\int_0^1 e^{x^2} dx$$ -->
+<!-- ``` -->
+
+<!-- It seems tricky to compute the integral \@ref(exm:mcex) analytically even though possible. So we implement *simulation* concept here, based on the following theorems. -->
+
+For instance, standard normal cdf.
+
+```{example, mcex, name = "Standard normal cdf"}
+Compute values for
+
+$$\Phi(x) = \int_{-\infty}^x \frac{1}{\sqrt{2\pi}}\exp\bigg(-\frac{t^2}{2}\bigg)dt$$
 ```
 
-It seems tricky to compute the integral \@ref(exm:mcex) analytically even though possible. So we implement *simulation* concept here, based on the following theorems.
+It might be impossible to compute this integral with hand. So we implement *simulation* concept here, based on the following theorems.
 
 ```{theorem, wlaw, name = "Weak Law of Large Numbers"}
 Suppose that $X_1, \ldots, X_n \iid (\mu, \sigma^2 < \infty)$. Then
@@ -36,92 +46,299 @@ $$\frac{1}{n}\sum_{i = 1}^n g(X_i) \stackrel{a.s.}{\rightarrow} g(\mu)$$
 
 ### Simple Monte Carlo estimator
 
-Suppose that we have a distribution $f(x)$. Consider
+```{theorem, mcint, name = "Monte Carlo Integration"}
+Consider integration \@ref(eq:muint). This can be approximated via appropriate pdf $f(x)$ by
+
+$$\hat\theta_M = \frac{1}{N} \sum_{i = 1}^N g(X_i)$$
+```
+
+Suppose that we have a distribution $f(x) = I_{spt g}(x)$, i.e. *uniform distribution*. Let $spt g = (a, b)$.
 
 \begin{equation}
-  I \equiv \int_{spt f} g(x)f(x) dx
+  \begin{split}
+    \theta & \equiv \int_{spt g} g(x) dx \\
+    & = \int_a^b g(x) dx \\
+    & = \int_0^1 g(a + (b - a)t)(b - a) dt \\
+    & \equiv \int_0^1 h(t) dt \\
+    & = \int_0^1 h(t) I_{(a, b)}(t) dt \\
+    & = E[h(U)] \qquad U \sim unif(0, 1)
+  \end{split}
   (\#eq:muint)
 \end{equation}
 
 By *the Strong law of large numbers* \@ref(thm:slaw),
 
-$$\frac{1}{n}\sum_{i = 1}^n g(X_i) \stackrel{a.s.}{\rightarrow} E\Big[g(X)\Big] = I$$
+$$\frac{1}{n}\sum_{i = 1}^n h(U_i) \stackrel{a.s.}{\rightarrow} E\Big[h(U)\Big] = \theta$$
 
-```{theorem, mcint, name = "Monte Carlo Integration"}
-Consider integration \@ref(eq:muint). This can be approximated via appropriate pdf $f(x)$ by
+where $U \sim unif(0, 1)$. Thus, what we have to do here are two things.
 
-$$\hat\theta_M = \frac{1}{M} \sum_{i = 1}^M g(X_i)$$
-```
+1. representing $g$ as $h$.
+2. generating lots of $U_i$
+
+<!-- Go back to Example \@ref(exm:mcex). -->
+
+<!-- ```{solution} -->
+<!-- \begin{equation*} -->
+<!--   \begin{split} -->
+<!--     \theta & \equiv \int_0^1 e^{x^2} dx \\ -->
+<!--     & = \int_0^1 \frac{e^{x^2}}{f(x)}f(x) dx \qquad f(x) = \frac{e^x}{e - 1} : pdf \\ -->
+<!--     & = \int_0^1 (e - 1)\exp(x^2 - x)f(x)dx \\ -->
+<!--     & \approx \frac{1}{M} \sum_{m = 1}^M (e - 1)\exp(X_m^2 - X_m) -->
+<!--   \end{split} -->
+<!-- \end{equation*} -->
+
+<!-- Then generate $X_1, \ldots, X_M \sim f(x)$. -->
+
+<!-- Let $F(X_1), \ldots, F(X_M) \iid unif(0, 1)$ where -->
+
+<!-- $$F(x) = \int_0^x f(t)dt = \frac{e^x - 1}{e - 1}$$ -->
+
+<!-- i.e. $U_1 = \frac{e^{X_1} - 1}{e - 1}, \ldots, U_M = \frac{e^{X_M} - 1}{e - 1} \iid unif(0, 1)$. Hence, -->
+
+<!-- $$X_m = \ln (1 + (e - 1) U_m)$$ -->
+<!-- ``` -->
+
+<!-- i.e. -->
+
+<!-- 1. $u_1, \ldots, u_M \iid unif(0,1)$ -->
+<!-- 2. $x_i = \ln (1 + (e - 1) u_i)$ -->
+
+<!-- ```{r} -->
+<!-- x <- log(1 + (exp(1) - 1) * runif(10000)) -->
+<!-- mean((exp(1) - 1) * exp(x^2 - x)) -->
+<!-- ``` -->
+
+<!-- This method is also helpful solving high-dimensional problem. -->
+
+<!-- ```{example, mcex2, name = "Higher dimensional problem"} -->
+<!-- $$\int_0^1 \int_0^1 e^{(x_1 + x_2)^2} dx_1 dx_2$$ -->
+<!-- ``` -->
+
+<!-- ```{solution} -->
+<!-- \begin{equation*} -->
+<!--   \begin{split} -->
+<!--     I & \equiv \int_0^1 \int_0^1 e^{(x_1 + x_2)^2} dx_1 dx_2 \\ -->
+<!--     & = \int_0^1\int_0^1 \frac{e^{(x_1 + x_2)^2}}{f(x_1, x_2)}f(x_1, x_2) dx_1dx_2 \qquad f(x) = \frac{e^{(x_1 + x_2)}}{(e - 1)^2} = \frac{e^{x_1}}{e - 1} + \frac{e^{x_2}}{e - 1} \\ -->
+<!--     & = \int_0^1\int_0^1 (e - 1)^2\exp((x_1 + x_2)^2 - x_1 - x_2)f(x_1, x_2)dx_1dx_2 \\ -->
+<!--     & \approx \frac{1}{M} \sum_{m = 1}^M (e - 1)^2\exp((X_{1m} + X_{2m})^2 - X_{1m} - X_{2m}) -->
+<!--   \end{split} -->
+<!-- \end{equation*} -->
+<!-- ``` -->
+
+<!-- Hence, -->
+
+<!-- 1. $u_{1m}, u_{2m} \sim unif(0,1), \quad m = 1, \ldots, M$ -->
+<!-- 2. $x_{jm} = \ln(1 + (e - 1)u_{jm}), \quad j = 1, 2, \quad m = 1, \ldots, M$ -->
+
+<!-- ```{r} -->
+<!-- tibble( -->
+<!--   x1 = log(1 + (exp(1) - 1) * runif(10000)), -->
+<!--   x2 = log(1 + (exp(1) - 1) * runif(10000)) -->
+<!-- ) %>%  -->
+<!--   summarise(int = mean((exp(1) - 1)^2 * exp((x1 + x2)^2 - x1 - x2))) -->
+<!-- ``` -->
 
 Go back to Example \@ref(exm:mcex).
 
+
 ```{solution}
+Case 1: $x > 0$
+
+Since $\Phi(x)$ is symmetry,
+
+$$\Phi(0) = \frac{1}{2}$$
+
+Fix $x > 0$. Let $y = \frac{t}{x}$ be a change of variable.
+
 \begin{equation*}
   \begin{split}
-    I & \equiv \int_0^1 e^{x^2} dx \\
-    & = \int_0^1 \frac{e^{x^2}}{f(x)}f(x) dx \qquad f(x) = \frac{e^x}{e - 1} : pdf \\
-    & = \int_0^1 (e - 1)\exp(x^2 - x)f(x)dx \\
-    & \approx \frac{1}{M} \sum_{m = 1}^M (e - 1)\exp(X_m^2 - X_m)
+    \int_0^x \exp\bigg(-\frac{t^2}{2}\bigg) dt & = \int_0^x x\exp\bigg(-\frac{t^2}{2}\bigg)\frac{I_{(0, x)}(t)}{x} dt \\
+    & \approx \frac{1}{N} \sum_{i = 1}^N x\exp\bigg(-\frac{U_i^2}{2}\bigg)
   \end{split}
 \end{equation*}
 
-Then generate $X_1, \ldots, X_M \sim f(x)$.
+with $U_1, \ldots, U_N \iid unif(0, x)$.
 
-Let $F(X_1), \ldots, F(X_M) \iid unif(0, 1)$ where
+Case 2: $x \le 0$
 
-$$F(x) = \int_0^x f(t)dt = \frac{e^x - 1}{e - 1}$$
-
-i.e. $U_1 = \frac{e^{X_1} - 1}{e - 1}, \ldots, U_M = \frac{e^{X_M} - 1}{e - 1} \iid unif(0, 1)$. Hence,
-
-$$X_m = \ln (1 + (e - 1) U_m)$$
-```
-
-i.e.
-
-1. $u_1, \ldots, u_M \iid unif(0,1)$
-2. $x_i = \ln (1 + (e - 1) u_i)$
-
-```{r}
-x <- log(1 + (exp(1) - 1) * runif(10000))
-mean((exp(1) - 1) * exp(x^2 - x))
-```
-
-This method is also helpful solving high-dimensional problem.
-
-```{example, mcex2, name = "Higher dimensional problem"}
-$$\int_0^1 \int_0^1 e^{(x_1 + x_2)^2} dx_1 dx_2$$
-```
-
-```{solution}
-\begin{equation*}
-  \begin{split}
-    I & \equiv \int_0^1 \int_0^1 e^{(x_1 + x_2)^2} dx_1 dx_2 \\
-    & = \int_0^1\int_0^1 \frac{e^{(x_1 + x_2)^2}}{f(x_1, x_2)}f(x_1, x_2) dx_1dx_2 \qquad f(x) = \frac{e^{(x_1 + x_2)}}{(e - 1)^2} = \frac{e^{x_1}}{e - 1} + \frac{e^{x_2}}{e - 1} \\
-    & = \int_0^1\int_0^1 (e - 1)^2\exp((x_1 + x_2)^2 - x_1 - x_2)f(x_1, x_2)dx_1dx_2 \\
-    & \approx \frac{1}{M} \sum_{m = 1}^M (e - 1)^2\exp((X_{1m} + X_{2m})^2 - X_{1m} - X_{2m})
-  \end{split}
-\end{equation*}
-```
+Recall that $\Phi(x)$ is symmetry.
 
 Hence,
 
-1. $u_{1m}, u_{2m} \sim unif(0,1), \quad m = 1, \ldots, M$
-2. $x_{jm} = \ln(1 + (e - 1)u_{jm}), \quad j = 1, 2, \quad m = 1, \ldots, M$
-
-```{r}
-tibble(
-  x1 = log(1 + (exp(1) - 1) * runif(10000)),
-  x2 = log(1 + (exp(1) - 1) * runif(10000))
-) %>% 
-  summarise(int = mean((exp(1) - 1)^2 * exp((x1 + x2)^2 - x1 - x2)))
+$$
+\hat\Phi(x) = \begin{cases}
+  \frac{1}{\sqrt{2\pi}} \frac{1}{N} \sum_{i = 1}^N x\exp\bigg(-\frac{U_i^2}{2}\bigg) + \frac{1}{2} \equiv \hat\theta(x) & x \ge 0 \\
+  1 - \hat\theta(-x) & x < 0
+\end{cases}
+$$
 ```
 
-### Standard error
+```{r}
+phihat <- function(x, y) {
+  yi <- abs(y)
+  theta <- mean(yi * exp(-x^2 / 2)) / sqrt(2 * pi) + .5
+  ifelse(y >= 0, theta, 1 - theta)
+}
+```
+
+Then compute $\hat\Phi(x)$ for various $x$ values.
+
+```{r}
+phi_simul <- foreach(y = seq(.1, 2.5, length.out = 10), .combine = bind_rows) %do% {
+  tibble(
+    x = y,
+    phi = pnorm(y),
+    Phihat = 
+      tibble(x = runif(10000, max = y)) %>% 
+      summarise(cdf = phihat(x, y = y)) %>% 
+      pull()
+  )
+}
+```
+
+```{r, echo=FALSE}
+knitr::kable(phi_simul, col.names = c("x", "pnorm", "mc"))
+```
+
+
+### Hit-or-Miss Monte Carlo
+
+Hit-or-Miss approach is another way to evaluate integrals.
+
+```{example, estpi, name = "Estimation of $\\pi$"}
+Consider a circle in $\R$ coordinate.
+
+$$x^2 + y^2 = 1$$
+
+Since $y = \sqrt{1 - x^2}$,
+
+\begin{equation}
+  \int_0^1 \sqrt{1 - t^2} dt = \frac{\pi}{4}
+  (\#eq:mcpi)
+\end{equation}
+```
+
+By estimating Equation \@ref(eq:mcpi), we can estimate $\pi$, i.e.
+
+$$\pi = 4 \int_0^1 \sqrt{1 - t^2} dt$$
+
+Simple MC integration can also be used.
+
+\begin{equation*}
+  \begin{split}
+    \int_0^1 \sqrt{1 - t^2} dt & = \int_0^1 \sqrt{1 - t^2} I_{(0,1)}(t) dt \\
+    & \approx \frac{1}{N} \sum_{i = 1}^N \sqrt{1 - U_i^2}
+  \end{split}
+\end{equation*}
+
+```{r}
+circ <- function(x) {
+  4 * sqrt(1 - x^2)
+}
+```
+
+```{r}
+tibble(x = runif(10000)) %>% 
+  summarise(mc_pi = mean(circ(x)))
+```
+
+
+On the other way, hit-or-miss MC method applies geometric probability.
+
+```{r hmmc, echo=FALSE, fig.cap="Hit-or-Miss"}
+tibble(x = seq(0, 1, by = .01)) %>% 
+  mutate(y = sqrt(1 - x^2)) %>% 
+  ggplot(aes(x, y)) +
+  geom_path() +
+  geom_ribbon(aes(ymin = 0, ymax = 1), alpha = .3) +
+  geom_area(fill = gg_hcl(1), alpha = .5)
+```
+
+See Figure \@ref(fig:hmmc). From each coordinate, generate
+
+- $X_i \iid unif(0,1)$
+- $Y_i \iid unif(0,1)$
+
+Then the proportion of $Y_i \le \sqrt{1 - X_i^2}$ estimates $\frac{\pi}{4}$.
+
+```{r}
+tibble(x = runif(10000), y = runif(10000)) %>% 
+  summarise(hitormiss = mean(y <= sqrt(1 - x^2)) * 4)
+```
 
 
 ## Variance and Efficiency
 
+We have seen two apporoaches doing the same task. Now we want to *evaluate them*. Denote that simple Monte Carlo integration \@ref(thm:mcint) is estimating the *expected value of some random variable*. Proportion, which approximates probability is expected value of identity function.
+
+The common statistic that can evaluate estimators expected value might be their variances.
+
 ### Variance
+
+Note that $Var(\overline{g(X)}) = \frac{Var(g(X))}{N}$. This property is one of estimating variance of $\hat\theta$. However, this *variance of sample mean* is used in situation when we are in sample limitation situation. Now, we can generate samples as many as we want to. So we try another approach: *parametric bootstrap*.
+
+```{r mcintvar, echo=FALSE, fig.cap="Empircal distribution of $\\hat\\theta$"}
+knitr::include_graphics("images/mcint.png")
+```
+
+See Figure \@ref(fig:mcintvar). If we estimate $E\Big[g(U \sim unif(a, b))\Big]$, we can get $\theta$. Generate $M$ samples $\{ U_1^{(j)}, \ldots, U_N^{(j)} \}, j = 1, \ldots M$ from this $U \sim unif(a, b)$. In each sample, calculate MC estimates $\hat\theta^{(j)}$. Now we have $M$ MC estimates $\hat\theta$. This gives empirical distribution of $\hat\theta$. By *drawing a histogram*, we can see the outline.
+
+\begin{algorithm}[H] \label{alg:algmcint}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$\theta = \int_a^b g(x) dx$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $U_1^{(m)}, \ldots, U_N^{(m)} \iid unif(a, b)$ \;
+    Compute $\hat\theta^{(j)} = \frac{(b - a)}{N} \sum g(U_i^{(j)})$\;
+  }
+  $\bar{\hat\theta} = \frac{1}{M} \sum \hat\theta^{(j)}$\;
+  $\widehat{Var}(\hat\theta) = \frac{1}{M - 1} \sum (\hat\theta^{(j)} - \bar{\hat\theta})^2$\;
+  \Output{$\widehat{Var}(\hat\theta)$}
+  \caption{Variance of $\hat\theta$}
+\end{algorithm}
+
+Since we have to generate large size of data, `data.table` package will be used.
+
+```{r, eval=FALSE}
+library(data.table)
+```
+
+Group operation can be used. Additional column (`sam`) would indicate group, and for each group MC operation would be processed. The following is the function generating `data.table` before group operation.
+
+```{r}
+mc_data <- function(rand, N = 10000, M = 1000, char = "s", ...) {
+  data.table(
+    u = rand(n = N * M, ...),
+    sam = gl(M, N, labels = paste0("s", 1:M))
+  )
+}
+```
+
+
+```{r}
+pi_mc <-
+  mc_data(runif)[,
+                 .(mc_pi = mean(circ(u))),
+                 by = sam]
+```
+
+
+```{r smchis, fig.cap="Empirical distribution of $\\hat\\pi$ by simple MC"}
+pi_mc %>% 
+  ggplot(aes(x = mc_pi)) +
+  geom_histogram(bins = 30, col = gg_hcl(1), alpha = .7) +
+  xlab(expression(pi)) +
+  geom_vline(xintercept = pi, col = gg_hcl(2)[2])
+```
+
+As in Algorighm $\ref{alg:algmcint}$, we can compute the variance as below.
+
+```{r}
+pi_mc[,
+      .(variance = var(mc_pi))]
+```
+
 
 ### Efficiency
 

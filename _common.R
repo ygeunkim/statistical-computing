@@ -14,6 +14,8 @@ knitr::opts_chunk$set(
 library(tidyverse)
 # data.table ----------------------------------
 library(data.table)
+# useful looping construct --------------------
+library(foreach)
 # tools for r markdown ------------------------
 library(rmdtool)
 # assistant tools for ggplot ------------------

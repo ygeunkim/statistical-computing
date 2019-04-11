@@ -858,7 +858,7 @@ $$F_X = p_1 F_{X_1} + (1 - p_1) F_{X_2}$$
 
 For easy combining samples, we use `foreach` library.
 
-```{r, message=FALSE}
+```{r, eval=FALSE}
 library(foreach)
 ```
 
@@ -1045,7 +1045,7 @@ where $Q$ is an upper triangular matrix.
 ```
 
 ```{corollary, mvnchol2}
-Suppose that $\Sigma$ is symmetric and positive definite. For cholesky decomposition \@ref(thm:mvnchol), define
+Suppose that $\Sigma$ is symmetric and positive definite. For cholesky decomposition \@ref(thm:covchol), define
 
 $$\Sigma^{\frac{1}{2}} = Q$$
 ```

@@ -1384,7 +1384,7 @@ where \(Q\) is an upper triangular matrix.
 \EndKnitrBlock{theorem}
 
 \BeginKnitrBlock{corollary}
-\protect\hypertarget{cor:mvnchol2}{}{\label{cor:mvnchol2} }Suppose that \(\Sigma\) is symmetric and positive definite. For cholesky decomposition \ref{thm:mvnchol}, define
+\protect\hypertarget{cor:mvnchol2}{}{\label{cor:mvnchol2} }Suppose that \(\Sigma\) is symmetric and positive definite. For cholesky decomposition \ref{thm:covchol}, define
 
 \[\Sigma^{\frac{1}{2}} = Q\]
 \EndKnitrBlock{corollary}
@@ -1439,15 +1439,17 @@ A State space is called te set of possible values that \(X(t)\) can take.
 
 Consider integration problem of a integrable function \(g(x)\). We want to compute
 
-\[\int_a^b g(x) dx\]
+\[\theta \equiv \int_a^b g(x) dx\]
 
-For instance, \(g(x) = e^{x^2}\)
+For instance, standard normal cdf.
 
-\BeginKnitrBlock{example}
-\protect\hypertarget{exm:mcex}{}{\label{exm:mcex} }\[\int_0^1 e^{x^2} dx\]
+\BeginKnitrBlock{example}[Standard normal cdf]
+\protect\hypertarget{exm:mcex}{}{\label{exm:mcex} \iffalse (Standard normal cdf) \fi{} }Compute values for
+
+\[\Phi(x) = \int_{-\infty}^x \frac{1}{\sqrt{2\pi}}\exp\bigg(-\frac{t^2}{2}\bigg)dt\]
 \EndKnitrBlock{example}
 
-It seems tricky to compute the integral \ref{exm:mcex} analytically even though possible. So we implement \emph{simulation} concept here, based on the following theorems.
+It might be impossible to compute this integral with hand. So we implement \emph{simulation} concept here, based on the following theorems.
 
 \BeginKnitrBlock{theorem}[Weak Law of Large Numbers]
 \protect\hypertarget{thm:wlaw}{}{\label{thm:wlaw} \iffalse (Weak Law of Large Numbers) \fi{} }Suppose that \(X_1, \ldots, X_n \iid (\mu, \sigma^2 < \infty)\). Then
@@ -1472,115 +1474,309 @@ Let \(g\) be a measurable function. Then
 \hypertarget{simple-monte-carlo-estimator}{%
 \subsection{Simple Monte Carlo estimator}\label{simple-monte-carlo-estimator}}
 
-Suppose that we have a distribution \(f(x)\). Consider
+\BeginKnitrBlock{theorem}[Monte Carlo Integration]
+\protect\hypertarget{thm:mcint}{}{\label{thm:mcint} \iffalse (Monte Carlo Integration) \fi{} }Consider integration \eqref{eq:muint}. This can be approximated via appropriate pdf \(f(x)\) by
+
+\[\hat\theta_M = \frac{1}{N} \sum_{i = 1}^N g(X_i)\]
+\EndKnitrBlock{theorem}
+
+Suppose that we have a distribution \(f(x) = I_{spt g}(x)\), i.e.~\emph{uniform distribution}. Let \(spt g = (a, b)\).
 
 \begin{equation}
-  I \equiv \int_{spt f} g(x)f(x) dx
+  \begin{split}
+    \theta & \equiv \int_{spt g} g(x) dx \\
+    & = \int_a^b g(x) dx \\
+    & = \int_0^1 g(a + (b - a)t)(b - a) dt \\
+    & \equiv \int_0^1 h(t) dt \\
+    & = \int_0^1 h(t) I_{(a, b)}(t) dt \\
+    & = E[h(U)] \qquad U \sim unif(0, 1)
+  \end{split}
   \label{eq:muint}
 \end{equation}
 
 By \emph{the Strong law of large numbers} \ref{thm:slaw},
 
-\[\frac{1}{n}\sum_{i = 1}^n g(X_i) \stackrel{a.s.}{\rightarrow} E\Big[g(X)\Big] = I\]
+\[\frac{1}{n}\sum_{i = 1}^n h(U_i) \stackrel{a.s.}{\rightarrow} E\Big[h(U)\Big] = \theta\]
 
-\BeginKnitrBlock{theorem}[Monte Carlo Integration]
-\protect\hypertarget{thm:mcint}{}{\label{thm:mcint} \iffalse (Monte Carlo Integration) \fi{} }Consider integration \eqref{eq:muint}. This can be approximated via appropriate pdf \(f(x)\) by
+where \(U \sim unif(0, 1)\). Thus, what we have to do here are two things.
 
-\[\hat\theta_M = \frac{1}{M} \sum_{i = 1}^M g(X_i)\]
-\EndKnitrBlock{theorem}
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  representing \(g\) as \(h\).
+\item
+  generating lots of \(U_i\)
+\end{enumerate}
 
 Go back to Example \ref{exm:mcex}.
 
 \BeginKnitrBlock{solution}
-\iffalse{} {Solution. } \fi{}\begin{equation*}
+\iffalse{} {Solution. } \fi{}Case 1: \(x > 0\)
+
+Since \(\Phi(x)\) is symmetry,
+
+\[\Phi(0) = \frac{1}{2}\]
+
+Fix \(x > 0\). Let \(y = \frac{t}{x}\) be a change of variable.
+
+\begin{equation*}
   \begin{split}
-    I & \equiv \int_0^1 e^{x^2} dx \\
-    & = \int_0^1 \frac{e^{x^2}}{f(x)}f(x) dx \qquad f(x) = \frac{e^x}{e - 1} : pdf \\
-    & = \int_0^1 (e - 1)\exp(x^2 - x)f(x)dx \\
-    & \approx \frac{1}{M} \sum_{m = 1}^M (e - 1)\exp(X_m^2 - X_m)
+    \int_0^x \exp\bigg(-\frac{t^2}{2}\bigg) dt & = \int_0^x x\exp\bigg(-\frac{t^2}{2}\bigg)\frac{I_{(0, x)}(t)}{x} dt \\
+    & \approx \frac{1}{N} \sum_{i = 1}^N x\exp\bigg(-\frac{U_i^2}{2}\bigg)
   \end{split}
 \end{equation*}
 
-Then generate \(X_1, \ldots, X_M \sim f(x)\).
+with \(U_1, \ldots, U_N \iid unif(0, x)\).
 
-Let \(F(X_1), \ldots, F(X_M) \iid unif(0, 1)\) where
+Case 2: \(x \le 0\)
 
-\[F(x) = \int_0^x f(t)dt = \frac{e^x - 1}{e - 1}\]
-
-i.e.~\(U_1 = \frac{e^{X_1} - 1}{e - 1}, \ldots, U_M = \frac{e^{X_M} - 1}{e - 1} \iid unif(0, 1)\). Hence,
-
-\[X_m = \ln (1 + (e - 1) U_m)\]
-\EndKnitrBlock{solution}
-
-i.e.
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  \(u_1, \ldots, u_M \iid unif(0,1)\)
-\item
-  \(x_i = \ln (1 + (e - 1) u_i)\)
-\end{enumerate}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{x <-}\StringTok{ }\KeywordTok{log}\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{exp}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\KeywordTok{runif}\NormalTok{(}\DecValTok{10000}\NormalTok{))}
-\KeywordTok{mean}\NormalTok{((}\KeywordTok{exp}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\KeywordTok{exp}\NormalTok{(x}\OperatorTok{^}\DecValTok{2} \OperatorTok{-}\StringTok{ }\NormalTok{x))}
-\CommentTok{#> [1] 1.46}
-\end{Highlighting}
-\end{Shaded}
-
-This method is also helpful solving high-dimensional problem.
-
-\BeginKnitrBlock{example}[Higher dimensional problem]
-\protect\hypertarget{exm:mcex2}{}{\label{exm:mcex2} \iffalse (Higher dimensional problem) \fi{} }\[\int_0^1 \int_0^1 e^{(x_1 + x_2)^2} dx_1 dx_2\]
-\EndKnitrBlock{example}
-
-\BeginKnitrBlock{solution}
-\iffalse{} {Solution. } \fi{}\begin{equation*}
-  \begin{split}
-    I & \equiv \int_0^1 \int_0^1 e^{(x_1 + x_2)^2} dx_1 dx_2 \\
-    & = \int_0^1\int_0^1 \frac{e^{(x_1 + x_2)^2}}{f(x_1, x_2)}f(x_1, x_2) dx_1dx_2 \qquad f(x) = \frac{e^{(x_1 + x_2)}}{(e - 1)^2} = \frac{e^{x_1}}{e - 1} + \frac{e^{x_2}}{e - 1} \\
-    & = \int_0^1\int_0^1 (e - 1)^2\exp((x_1 + x_2)^2 - x_1 - x_2)f(x_1, x_2)dx_1dx_2 \\
-    & \approx \frac{1}{M} \sum_{m = 1}^M (e - 1)^2\exp((X_{1m} + X_{2m})^2 - X_{1m} - X_{2m})
-  \end{split}
-\end{equation*}
-\EndKnitrBlock{solution}
+Recall that \(\Phi(x)\) is symmetry.
 
 Hence,
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  \(u_{1m}, u_{2m} \sim unif(0,1), \quad m = 1, \ldots, M\)
-\item
-  \(x_{jm} = \ln(1 + (e - 1)u_{jm}), \quad j = 1, 2, \quad m = 1, \ldots, M\)
-\end{enumerate}
+\[
+\hat\Phi(x) = \begin{cases}
+  \frac{1}{\sqrt{2\pi}} \frac{1}{N} \sum_{i = 1}^N x\exp\bigg(-\frac{U_i^2}{2}\bigg) + \frac{1}{2} \equiv \hat\theta(x) & x \ge 0 \\
+  1 - \hat\theta(-x) & x < 0
+\end{cases}
+\]
+\EndKnitrBlock{solution}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{tibble}\NormalTok{(}
-  \DataTypeTok{x1 =} \KeywordTok{log}\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{exp}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\KeywordTok{runif}\NormalTok{(}\DecValTok{10000}\NormalTok{)),}
-  \DataTypeTok{x2 =} \KeywordTok{log}\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{(}\KeywordTok{exp}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\KeywordTok{runif}\NormalTok{(}\DecValTok{10000}\NormalTok{))}
-\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{int =} \KeywordTok{mean}\NormalTok{((}\KeywordTok{exp}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{)}\OperatorTok{^}\DecValTok{2} \OperatorTok{*}\StringTok{ }\KeywordTok{exp}\NormalTok{((x1 }\OperatorTok{+}\StringTok{ }\NormalTok{x2)}\OperatorTok{^}\DecValTok{2} \OperatorTok{-}\StringTok{ }\NormalTok{x1 }\OperatorTok{-}\StringTok{ }\NormalTok{x2)))}
-\CommentTok{#> # A tibble: 1 x 1}
-\CommentTok{#>     int}
-\CommentTok{#>   <dbl>}
-\CommentTok{#> 1  4.95}
+\NormalTok{phihat <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, y) \{}
+\NormalTok{  yi <-}\StringTok{ }\KeywordTok{abs}\NormalTok{(y)}
+\NormalTok{  theta <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(yi }\OperatorTok{*}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\NormalTok{x}\OperatorTok{^}\DecValTok{2} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{)) }\OperatorTok{/}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{pi) }\OperatorTok{+}\StringTok{ }\FloatTok{.5}
+  \KeywordTok{ifelse}\NormalTok{(y }\OperatorTok{>=}\StringTok{ }\DecValTok{0}\NormalTok{, theta, }\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{theta)}
+\NormalTok{\}}
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{standard-error}{%
-\subsection{Standard error}\label{standard-error}}
+Then compute \(\hat\Phi(x)\) for various \(x\) values.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{phi_simul <-}\StringTok{ }\KeywordTok{foreach}\NormalTok{(}\DataTypeTok{y =} \KeywordTok{seq}\NormalTok{(.}\DecValTok{1}\NormalTok{, }\FloatTok{2.5}\NormalTok{, }\DataTypeTok{length.out =} \DecValTok{10}\NormalTok{), }\DataTypeTok{.combine =}\NormalTok{ bind_rows) }\OperatorTok{%do%}\StringTok{ }\NormalTok{\{}
+  \KeywordTok{tibble}\NormalTok{(}
+    \DataTypeTok{x =}\NormalTok{ y,}
+    \DataTypeTok{phi =} \KeywordTok{pnorm}\NormalTok{(y),}
+    \DataTypeTok{Phihat =} 
+      \KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{runif}\NormalTok{(}\DecValTok{10000}\NormalTok{, }\DataTypeTok{max =}\NormalTok{ y)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{cdf =} \KeywordTok{phihat}\NormalTok{(x, }\DataTypeTok{y =}\NormalTok{ y)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{pull}\NormalTok{()}
+\NormalTok{  )}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{tabular}{r|r|r}
+\hline
+x & pnorm & mc\\
+\hline
+0.100 & 0.540 & 0.540\\
+\hline
+0.367 & 0.643 & 0.643\\
+\hline
+0.633 & 0.737 & 0.737\\
+\hline
+0.900 & 0.816 & 0.816\\
+\hline
+1.167 & 0.878 & 0.878\\
+\hline
+1.433 & 0.924 & 0.923\\
+\hline
+1.700 & 0.955 & 0.958\\
+\hline
+1.967 & 0.975 & 0.976\\
+\hline
+2.233 & 0.987 & 0.987\\
+\hline
+2.500 & 0.994 & 0.990\\
+\hline
+\end{tabular}
+
+\hypertarget{hit-or-miss-monte-carlo}{%
+\subsection{Hit-or-Miss Monte Carlo}\label{hit-or-miss-monte-carlo}}
+
+Hit-or-Miss approach is another way to evaluate integrals.
+
+\BeginKnitrBlock{example}[Estimation of $\pi$]
+\protect\hypertarget{exm:estpi}{}{\label{exm:estpi} \iffalse (Estimation of \(\pi\)) \fi{} }Consider a circle in \(\R\) coordinate.
+
+\[x^2 + y^2 = 1\]
+
+Since \(y = \sqrt{1 - x^2}\),
+
+\begin{equation}
+  \int_0^1 \sqrt{1 - t^2} dt = \frac{\pi}{4}
+  \label{eq:mcpi}
+\end{equation}
+\EndKnitrBlock{example}
+
+By estimating Equation \eqref{eq:mcpi}, we can estimate \(\pi\), i.e.
+
+\[\pi = 4 \int_0^1 \sqrt{1 - t^2} dt\]
+
+Simple MC integration can also be used.
+
+\begin{equation*}
+  \begin{split}
+    \int_0^1 \sqrt{1 - t^2} dt & = \int_0^1 \sqrt{1 - t^2} I_{(0,1)}(t) dt \\
+    & \approx \frac{1}{N} \sum_{i = 1}^N \sqrt{1 - U_i^2}
+  \end{split}
+\end{equation*}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{circ <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+  \DecValTok{4} \OperatorTok{*}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2}\NormalTok{)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{runif}\NormalTok{(}\DecValTok{10000}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{mc_pi =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{circ}\NormalTok{(x)))}
+\CommentTok{#> # A tibble: 1 x 1}
+\CommentTok{#>   mc_pi}
+\CommentTok{#>   <dbl>}
+\CommentTok{#> 1  3.14}
+\end{Highlighting}
+\end{Shaded}
+
+On the other way, hit-or-miss MC method applies geometric probability.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/hmmc-1} 
+
+}
+
+\caption{Hit-or-Miss}\label{fig:hmmc}
+\end{figure}
+
+See Figure \ref{fig:hmmc}. From each coordinate, generate
+
+\begin{itemize}
+\tightlist
+\item
+  \(X_i \iid unif(0,1)\)
+\item
+  \(Y_i \iid unif(0,1)\)
+\end{itemize}
+
+Then the proportion of \(Y_i \le \sqrt{1 - X_i^2}\) estimates \(\frac{\pi}{4}\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{runif}\NormalTok{(}\DecValTok{10000}\NormalTok{), }\DataTypeTok{y =} \KeywordTok{runif}\NormalTok{(}\DecValTok{10000}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{hitormiss =} \KeywordTok{mean}\NormalTok{(y }\OperatorTok{<=}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2}\NormalTok{)) }\OperatorTok{*}\StringTok{ }\DecValTok{4}\NormalTok{)}
+\CommentTok{#> # A tibble: 1 x 1}
+\CommentTok{#>   hitormiss}
+\CommentTok{#>       <dbl>}
+\CommentTok{#> 1      3.15}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{variance-and-efficiency}{%
 \section{Variance and Efficiency}\label{variance-and-efficiency}}
 
+We have seen two apporoaches doing the same task. Now we want to \emph{evaluate them}. Denote that simple Monte Carlo integration \ref{thm:mcint} is estimating the \emph{expected value of some random variable}. Proportion, which approximates probability is expected value of identity function.
+
+The common statistic that can evaluate estimators expected value might be their variances.
+
 \hypertarget{variance}{%
 \subsection{Variance}\label{variance}}
+
+Note that \(Var(\overline{g(X)}) = \frac{Var(g(X))}{N}\). This property is one of estimating variance of \(\hat\theta\). However, this \emph{variance of sample mean} is used in situation when we are in sample limitation situation. Now, we can generate samples as many as we want to. So we try another approach: \emph{parametric bootstrap}.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{images/mcint} 
+
+}
+
+\caption{Empircal distribution of $\hat\theta$}\label{fig:mcintvar}
+\end{figure}
+
+See Figure \ref{fig:mcintvar}. If we estimate \(E\Big[g(U \sim unif(a, b))\Big]\), we can get \(\theta\). Generate \(M\) samples \(\{ U_1^{(j)}, \ldots, U_N^{(j)} \}, j = 1, \ldots M\) from this \(U \sim unif(a, b)\). In each sample, calculate MC estimates \(\hat\theta^{(j)}\). Now we have \(M\) MC estimates \(\hat\theta\). This gives empirical distribution of \(\hat\theta\). By \emph{drawing a histogram}, we can see the outline.
+
+\begin{algorithm}[H] \label{alg:algmcint}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$\theta = \int_a^b g(x) dx$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $U_1^{(m)}, \ldots, U_N^{(m)} \iid unif(a, b)$ \;
+    Compute $\hat\theta^{(j)} = \frac{(b - a)}{N} \sum g(U_i^{(j)})$\;
+  }
+  $\bar{\hat\theta} = \frac{1}{M} \sum \hat\theta^{(j)}$\;
+  $\widehat{Var}(\hat\theta) = \frac{1}{M - 1} \sum (\hat\theta^{(j)} - \bar{\hat\theta})^2$\;
+  \Output{$\widehat{Var}(\hat\theta)$}
+  \caption{Variance of $\hat\theta$}
+\end{algorithm}
+
+Since we have to generate large size of data, \texttt{data.table} package will be used.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(data.table)}
+\end{Highlighting}
+\end{Shaded}
+
+Group operation can be used. Additional column (\texttt{sam}) would indicate group, and for each group MC operation would be processed. The following is the function generating \texttt{data.table} before group operation.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mc_data <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(rand, }\DataTypeTok{N =} \DecValTok{10000}\NormalTok{, }\DataTypeTok{M =} \DecValTok{1000}\NormalTok{, }\DataTypeTok{char =} \StringTok{"s"}\NormalTok{, ...) \{}
+  \KeywordTok{data.table}\NormalTok{(}
+    \DataTypeTok{u =} \KeywordTok{rand}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ N }\OperatorTok{*}\StringTok{ }\NormalTok{M, ...),}
+    \DataTypeTok{sam =} \KeywordTok{gl}\NormalTok{(M, N, }\DataTypeTok{labels =} \KeywordTok{paste0}\NormalTok{(}\StringTok{"s"}\NormalTok{, }\DecValTok{1}\OperatorTok{:}\NormalTok{M))}
+\NormalTok{  )}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pi_mc <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(runif)[,}
+\NormalTok{                 .(}\DataTypeTok{mc_pi =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{circ}\NormalTok{(u))),}
+\NormalTok{                 by =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pi_mc }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ mc_pi)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\DataTypeTok{col =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{), }\DataTypeTok{alpha =} \FloatTok{.7}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(pi)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_vline}\NormalTok{(}\DataTypeTok{xintercept =}\NormalTok{ pi, }\DataTypeTok{col =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{2}\NormalTok{)[}\DecValTok{2}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/smchis-1} 
+
+}
+
+\caption{Empirical distribution of $\hat\pi$ by simple MC}\label{fig:smchis}
+\end{figure}
+
+As in Algorighm \(\ref{alg:algmcint}\), we can compute the variance as below.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pi_mc[,}
+\NormalTok{      .(}\DataTypeTok{variance =} \KeywordTok{var}\NormalTok{(mc_pi))]}
+\CommentTok{#>    variance}
+\CommentTok{#> 1: 8.07e-05}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{efficiency-1}{%
 \subsection{Efficiency}\label{efficiency-1}}
