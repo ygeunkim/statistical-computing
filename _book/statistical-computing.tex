@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{11 Apr, 2019}
+    \date{12 Apr, 2019}
 
 \usepackage{booktabs}
 \usepackage{float}
@@ -1570,6 +1570,10 @@ Then compute \(\hat\Phi(x)\) for various \(x\) values.
 \end{Highlighting}
 \end{Shaded}
 
+\begin{table}[t]
+
+\caption{\label{tab:unnamed-chunk-35}Simple MC estimates of Normal cdf for each x}
+\centering
 \begin{tabular}{r|r|r}
 \hline
 x & pnorm & mc\\
@@ -1595,6 +1599,7 @@ x & pnorm & mc\\
 2.500 & 0.994 & 0.990\\
 \hline
 \end{tabular}
+\end{table}
 
 \hypertarget{hit-or-miss-monte-carlo}{%
 \subsection{Hit-or-Miss Monte Carlo}\label{hit-or-miss-monte-carlo}}
@@ -1744,7 +1749,7 @@ Group operation can be used. Additional column (\texttt{sam}) would indicate gro
 \NormalTok{pi_mc <-}
 \StringTok{  }\KeywordTok{mc_data}\NormalTok{(runif)[,}
 \NormalTok{                 .(}\DataTypeTok{mc_pi =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{circ}\NormalTok{(u))),}
-\NormalTok{                 by =}\StringTok{ }\NormalTok{sam]}
+\NormalTok{                 keyby =}\StringTok{ }\NormalTok{sam]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1771,15 +1776,86 @@ As in Algorighm \(\ref{alg:algmcint}\), we can compute the variance as below.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{pi_mc[,}
-\NormalTok{      .(}\DataTypeTok{variance =} \KeywordTok{var}\NormalTok{(mc_pi))]}
-\CommentTok{#>    variance}
-\CommentTok{#> 1: 8.07e-05}
+\NormalTok{(mc_var <-}
+\StringTok{  }\NormalTok{pi_mc[,}
+\NormalTok{        .(}\DataTypeTok{mc_variance =} \KeywordTok{var}\NormalTok{(mc_pi))])}
+\CommentTok{#>    mc_variance}
+\CommentTok{#> 1:    8.07e-05}
+\end{Highlighting}
+\end{Shaded}
+
+On the other hand, we need to generate two sets of random numbers for hit-or-miss MC.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pi_hit <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(runif)[}
+\NormalTok{    , u2 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\KeywordTok{runif}\NormalTok{(}\DecValTok{10000} \OperatorTok{*}\StringTok{ }\DecValTok{1000}\NormalTok{)}
+\NormalTok{  ][,}
+\NormalTok{    .(}\DataTypeTok{hitormiss =} \KeywordTok{mean}\NormalTok{(u2 }\OperatorTok{<=}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{u}\OperatorTok{^}\DecValTok{2}\NormalTok{)) }\OperatorTok{*}\StringTok{ }\DecValTok{4}\NormalTok{),}
+\NormalTok{    keyby =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pi_mc[pi_hit] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{melt}\NormalTok{(}\DataTypeTok{id.vars =} \StringTok{"sam"}\NormalTok{, }\DataTypeTok{variable.name =} \StringTok{"hat"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ value, }\DataTypeTok{fill =}\NormalTok{ hat)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{.5}\NormalTok{, }\DataTypeTok{position =} \StringTok{"identity"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(pi)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_vline}\NormalTok{(}\DataTypeTok{xintercept =}\NormalTok{ pi, }\DataTypeTok{col =} \KeywordTok{I}\NormalTok{(}\StringTok{"red"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_discrete}\NormalTok{(}
+    \DataTypeTok{name =} \StringTok{"MC"}\NormalTok{,}
+    \DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"Simple"}\NormalTok{, }\StringTok{"Hit-or-Miss"}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/simhit-1} 
+
+}
+
+\caption{Simple MC and Hit-or-Miss MC}\label{fig:simhit}
+\end{figure}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(hit_var <-}
+\StringTok{  }\NormalTok{pi_hit[,}
+\NormalTok{         .(}\DataTypeTok{hit_variance =} \KeywordTok{var}\NormalTok{(hitormiss))])}
+\CommentTok{#>    hit_variance}
+\CommentTok{#> 1:     0.000257}
 \end{Highlighting}
 \end{Shaded}
 
 \hypertarget{efficiency-1}{%
 \subsection{Efficiency}\label{efficiency-1}}
+
+See Figure \ref{fig:simhit}. It is obvious that Hit-or-Miss estimate produces larger variance than simple MC.
+
+\BeginKnitrBlock{definition}[Efficiency]
+\protect\hypertarget{def:eff}{}{\label{def:eff} \iffalse (Efficiency) \fi{} }Let \(\hat\theta_1\) and \(\hat\theta_2\) be two estimators for \(\theta\). Then \(\hat\theta_1\) is more efficient than \(\hat\theta_2\) if
+
+\[\frac{Var(\hat\theta_1)}{Var(\hat\theta_2)} < 1\]
+\EndKnitrBlock{definition}
+
+In other words, if \(\hat\theta_1\) has smaller variance than \(\hat\theta_2\), then \(\hat\theta_1\) is said to be efficient, which is preferable.
+
+\begin{table}[t]
+
+\caption{\label{tab:unnamed-chunk-45}Simple MC versus Hit-or-Miss}
+\centering
+\begin{tabular}{r|r|l}
+\hline
+SimpleMC & Hit-or-Miss & SimpleMCefficiency\\
+\hline
+0 & 0 & TRUE\\
+\hline
+\end{tabular}
+\end{table}
 
 \hypertarget{variance-reduction}{%
 \section{Variance Reduction}\label{variance-reduction}}

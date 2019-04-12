@@ -197,7 +197,7 @@ phi_simul <- foreach(y = seq(.1, 2.5, length.out = 10), .combine = bind_rows) %d
 ```
 
 ```{r, echo=FALSE}
-knitr::kable(phi_simul, col.names = c("x", "pnorm", "mc"))
+knitr::kable(phi_simul, col.names = c("x", "pnorm", "mc"), caption = "Simple MC estimates of Normal cdf for each x")
 ```
 
 
@@ -320,7 +320,7 @@ mc_data <- function(rand, N = 10000, M = 1000, char = "s", ...) {
 pi_mc <-
   mc_data(runif)[,
                  .(mc_pi = mean(circ(u))),
-                 by = sam]
+                 keyby = sam]
 ```
 
 
@@ -335,15 +335,68 @@ pi_mc %>%
 As in Algorighm $\ref{alg:algmcint}$, we can compute the variance as below.
 
 ```{r}
-pi_mc[,
-      .(variance = var(mc_pi))]
+(mc_var <-
+  pi_mc[,
+        .(mc_variance = var(mc_pi))])
+```
+
+On the other hand, we need to generate two sets of random numbers for hit-or-miss MC.
+
+```{r}
+pi_hit <-
+  mc_data(runif)[
+    , u2 := runif(10000 * 1000)
+  ][,
+    .(hitormiss = mean(u2 <= sqrt(1 - u^2)) * 4),
+    keyby = sam]
+```
+
+```{r simhit, fig.cap="Simple MC and Hit-or-Miss MC"}
+pi_mc[pi_hit] %>% 
+  melt(id.vars = "sam", variable.name = "hat") %>% 
+  ggplot(aes(x = value, fill = hat)) +
+  geom_histogram(bins = 30, alpha = .5, position = "identity") +
+  xlab(expression(pi)) +
+  geom_vline(xintercept = pi, col = I("red")) +
+  scale_fill_discrete(
+    name = "MC",
+    labels = c("Simple", "Hit-or-Miss")
+  )
+```
+
+```{r}
+(hit_var <-
+  pi_hit[,
+         .(hit_variance = var(hitormiss))])
 ```
 
 
 ### Efficiency
 
+See Figure \@ref(fig:simhit). It is obvious that Hit-or-Miss estimate produces larger variance than simple MC.
+
+```{definition, eff, name = "Efficiency"}
+Let $\hat\theta_1$ and $\hat\theta_2$ be two estimators for $\theta$. Then $\hat\theta_1$ is more efficient than $\hat\theta_2$ if
+
+$$\frac{Var(\hat\theta_1)}{Var(\hat\theta_2)} < 1$$
+```
+
+In other words, if $\hat\theta_1$ has smaller variance than $\hat\theta_2$, then $\hat\theta_1$ is said to be efficient, which is preferable.
+
+```{r, echo=FALSE}
+mc_var %>% 
+  bind_cols(hit_var) %>% 
+  mutate(mc_efficient = (mc_variance / hit_variance < 1)) %>% 
+  knitr::kable(
+    col.names = c("SimpleMC", "Hit-or-Miss", "SimpleMCefficiency"),
+    caption = "Simple MC versus Hit-or-Miss"
+  )
+```
+
 
 ## Variance Reduction
+
+
 
 
 ## Antithetic Variables
