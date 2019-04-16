@@ -5,7 +5,8 @@ rmd_files: [
   
   "01-rand.rmd",
   
-  "02-mc.rmd"
+  "02-mc.rmd",
+  "03-inf.rmd"
 ]
 before_chapter_script: "_common.R"
 language:

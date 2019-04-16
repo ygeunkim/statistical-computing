@@ -5,6 +5,13 @@ author: |
   | [Department of Statistics](https://stat.skku.edu/stat/index.jsp), [SKKU](https://www.skku.edu/skku/index.do)
   | [dudrms33@g.skku.edu](mailto:dudrms33@g.skku.edu)
 date: "`r format(Sys.time(), '%d %b, %Y')`"
+include-before:
+  - \newcommand{\iid}{\stackrel{iid}{\sim}}
+  - \newcommand{\indep}{\stackrel{indep}{\sim}}
+  - \newcommand{\hsim}{\stackrel{H_0}{\sim}}
+  - \newcommand{\ind}{\perp\!\!\!\perp}
+  - \newcommand{\R}{\mathbb{R}}
+  - $\DeclareMathOperator*{\argmin}{argmin}$
 site: bookdown::bookdown_site
 documentclass: book
 bibliography: [book.bib, packages.bib]

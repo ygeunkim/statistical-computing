@@ -148,7 +148,7 @@ Since $\Phi(x)$ is symmetry,
 
 $$\Phi(0) = \frac{1}{2}$$
 
-Fix $x > 0$. Let $y = \frac{t}{x}$ be a change of variable.
+Fix $x > 0$.
 
 \begin{equation*}
   \begin{split}
@@ -275,7 +275,21 @@ The common statistic that can evaluate estimators expected value might be their 
 
 ### Variance
 
-Note that $Var(\overline{g(X)}) = \frac{Var(g(X))}{N}$. This property is one of estimating variance of $\hat\theta$. However, this *variance of sample mean* is used in situation when we are in sample limitation situation. Now, we can generate samples as many as we want to. So we try another approach: *parametric bootstrap*.
+Note that variance of sample mean is $Var(\overline{g(X)}) = \frac{Var(g(X))}{N}$. This property is one of estimating variance of $\hat\theta$.
+
+\begin{equation}
+  \widehat{Var}(\hat\theta) = \frac{1}{N}\bigg( \frac{1}{N} \sum_{i = 1}^N (g(X_i) - \overline{g(X_i)}) \bigg) = \frac{1}{N^2} \sum_{i = 1}^N (g(X_i) - \overline{g(X_i)})
+  (\#eq:mcsamvar)
+\end{equation}
+
+For example,
+
+```{r}
+tibble(x = runif(10000)) %>% 
+  summarise(mc_pi = var(circ(x)) / 10000)
+```
+
+However, this *variance of sample mean* is used in situation when we are in sample limitation situation. We do not have to stick to this. Now, Generating samples as many as we want is possible. So we try another approach: *parametric bootstrap*.
 
 ```{r mcintvar, echo=FALSE, fig.cap="Empircal distribution of $\\hat\\theta$"}
 knitr::include_graphics("images/mcint.png")
@@ -370,7 +384,6 @@ pi_mc[pi_hit] %>%
          .(hit_variance = var(hitormiss))])
 ```
 
-
 ### Efficiency
 
 See Figure \@ref(fig:simhit). It is obvious that Hit-or-Miss estimate produces larger variance than simple MC.
@@ -396,13 +409,136 @@ mc_var %>%
 
 ## Variance Reduction
 
+Consider Equation \@ref(eq:mcsamvar) based on $Var(\hat\theta) = \frac{\sigma^2}{N}$. This variance can always reduced by adding $N$. But we want to reduce variance less computationally.
+
+### Antithetic Variables
+
+Consider correlated random variables $U_1$ and $U_2$. Then we have
+
+$$Var\bigg( \frac{U_1 + U_2}{2} \bigg) = \frac{1}{4}\Big( Var(U_1) +  Var(U_2) + 2Cov(U_1, U_2)\Big)$$
+
+See the last term $Cov(U_1, U_2)$. If we generate $U_{i1}$ and $U_{i2}$ negatively correlated, we can get reduced variance than previous i.i.d. sample
+
+$$Var\bigg( \frac{U_1 + U_2}{2} \bigg) = \frac{1}{4}\Big( Var(U_1) +  Var(U_2)\Big)$$
+
+```{lemma, antiunif}
+$U$ and $1 - U$ are identically distributed, but *negatively correlated*.
+
+\begin{enumerate}
+  \item $U \sim unif(0,1) \Leftrightarrow 1 - U \sim unif(0,1)$
+  \item $Corr(U, 1 - U) = -1$
+\end{enumerate}
+```
+
+This is well-known property of uniform distribution. Instead of generating $N$ uniform numbers, try $\frac{N}{2}$ $U_i$ and make corresponding $\frac{N}{2}$ $1 - U_i$. This sequence becomes negatively correlated, so we can reduce the variance as mentioned.
+
+When can we replace previous numbers with these *antithetic variables*? We usually plug-in the numbers in some function $h$ to get Monte carlo integration. The thing is, our target is $h$, not $U$. $h(U)$ and $h(1 - U)$ should *still be negatively correlated*. Hence, $h$ should be *monotonic function*.
+
+```{corollary, antifun}
+If $g = g(X_1, \ldots, X_n)$ is monotone, then
+
+$$Y = g(F_X^{-1}(U_1), \ldots, F_X^{-1}(U_n))$$
+
+and
+
+$$Y^{\prime} = g(F_X^{-1}(1 - U_1), \ldots, F_X^{-1}(1 - U_n))$$
+
+are negatively correlated.
+```
+
+\begin{algorithm}[H] \label{alg:alganti}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$h: monotonic$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $U_{1,1}^{(m)}, \ldots, U_{\frac{N}{2},1}^{(m)} \iid unif(0, 1)$\;
+    Set $U_{i,2}^{(m)} := 1 - U_{i,1}^{(m)} \iid unif(0, 1)$\;
+    $\{U_{i}^{(m)}\}_1^N = \{ U_{1,1}^{(m)}, \ldots, U_{{\frac{N}{2}},2}^{(m)} \}$\;
+    $\hat\theta^{(j)} = \frac{1}{N} \sum h(U_i^{(j)})$\;
+  }
+  $\bar{\hat\theta} = \frac{1}{M} \sum \hat\theta^{(j)}$\;
+  $\widehat{Var}(\hat\theta) = \frac{1}{M - 1} \sum (\hat\theta^{(j)} - \bar{\hat\theta})^2$\;
+  \Output{$\widehat{Var}(\hat\theta)$}
+  \caption{Variance of $\hat\theta$ using antithetic variables}
+\end{algorithm}
+
+Check again Example \@ref(exm:mcex). We have try to calculate
+
+$$\Phi(x) = \int_{-\infty}^x \frac{1}{\sqrt{2\pi}}\exp\bigg(-\frac{t^2}{2}\bigg)dt$$
+
+using simple monte carlo. To make the support $(0, 1)$, let $y = \frac{t}{x}$ be a change of variable. Then
+
+\begin{equation*}
+  \begin{split}
+    \int_0^x \exp\bigg(-\frac{t^2}{2}\bigg) dt & = \int_0^1 x\exp\bigg(-\frac{(xy)^2}{2}\bigg) dy \\
+    & \approx \frac{1}{N} \sum_{i = 1}^N x\exp\bigg(-\frac{(xU_i)^2}{2}\bigg)
+  \end{split}
+\end{equation*}
+
+```{r}
+phiunif <- function(x, y) {
+  yi <- abs(y)
+  theta <- mean(yi * exp(-(yi * x)^2 / 2)) / sqrt(2 * pi) + .5
+  ifelse(y >= 0, theta, 1 - theta)
+}
+```
+
+Consider $\Phi(2)$.
+
+```{r}
+phi2 <-
+  mc_data(runif)[,
+                 .(p2 = phiunif(u, y = 2)),
+                 keyby = sam]
+```
+
+Now apply antithetic variables.
+
+```{r}
+phi2_anti <-
+  mc_data(runif, N = 10000 / 2)[,
+                                u2 := 1 - u] %>% 
+  melt(id.vars = "sam", value.name = "U") %>% 
+  .[,
+    .(anti_p2 = phiunif(U, y = 2)),
+    keyby = sam]
+```
+
+```{r svsanti, fig.cap="Use of antithetic variables"}
+phi2[phi2_anti] %>% 
+  melt(id.vars = "sam", variable.name = "hat") %>% 
+  ggplot(aes(x = value, fill = hat)) +
+  geom_histogram(bins = 30, alpha = .5, position = "identity") +
+  xlab(expression(pi)) +
+  geom_vline(xintercept = pnorm(2), col = I("red")) +
+  scale_fill_discrete(
+    name = "MC",
+    labels = c("Simple", "Antithetic")
+  )
+```
+
+Obviously, variance has been reduced.
+
+```{r}
+phi2[phi2_anti] %>% 
+  melt(id.vars = "sam", variable.name = "hat") %>% 
+  .[,
+    .(variance = var(value)),
+    by = hat]
+```
+
+### Control Variates
+
+Recall that we are trying to estimate $\theta = EX$ here in MC integration. Consider other output random variable. Suppose that $\mu_Y \equiv E(Y)$ is known. Then
+
+$$X + c(Y - \mu_Y)$$
+
+is an unbiased estimator for $\theta$ for any $c \in \R$.
 
 
 
-## Antithetic Variables
 
-
-## Control Variates
 
 
 ## Importance Sampling

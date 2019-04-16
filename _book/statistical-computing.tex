@@ -126,9 +126,9 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{12 Apr, 2019}
+    \date{16 Apr, 2019}
 
-\usepackage{booktabs}
+%\usepackage{booktabs}
 \usepackage{float}
 \usepackage{pdfpages}
 \usepackage{hyperref}
@@ -406,10 +406,10 @@ Thus, to generate \(n\) random variables \(\sim F_X\), we can use \emph{uniform 
   \SetKwInOut{Output}{output}
   \Input{analytical form of $F_X^{-1}$}
   \For{$i \leftarrow 1$ \KwTo $n$}{
-    $u_i \iid unif(0, 1)$\;
+    $u_i \stackrel{iid}{\sim}unif(0, 1)$\;
     $x_i = F_X^{-1}(u_i)$\;
   }
-  \Output{$x_1, x_2, \ldots, x_n \iid F_X$}
+  \Output{$x_1, x_2, \ldots, x_n \stackrel{iid}{\sim}F_X$}
   \caption{Inverse transformation method}
 \end{algorithm}
 
@@ -472,10 +472,10 @@ If we generate \(x_1, \ldots, x_{500} \sim Exp(\lambda = 1)\),
   \SetKwInOut{Output}{output}
   \Input{analytical form of $F_X$}
   \For{$i \leftarrow 1$ \KwTo $n$}{
-    $u_i \iid unif(0, 1)$\;
+    $u_i \stackrel{iid}{\sim}unif(0, 1)$\;
     Take $x_i$ s.t. $F_X(x_{i - 1}) < U \le F_X(x_i)$\;
   }
-  \Output{$x_1, x_2, \ldots, x_n \iid F_X$}
+  \Output{$x_1, x_2, \ldots, x_n \stackrel{iid}{\sim}F_X$}
   \caption{Inverse transformation method in discrete case}
 \end{algorithm}
 
@@ -602,14 +602,14 @@ Next, for some (pre-specified) \(c > 0\)
   \Input{target $f$, proposal $g$, and $c$}
   \For{$i \leftarrow 1$ \KwTo $n$}{
     $Y \sim g(y)$\; \label{alg:argoto}
-    $U \sim unif(0, 1) \ind Y$\;
+    $U \sim unif(0, 1) \perp\!\!\!\perp Y$\;
     \eIf{$U \le \frac{f(Y)}{cg(Y)}$}{
       Accept $x_i = Y$\;
     }{
       go to Line \ref{alg:argoto}\;
     }
   }
-  \Output{$x_1, x_2, \ldots, x_n \iid f(x)$}
+  \Output{$x_1, x_2, \ldots, x_n \stackrel{iid}{\sim}f(x)$}
   \caption{Acceptance-rejection algorithm}
 \end{algorithm}
 
@@ -864,12 +864,12 @@ Then we set
 \protect\hypertarget{prp:trans1}{}{\label{prp:trans1} \iffalse (Transformation between continuous random variables) \fi{} }Relation between random variables enables generating target numbers from the others.
 
 \begin{enumerate}
-  \item $Z_1, \ldots, Z_n \iid N(0, 1) \Rightarrow \sum Z_i^2 \sim \chi^2(n)$
-  \item $Y_1 \sim \chi^2(m) \ind Y_2 \sim \chi^2(n) \Rightarrow \frac{Y_1 / m}{Y_2 / n} \sim F(m, n)$
-  \item $Z \sim N(0, 1) \ind Y \sim \chi^2(n) \Rightarrow \frac{Z}{\sqrt{Y / n}} \sim t(n)$
-  \item $Y_1, \ldots, Y_n \iid Exp(\lambda) \Rightarrow \sum Y_i^2 Gamma(n, \lambda)$
+  \item $Z_1, \ldots, Z_n \stackrel{iid}{\sim}N(0, 1) \Rightarrow \sum Z_i^2 \sim \chi^2(n)$
+  \item $Y_1 \sim \chi^2(m) \perp\!\!\!\perp Y_2 \sim \chi^2(n) \Rightarrow \frac{Y_1 / m}{Y_2 / n} \sim F(m, n)$
+  \item $Z \sim N(0, 1) \perp\!\!\!\perp Y \sim \chi^2(n) \Rightarrow \frac{Z}{\sqrt{Y / n}} \sim t(n)$
+  \item $Y_1, \ldots, Y_n \stackrel{iid}{\sim}Exp(\lambda) \Rightarrow \sum Y_i^2 Gamma(n, \lambda)$
   \item $U \sim unif(0, 1) \Rightarrow (b - a)U + a \sim unif(a, b)$
-  \item $U \sim Gamma(r, \lambda) \ind V \sim Gamma(s, \lambda) \Rightarrow \frac{U}{U + V} \sim Beta(r, s)$
+  \item $U \sim Gamma(r, \lambda) \perp\!\!\!\perp V \sim Gamma(s, \lambda) \Rightarrow \frac{U}{U + V} \sim Beta(r, s)$
   \item $Z \sim N(0, 1) \Rightarrow \mu + \sigma Z \sim N(\mu, \sigma^2)$
   \item $Y \sim N(\mu, \sigma^2) \Rightarrow e^Y \sim LogNormal(\mu, \sigma^2)$
 \end{enumerate}
@@ -904,7 +904,7 @@ Then we set
 Denote that Gaussian cdf has no closed form of \(F_X^{-1}\). Using polar coordiantes, we can generate Normal random numers.
 
 \BeginKnitrBlock{theorem}[Box-Muller transformation]
-\protect\hypertarget{thm:bmnorm}{}{\label{thm:bmnorm} \iffalse (Box-Muller transformation) \fi{} }Let \(U_1, U_2 \iid unif(0,1)\). Then
+\protect\hypertarget{thm:bmnorm}{}{\label{thm:bmnorm} \iffalse (Box-Muller transformation) \fi{} }Let \(U_1, U_2 \stackrel{iid}{\sim}unif(0,1)\). Then
 
 \[
 \begin{cases}
@@ -969,7 +969,7 @@ Then each marginal density function can be computed as
 
 Thus,
 
-\[f_{R,\theta} = f_{\theta}f_R \Rightarrow R \ind \theta\]
+\[f_{R,\theta} = f_{\theta}f_R \Rightarrow R \perp\!\!\!\perp\theta\]
 
 It follows from inverse transformation theorem that
 
@@ -979,7 +979,7 @@ and that
 
 \[Z_2 = R\sin\theta = \sqrt{-2 \ln U_2} \sin(2\pi U_1)\]
 
-where \(U_1, U_2 \iid unif(0, 1)\)
+where \(U_1, U_2 \stackrel{iid}{\sim}unif(0, 1)\)
 \EndKnitrBlock{proof}
 
 \begin{algorithm}[H] \label{alg:algbm}
@@ -987,11 +987,11 @@ where \(U_1, U_2 \iid unif(0, 1)\)
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
   \For{$i \leftarrow 1$ \KwTo $n$}{
-    $U_1, U_2 \iid unif(0,1)$\;
+    $U_1, U_2 \stackrel{iid}{\sim}unif(0,1)$\;
     $z_{2i - 1} = \sqrt{-2\ln U_2}\cos(2\pi U_1)$\;
     $z_{2i} = \sqrt{-2\ln U_2}\sin(2\pi U_1)$\;
   }
-  \Output{$z_1, \ldots, z_n \iid N(0,1)$}
+  \Output{$z_1, \ldots, z_n \stackrel{iid}{\sim}N(0,1)$}
   \caption{Box-Muller transformation}
 \end{algorithm}
 
@@ -1044,23 +1044,23 @@ where \(U_1, U_2 \iid unif(0, 1)\)
 \protect\hypertarget{prp:trans2}{}{\label{prp:trans2} \iffalse (Transformation between discrete random variables) \fi{} }Relation between random variables enables generating target numbers from the others.
 
 \begin{enumerate}
-  \item $Y_1, \ldots, Y_n \iid Bernoulli(p) \Rightarrow \sum Y_i^2 \sim B(n, p)$
+  \item $Y_1, \ldots, Y_n \stackrel{iid}{\sim}Bernoulli(p) \Rightarrow \sum Y_i^2 \sim B(n, p)$
   \item $U \sim unif(0,1) \Rightarrow X_i = \lfloor mU \rfloor + 1$
   \item $X = \text{the number of events occurring in 1 unit of time} \sim Poisson(\lambda)$
 \end{enumerate}
 \EndKnitrBlock{proposition}
 
 \BeginKnitrBlock{proposition}[Bernoulli process]
-\protect\hypertarget{prp:trans3}{}{\label{prp:trans3} \iffalse (Bernoulli process) \fi{} }Let \(X_1, X_2, \ldots \iid Bernoulli(p)\).
+\protect\hypertarget{prp:trans3}{}{\label{prp:trans3} \iffalse (Bernoulli process) \fi{} }Let \(X_1, X_2, \ldots \stackrel{iid}{\sim}Bernoulli(p)\).
 
 \begin{enumerate}
   \item $N = \text{the number of trials until we see a success, i.e.} X_N = 1 \Rightarrow N \sim Geo(p)$
-  \item $Y_1, \ldots, Y_r \iid Geo(p) \Rightarrow \sum\limits_{i = 1}^r Y_i = \text{the number of trials until we see r successes} \sim NegBin(r, p)$
+  \item $Y_1, \ldots, Y_r \stackrel{iid}{\sim}Geo(p) \Rightarrow \sum\limits_{i = 1}^r Y_i = \text{the number of trials until we see r successes} \sim NegBin(r, p)$
 \end{enumerate}
 \EndKnitrBlock{proposition}
 
 \BeginKnitrBlock{proposition}[Count process]
-\protect\hypertarget{prp:trans4}{}{\label{prp:trans4} \iffalse (Count process) \fi{} }Let \(Y_1, Y_2, \ldots \iid Exp(\lambda)\) be interarrival times. Then
+\protect\hypertarget{prp:trans4}{}{\label{prp:trans4} \iffalse (Count process) \fi{} }Let \(Y_1, Y_2, \ldots \stackrel{iid}{\sim}Exp(\lambda)\) be interarrival times. Then
 
 \[X = \max\{ n : \sum Y_i \le 1 \} = \text{the number of events occurring in 1 unit of time} \sim Poisson(\lambda)\]
 \EndKnitrBlock{proposition}
@@ -1078,7 +1078,7 @@ where \(U_1, U_2 \iid unif(0, 1)\)
 In the last chapter, we have already seen a bunch of random variables that can be generated by summing the other.
 
 \BeginKnitrBlock{example}[Chisquare]
-\protect\hypertarget{exm:rchi}{}{\label{exm:rchi} \iffalse (Chisquare) \fi{} }Let \(Z_1, \ldots, Z_n \iid N(0, 1)\). We know from Proposition \ref{prp:trans1} that
+\protect\hypertarget{exm:rchi}{}{\label{exm:rchi} \iffalse (Chisquare) \fi{} }Let \(Z_1, \ldots, Z_n \stackrel{iid}{\sim}N(0, 1)\). We know from Proposition \ref{prp:trans1} that
 
 \[V = \sum_{i = 1}^n Z_i \sim \chi^2(n)\]
 \EndKnitrBlock{example}
@@ -1238,7 +1238,7 @@ where \((\mathbf{v}_j, \lambda_j)\) corresponding eigenvector-eigenvalue
 
 \[
 \begin{cases}
-  P = \begin{bmatrix} \mathbf{v}_1 & \cdots & \mathbf{v}_p \end{bmatrix} \in \R^{p \times p} \:\text{orthogonal} \\
+  P = \begin{bmatrix} \mathbf{v}_1 & \cdots & \mathbf{v}_p \end{bmatrix} \in \mathbb{R}^{p \times p} \:\text{orthogonal} \\
   \Lambda = diag(\lambda_1, \ldots, \lambda_p)
 \end{cases}
 \]
@@ -1271,7 +1271,7 @@ Denote that each observation is row. To use Equation \eqref{eq:stdmvn}, we shoul
   \mu_{11} & \mu_{22} & \cdots & \mu_{1p} \\
   \vdots & \vdots & \vdots & \vdots \\
   \mu_{11} & Z_{n2} & \cdots & \mu_{1p}
-\end{bmatrix} \in \R^{n \times p}
+\end{bmatrix} \in \mathbb{R}^{n \times p}
 \]
 
 \begin{Shaded}
@@ -1452,7 +1452,7 @@ For instance, standard normal cdf.
 It might be impossible to compute this integral with hand. So we implement \emph{simulation} concept here, based on the following theorems.
 
 \BeginKnitrBlock{theorem}[Weak Law of Large Numbers]
-\protect\hypertarget{thm:wlaw}{}{\label{thm:wlaw} \iffalse (Weak Law of Large Numbers) \fi{} }Suppose that \(X_1, \ldots, X_n \iid (\mu, \sigma^2 < \infty)\). Then
+\protect\hypertarget{thm:wlaw}{}{\label{thm:wlaw} \iffalse (Weak Law of Large Numbers) \fi{} }Suppose that \(X_1, \ldots, X_n \stackrel{iid}{\sim}(\mu, \sigma^2 < \infty)\). Then
 
 \[\frac{1}{n}\sum_{i = 1}^n X_i \stackrel{p}{\rightarrow} \mu\]
 
@@ -1462,7 +1462,7 @@ Let \(g\) be a measurable function. Then
 \EndKnitrBlock{theorem}
 
 \BeginKnitrBlock{theorem}[Strong Law of Large Numbers]
-\protect\hypertarget{thm:slaw}{}{\label{thm:slaw} \iffalse (Strong Law of Large Numbers) \fi{} }Suppose that \(X_1, \ldots, X_n \iid (\mu, \sigma^2 < \infty)\). Then
+\protect\hypertarget{thm:slaw}{}{\label{thm:slaw} \iffalse (Strong Law of Large Numbers) \fi{} }Suppose that \(X_1, \ldots, X_n \stackrel{iid}{\sim}(\mu, \sigma^2 < \infty)\). Then
 
 \[\frac{1}{n}\sum_{i = 1}^n X_i \stackrel{a.s.}{\rightarrow} \mu\]
 
@@ -1518,7 +1518,7 @@ Since \(\Phi(x)\) is symmetry,
 
 \[\Phi(0) = \frac{1}{2}\]
 
-Fix \(x > 0\). Let \(y = \frac{t}{x}\) be a change of variable.
+Fix \(x > 0\).
 
 \begin{equation*}
   \begin{split}
@@ -1527,7 +1527,7 @@ Fix \(x > 0\). Let \(y = \frac{t}{x}\) be a change of variable.
   \end{split}
 \end{equation*}
 
-with \(U_1, \ldots, U_N \iid unif(0, x)\).
+with \(U_1, \ldots, U_N \stackrel{iid}{\sim}unif(0, x)\).
 
 Case 2: \(x \le 0\)
 
@@ -1607,7 +1607,7 @@ x & pnorm & mc\\
 Hit-or-Miss approach is another way to evaluate integrals.
 
 \BeginKnitrBlock{example}[Estimation of $\pi$]
-\protect\hypertarget{exm:estpi}{}{\label{exm:estpi} \iffalse (Estimation of \(\pi\)) \fi{} }Consider a circle in \(\R\) coordinate.
+\protect\hypertarget{exm:estpi}{}{\label{exm:estpi} \iffalse (Estimation of \(\pi\)) \fi{} }Consider a circle in \(\mathbb{R}\) coordinate.
 
 \[x^2 + y^2 = 1\]
 
@@ -1667,9 +1667,9 @@ See Figure \ref{fig:hmmc}. From each coordinate, generate
 \begin{itemize}
 \tightlist
 \item
-  \(X_i \iid unif(0,1)\)
+  \(X_i \stackrel{iid}{\sim}unif(0,1)\)
 \item
-  \(Y_i \iid unif(0,1)\)
+  \(Y_i \stackrel{iid}{\sim}unif(0,1)\)
 \end{itemize}
 
 Then the proportion of \(Y_i \le \sqrt{1 - X_i^2}\) estimates \(\frac{\pi}{4}\).
@@ -1695,7 +1695,27 @@ The common statistic that can evaluate estimators expected value might be their 
 \hypertarget{variance}{%
 \subsection{Variance}\label{variance}}
 
-Note that \(Var(\overline{g(X)}) = \frac{Var(g(X))}{N}\). This property is one of estimating variance of \(\hat\theta\). However, this \emph{variance of sample mean} is used in situation when we are in sample limitation situation. Now, we can generate samples as many as we want to. So we try another approach: \emph{parametric bootstrap}.
+Note that variance of sample mean is \(Var(\overline{g(X)}) = \frac{Var(g(X))}{N}\). This property is one of estimating variance of \(\hat\theta\).
+
+\begin{equation}
+  \widehat{Var}(\hat\theta) = \frac{1}{N}\bigg( \frac{1}{N} \sum_{i = 1}^N (g(X_i) - \overline{g(X_i)}) \bigg) = \frac{1}{N^2} \sum_{i = 1}^N (g(X_i) - \overline{g(X_i)})
+  \label{eq:mcsamvar}
+\end{equation}
+
+For example,
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{runif}\NormalTok{(}\DecValTok{10000}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{mc_pi =} \KeywordTok{var}\NormalTok{(}\KeywordTok{circ}\NormalTok{(x)) }\OperatorTok{/}\StringTok{ }\DecValTok{10000}\NormalTok{)}
+\CommentTok{#> # A tibble: 1 x 1}
+\CommentTok{#>       mc_pi}
+\CommentTok{#>       <dbl>}
+\CommentTok{#> 1 0.0000795}
+\end{Highlighting}
+\end{Shaded}
+
+However, this \emph{variance of sample mean} is used in situation when we are in sample limitation situation. We do not have to stick to this. Now, Generating samples as many as we want is possible. So we try another approach: \emph{parametric bootstrap}.
 
 \begin{figure}[H]
 
@@ -1714,7 +1734,7 @@ See Figure \ref{fig:mcintvar}. If we estimate \(E\Big[g(U \sim unif(a, b))\Big]\
   \SetKwInOut{Output}{output}
   \Input{$\theta = \int_a^b g(x) dx$}
   \For{$m \leftarrow 1$ \KwTo $M$}{
-    Generate $U_1^{(m)}, \ldots, U_N^{(m)} \iid unif(a, b)$ \;
+    Generate $U_1^{(m)}, \ldots, U_N^{(m)} \stackrel{iid}{\sim}unif(a, b)$ \;
     Compute $\hat\theta^{(j)} = \frac{(b - a)}{N} \sum g(U_i^{(j)})$\;
   }
   $\bar{\hat\theta} = \frac{1}{M} \sum \hat\theta^{(j)}$\;
@@ -1780,7 +1800,7 @@ As in Algorighm \(\ref{alg:algmcint}\), we can compute the variance as below.
 \StringTok{  }\NormalTok{pi_mc[,}
 \NormalTok{        .(}\DataTypeTok{mc_variance =} \KeywordTok{var}\NormalTok{(mc_pi))])}
 \CommentTok{#>    mc_variance}
-\CommentTok{#> 1:    8.07e-05}
+\CommentTok{#> 1:    8.09e-05}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1827,7 +1847,7 @@ On the other hand, we need to generate two sets of random numbers for hit-or-mis
 \StringTok{  }\NormalTok{pi_hit[,}
 \NormalTok{         .(}\DataTypeTok{hit_variance =} \KeywordTok{var}\NormalTok{(hitormiss))])}
 \CommentTok{#>    hit_variance}
-\CommentTok{#> 1:     0.000257}
+\CommentTok{#> 1:     0.000258}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1846,7 +1866,7 @@ In other words, if \(\hat\theta_1\) has smaller variance than \(\hat\theta_2\), 
 
 \begin{table}[t]
 
-\caption{\label{tab:unnamed-chunk-45}Simple MC versus Hit-or-Miss}
+\caption{\label{tab:unnamed-chunk-46}Simple MC versus Hit-or-Miss}
 \centering
 \begin{tabular}{r|r|l}
 \hline
@@ -1860,14 +1880,588 @@ SimpleMC & Hit-or-Miss & SimpleMCefficiency\\
 \hypertarget{variance-reduction}{%
 \section{Variance Reduction}\label{variance-reduction}}
 
+Consider Equation \eqref{eq:mcsamvar} based on \(Var(\hat\theta) = \frac{\sigma^2}{N}\). This variance can always reduced by adding \(N\). But we want to reduce variance less computationally.
+
 \hypertarget{antithetic-variables}{%
-\section{Antithetic Variables}\label{antithetic-variables}}
+\subsection{Antithetic Variables}\label{antithetic-variables}}
+
+Consider correlated random variables \(U_1\) and \(U_2\). Then we have
+
+\[Var\bigg( \frac{U_1 + U_2}{2} \bigg) = \frac{1}{4}\Big( Var(U_1) +  Var(U_2) + 2Cov(U_1, U_2)\Big)\]
+
+See the last term \(Cov(U_1, U_2)\). If we generate \(U_{i1}\) and \(U_{i2}\) negatively correlated, we can get reduced variance than previous i.i.d. sample
+
+\[Var\bigg( \frac{U_1 + U_2}{2} \bigg) = \frac{1}{4}\Big( Var(U_1) +  Var(U_2)\Big)\]
+
+\BeginKnitrBlock{lemma}
+\protect\hypertarget{lem:antiunif}{}{\label{lem:antiunif} }\(U\) and \(1 - U\) are identically distributed, but \emph{negatively correlated}.
+
+\begin{enumerate}
+  \item $U \sim unif(0,1) \Leftrightarrow 1 - U \sim unif(0,1)$
+  \item $Corr(U, 1 - U) = -1$
+\end{enumerate}
+\EndKnitrBlock{lemma}
+
+This is well-known property of uniform distribution. Instead of generating \(N\) uniform numbers, try \(\frac{N}{2}\) \(U_i\) and make corresponding \(\frac{N}{2}\) \(1 - U_i\). This sequence becomes negatively correlated, so we can reduce the variance as mentioned.
+
+When can we replace previous numbers with these \emph{antithetic variables}? We usually plug-in the numbers in some function \(h\) to get Monte carlo integration. The thing is, our target is \(h\), not \(U\). \(h(U)\) and \(h(1 - U)\) should \emph{still be negatively correlated}. Hence, \(h\) should be \emph{monotonic function}.
+
+\BeginKnitrBlock{corollary}
+\protect\hypertarget{cor:antifun}{}{\label{cor:antifun} }If \(g = g(X_1, \ldots, X_n)\) is monotone, then
+
+\[Y = g(F_X^{-1}(U_1), \ldots, F_X^{-1}(U_n))\]
+
+and
+
+\[Y^{\prime} = g(F_X^{-1}(1 - U_1), \ldots, F_X^{-1}(1 - U_n))\]
+
+are negatively correlated.
+\EndKnitrBlock{corollary}
+
+\begin{algorithm}[H] \label{alg:alganti}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$h: monotonic$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $U_{1,1}^{(m)}, \ldots, U_{\frac{N}{2},1}^{(m)} \stackrel{iid}{\sim}unif(0, 1)$\;
+    Set $U_{i,2}^{(m)} := 1 - U_{i,1}^{(m)} \stackrel{iid}{\sim}unif(0, 1)$\;
+    $\{U_{i}^{(m)}\}_1^N = \{ U_{1,1}^{(m)}, \ldots, U_{{\frac{N}{2}},2}^{(m)} \}$\;
+    $\hat\theta^{(j)} = \frac{1}{N} \sum h(U_i^{(j)})$\;
+  }
+  $\bar{\hat\theta} = \frac{1}{M} \sum \hat\theta^{(j)}$\;
+  $\widehat{Var}(\hat\theta) = \frac{1}{M - 1} \sum (\hat\theta^{(j)} - \bar{\hat\theta})^2$\;
+  \Output{$\widehat{Var}(\hat\theta)$}
+  \caption{Variance of $\hat\theta$ using antithetic variables}
+\end{algorithm}
+
+Check again Example \ref{exm:mcex}. We have try to calculate
+
+\[\Phi(x) = \int_{-\infty}^x \frac{1}{\sqrt{2\pi}}\exp\bigg(-\frac{t^2}{2}\bigg)dt\]
+
+using simple monte carlo. To make the support \((0, 1)\), let \(y = \frac{t}{x}\) be a change of variable. Then
+
+\begin{equation*}
+  \begin{split}
+    \int_0^x \exp\bigg(-\frac{t^2}{2}\bigg) dt & = \int_0^1 x\exp\bigg(-\frac{(xy)^2}{2}\bigg) dy \\
+    & \approx \frac{1}{N} \sum_{i = 1}^N x\exp\bigg(-\frac{(xU_i)^2}{2}\bigg)
+  \end{split}
+\end{equation*}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{phiunif <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, y) \{}
+\NormalTok{  yi <-}\StringTok{ }\KeywordTok{abs}\NormalTok{(y)}
+\NormalTok{  theta <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(yi }\OperatorTok{*}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\NormalTok{(yi }\OperatorTok{*}\StringTok{ }\NormalTok{x)}\OperatorTok{^}\DecValTok{2} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{)) }\OperatorTok{/}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{pi) }\OperatorTok{+}\StringTok{ }\FloatTok{.5}
+  \KeywordTok{ifelse}\NormalTok{(y }\OperatorTok{>=}\StringTok{ }\DecValTok{0}\NormalTok{, theta, }\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{theta)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Consider \(\Phi(2)\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{phi2 <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(runif)[,}
+\NormalTok{                 .(}\DataTypeTok{p2 =} \KeywordTok{phiunif}\NormalTok{(u, }\DataTypeTok{y =} \DecValTok{2}\NormalTok{)),}
+\NormalTok{                 keyby =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+Now apply antithetic variables.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{phi2_anti <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(runif, }\DataTypeTok{N =} \DecValTok{10000} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{)[,}
+\NormalTok{                                u2 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{u] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{melt}\NormalTok{(}\DataTypeTok{id.vars =} \StringTok{"sam"}\NormalTok{, }\DataTypeTok{value.name =} \StringTok{"U"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{.[,}
+\NormalTok{    .(}\DataTypeTok{anti_p2 =} \KeywordTok{phiunif}\NormalTok{(U, }\DataTypeTok{y =} \DecValTok{2}\NormalTok{)),}
+\NormalTok{    keyby =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{phi2[phi2_anti] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{melt}\NormalTok{(}\DataTypeTok{id.vars =} \StringTok{"sam"}\NormalTok{, }\DataTypeTok{variable.name =} \StringTok{"hat"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ value, }\DataTypeTok{fill =}\NormalTok{ hat)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{.5}\NormalTok{, }\DataTypeTok{position =} \StringTok{"identity"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(pi)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_vline}\NormalTok{(}\DataTypeTok{xintercept =} \KeywordTok{pnorm}\NormalTok{(}\DecValTok{2}\NormalTok{), }\DataTypeTok{col =} \KeywordTok{I}\NormalTok{(}\StringTok{"red"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_discrete}\NormalTok{(}
+    \DataTypeTok{name =} \StringTok{"MC"}\NormalTok{,}
+    \DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"Simple"}\NormalTok{, }\StringTok{"Antithetic"}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/svsanti-1} 
+
+}
+
+\caption{Use of antithetic variables}\label{fig:svsanti}
+\end{figure}
+
+Obviously, variance has been reduced.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{phi2[phi2_anti] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{melt}\NormalTok{(}\DataTypeTok{id.vars =} \StringTok{"sam"}\NormalTok{, }\DataTypeTok{variable.name =} \StringTok{"hat"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{.[,}
+\NormalTok{    .(}\DataTypeTok{variance =} \KeywordTok{var}\NormalTok{(value)),}
+\NormalTok{    by =}\StringTok{ }\NormalTok{hat]}
+\CommentTok{#>        hat variance}
+\CommentTok{#> 1:      p2  5.2e-06}
+\CommentTok{#> 2: anti_p2  1.5e-08}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{control-variates}{%
-\section{Control Variates}\label{control-variates}}
+\subsection{Control Variates}\label{control-variates}}
+
+Recall that we are trying to estimate \(\theta = EX\) here in MC integration. Consider other output random variable. Suppose that \(\mu_Y \equiv E(Y)\) is known. Then
+
+\[X + c(Y - \mu_Y)\]
+
+is an unbiased estimator for \(\theta\) for any \(c \in \mathbb{R}\).
 
 \hypertarget{importance-sampling}{%
 \section{Importance Sampling}\label{importance-sampling}}
+
+\hypertarget{monte-carlo-methods-in-inference}{%
+\chapter{Monte Carlo Methods in Inference}\label{monte-carlo-methods-in-inference}}
+
+\hypertarget{parametric-bootstrap}{%
+\section{Parametric Bootstrap}\label{parametric-bootstrap}}
+
+In this setting, we know distribution of \(X\). We can freely generate from this distribution.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{images/mcboot} 
+
+}
+
+\caption{Parametric bootstrap}\label{fig:paramboot}
+\end{figure}
+
+See Figure \ref{fig:paramboot}. From the ``true'' distribution, we can generate multiple samples. From each sample estimator can be computed. Then we can check these multiple estimates. Multiple estimates are close to motivation of estimator, so it helps exploring statistical inference with simple steps.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mc_data <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(rand, }\DataTypeTok{N =} \DecValTok{10000}\NormalTok{, }\DataTypeTok{M =} \DecValTok{1000}\NormalTok{, }\DataTypeTok{char =} \StringTok{"s"}\NormalTok{, ...) \{}
+  \KeywordTok{data.table}\NormalTok{(}
+    \DataTypeTok{x =} \KeywordTok{rand}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ N }\OperatorTok{*}\StringTok{ }\NormalTok{M, ...),}
+    \DataTypeTok{sam =} \KeywordTok{gl}\NormalTok{(M, N, }\DataTypeTok{labels =} \KeywordTok{paste0}\NormalTok{(}\StringTok{"s"}\NormalTok{, }\DecValTok{1}\OperatorTok{:}\NormalTok{M))}
+\NormalTok{  )}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{monte-carlo-methods-for-estimation}{%
+\section{Monte Carlo Methods for Estimation}\label{monte-carlo-methods-for-estimation}}
+
+\BeginKnitrBlock{example}[Any quantity of interest]
+\protect\hypertarget{exm:quanint}{}{\label{exm:quanint} \iffalse (Any quantity of interest) \fi{} }Suppose that \(X_1, X_2 \stackrel{iid}{\sim}N(0, 1)\). We want to estimate
+
+\[\theta = E\lvert X_1 - X_2 \rvert\]
+\EndKnitrBlock{example}
+
+\hypertarget{empirical-distribution}{%
+\subsection{Empirical distribution}\label{empirical-distribution}}
+
+\begin{algorithm}[H] \label{alg:algx1x2}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{distribution $f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $(X_1^{(m)}, X_2^{(m)}) \stackrel{iid}{\sim}N(0, 1)$\;
+    Compute $\hat\theta^{(m)} = \lvert X_1^{(m)} - X_2^{(m)} \rvert$\;
+  }
+  Draw a histogram\;
+  \Output{$\bar{\hat\theta} = \frac{1}{M} \sum\limits_{m = 1}^M\hat\theta_m^{(m)}, \{ \hat\theta^{(1)}, \ldots, \hat\theta^{(M)} \}$}
+  \caption{Empirical distribution of $\hat\theta$}
+\end{algorithm}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{basicmc <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{N =} \DecValTok{2}\NormalTok{)[,}
+\NormalTok{                        xname }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\KeywordTok{gl}\NormalTok{(}\DecValTok{2}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DataTypeTok{length =} \DecValTok{2000}\NormalTok{, }\DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"x1"}\NormalTok{, }\StringTok{"x2"}\NormalTok{))] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{dcast}\NormalTok{(sam }\OperatorTok{~}\StringTok{ }\NormalTok{xname, }\DataTypeTok{value.var =} \StringTok{"x"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{.[,}
+\NormalTok{    .(}\DataTypeTok{that =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{abs}\NormalTok{(x1 }\OperatorTok{-}\StringTok{ }\NormalTok{x2))),}
+\NormalTok{    by =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{basicmc[,}
+\NormalTok{        .(}\DataTypeTok{est =} \KeywordTok{mean}\NormalTok{(that))]}
+\CommentTok{#>    est}
+\CommentTok{#> 1: 1.1}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{basicmc }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ that)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\DataTypeTok{col =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{), }\DataTypeTok{alpha =} \FloatTok{.7}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(theta))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/absx12-1} 
+
+}
+
+\caption{Empirical distribution of $\hat\theta$ for $\lvert X_1 - X_2 \rvert$}\label{fig:absx12}
+\end{figure}
+
+\hypertarget{standard-error}{%
+\subsection{Standard error}\label{standard-error}}
+
+In Algorithm \(\ref{alg:algx1x2}\), we can get standard error by just calculating standard deviation of
+
+\[\{ \hat\theta^{(1)}, \ldots, \hat\theta^{(M)} \}\]
+
+\begin{algorithm}[H] \label{alg:algmcse}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{distribution $f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $(X_1^{(m)}, X_2^{(m)}) \stackrel{iid}{\sim}N(0, 1)$\;
+    Compute $\hat\theta^{(m)} = \lvert X_1^{(m)} - X_2^{(m)} \rvert$\;
+  }
+  $\bar{\hat\theta} = \frac{1}{M} \sum\limits_{m = 1}^M\hat\theta_m^{(m)}$\;
+  $\widehat{SE}(\hat\theta) = \sqrt{\frac{1}{M - 1}\sum\limits_{m = 1}^M(\hat\theta^{(m)} - \bar{\hat\theta})}$\;
+  \Output{$\widehat{SE}(\hat\theta)$}
+  \caption{Standard error of $\hat\theta$}
+\end{algorithm}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{basicmc[,}
+\NormalTok{        .(}\DataTypeTok{se =} \KeywordTok{sd}\NormalTok{(that))]}
+\CommentTok{#>       se}
+\CommentTok{#> 1: 0.844}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{mean-squared-error}{%
+\subsection{Mean squared error}\label{mean-squared-error}}
+
+\(MSE\) is used when comparing several estimators.
+
+\BeginKnitrBlock{definition}[Mean squared error]
+\protect\hypertarget{def:mse}{}{\label{def:mse} \iffalse (Mean squared error) \fi{} }\[MSE(\hat\theta) := E(\hat\theta - \theta)^2\]
+\EndKnitrBlock{definition}
+
+To know \(MSE\), however, we should compute expectation. Some of them might be complicated even though we know true distribution. As the last chapter, we can apply Monte carlo method.
+
+\BeginKnitrBlock{example}[MSE of a trimmed mean]
+\protect\hypertarget{exm:trim}{}{\label{exm:trim} \iffalse (MSE of a trimmed mean) \fi{} }Suppose that \(X_1, \ldots, X_n \stackrel{iid}{\sim}N(2, 1)\). Consider three estimators for \(\mu = 2\).
+
+\begin{enumerate}
+  \item mean $\overline{X}$
+  \item median $\tilde{X}$
+  \item $k$th trimmed mean $\overline{X}_{[-k]}$
+\end{enumerate}
+\EndKnitrBlock{example}
+
+\begin{algorithm}[H] \label{alg:algmse}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{distribution $f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $(X_1^{(m)}, \ldots, X_N^{(m)}) \stackrel{iid}{\sim}N(2, 1)$\;
+    Sort $(X_1^{(m)}, \ldots, X_N^{(m)})$ in increasing order, i.e. $(X_{(1)}^{(m)}, \ldots, X_{(N)}^{(m)})$\;
+    Mean $\overline{X}^{(m)} = \frac{1}{N}\sum\limits_{i = 1}^N X_i^{(m)}$\;
+    Median $\tilde{X}^{(m)} = \begin{cases} X_{\frac{N}{2} + 1}^{(m)} & N \:\text{odd} \\ \frac{X_{\frac{N}{2}}^{(m)} + X_{\frac{N}{2} + 1}^{(m)}}{2} & N \:\text{even} \end{cases}$\;
+    $k$th trimmed mean $\overline{X}_{[-k]}^{(m)} = \frac{1}{N - 2k}\sum\limits_{i = k + 1}^{n - k}X_{(i)}^{(m)}$
+  }
+  $\widehat{MSE}(\overline{X}) = \frac{1}{M} \sum\limits_{m = 1}^M (\overline{X}^{(m)} - 2)^2$\;
+  $\widehat{MSE}(\tilde{X}) = \frac{1}{M} \sum\limits_{m = 1}^M (\tilde{X}^{(m)} - 2)^2$\;
+  $\widehat{MSE}(\overline{X}_{[-k]}) = \frac{1}{M} \sum\limits_{m = 1}^M (\overline{X}_{[-k]}^{(m)} - 2)^2$\;
+  \Output{$\widehat{MSE}(\overline{X}), \widehat{MSE}(\tilde{X}), \:\text{and}\: \widehat{MSE}(\overline{X}_{[-k]})$}
+  \caption{MSE of mean, median, and $k$th trimmed mean}
+\end{algorithm}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{trim <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, }\DataTypeTok{k =} \DecValTok{1}\NormalTok{) \{}
+\NormalTok{  n <-}\StringTok{ }\KeywordTok{length}\NormalTok{(x)}
+\NormalTok{  x <-}\StringTok{ }\KeywordTok{sort}\NormalTok{(x)}
+  \KeywordTok{sum}\NormalTok{(x[(k }\OperatorTok{+}\StringTok{ }\DecValTok{1}\NormalTok{)}\OperatorTok{:}\NormalTok{(n }\OperatorTok{-}\StringTok{ }\NormalTok{k)]) }\OperatorTok{/}\StringTok{ }\NormalTok{(n }\OperatorTok{-}\StringTok{ }\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{k)}
+\NormalTok{\}}
+\CommentTok{#--------------------------------------}
+\NormalTok{mu_list <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, k) \{}
+  \KeywordTok{list}\NormalTok{(}\DataTypeTok{mean =} \KeywordTok{mean}\NormalTok{(x), }\DataTypeTok{median =} \KeywordTok{median}\NormalTok{(x), }\DataTypeTok{trim =} \KeywordTok{trim}\NormalTok{(x, k))}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Try \(k = 1\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(trim_mc <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{mean =} \DecValTok{2}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{1}\NormalTok{)[,}
+                                   \KeywordTok{unlist}\NormalTok{(}\KeywordTok{lapply}\NormalTok{(.SD, mu_list, }\DataTypeTok{k =} \DecValTok{1}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }\NormalTok{as.list,}
+                                   \DataTypeTok{by =}\NormalTok{ sam])}
+\CommentTok{#>         sam x.mean x.median x.trim}
+\CommentTok{#>    1:    s1   2.02     2.02   2.02}
+\CommentTok{#>    2:    s2   2.00     2.00   2.00}
+\CommentTok{#>    3:    s3   2.00     2.01   2.00}
+\CommentTok{#>    4:    s4   1.99     1.98   1.99}
+\CommentTok{#>    5:    s5   2.00     1.99   2.00}
+\CommentTok{#>   ---                             }
+\CommentTok{#>  996:  s996   2.02     2.02   2.02}
+\CommentTok{#>  997:  s997   2.00     1.99   2.00}
+\CommentTok{#>  998:  s998   1.99     1.99   1.99}
+\CommentTok{#>  999:  s999   1.99     1.99   1.99}
+\CommentTok{#> 1000: s1000   2.00     2.01   2.00}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{trim_mc }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{melt}\NormalTok{(}\DataTypeTok{id.vars =} \StringTok{"sam"}\NormalTok{, }\DataTypeTok{variable.name =} \StringTok{"hat"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ value, }\DataTypeTok{fill =}\NormalTok{ hat)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{.3}\NormalTok{, }\DataTypeTok{position =} \StringTok{"identity"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(mu)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_vline}\NormalTok{(}\DataTypeTok{xintercept =} \DecValTok{2}\NormalTok{, }\DataTypeTok{col =} \KeywordTok{I}\NormalTok{(}\StringTok{"red"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_discrete}\NormalTok{(}
+    \DataTypeTok{name =} \StringTok{"Estimates"}\NormalTok{,}
+    \DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"Mean"}\NormalTok{, }\StringTok{"Median"}\NormalTok{, }\StringTok{"Trimmed"}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/meanemp-1} 
+
+}
+
+\caption{Empirical distribution of each estimator for $\mu = 2$}\label{fig:meanemp}
+\end{figure}
+
+Here, median shows the largest standard error.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{trim_mc[,}
+        \KeywordTok{lapply}\NormalTok{(.SD, sd),}
+\NormalTok{        .SDcols =}\StringTok{ }\OperatorTok{-}\StringTok{"sam"}\NormalTok{]}
+\CommentTok{#>     x.mean x.median  x.trim}
+\CommentTok{#> 1: 0.00942   0.0123 0.00942}
+\end{Highlighting}
+\end{Shaded}
+
+Now try various \(k\) for trimmed mean.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mse_list <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, k) \{}
+  \KeywordTok{list}\NormalTok{(}\DataTypeTok{mse =} \KeywordTok{mean}\NormalTok{((x }\OperatorTok{-}\StringTok{ }\DecValTok{2}\NormalTok{)}\OperatorTok{^}\DecValTok{2}\NormalTok{), }\DataTypeTok{se =} \KeywordTok{sd}\NormalTok{(x))}
+\NormalTok{\}}
+\CommentTok{#-----------------------------------------}
+\NormalTok{trim_mse <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{mean =} \DecValTok{2}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{1}\NormalTok{)[,}
+                                   \KeywordTok{lapply}\NormalTok{(.SD, }\ControlFlowTok{function}\NormalTok{(x) \{}
+                                     \KeywordTok{sapply}\NormalTok{(}\DecValTok{0}\OperatorTok{:}\DecValTok{9}\NormalTok{, }\ControlFlowTok{function}\NormalTok{(k) \{}
+                                       \KeywordTok{trim}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{k =}\NormalTok{ k)}
+\NormalTok{                                     \})}
+\NormalTok{                                   \}) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{                                     }\KeywordTok{unlist}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
+\StringTok{                                     }\KeywordTok{as.list}\NormalTok{(),}
+\NormalTok{                                   by =}\StringTok{ }\NormalTok{sam][,}
+                                             \KeywordTok{lapply}\NormalTok{(.SD, mse_list) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{                                               }\KeywordTok{unlist}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
+\StringTok{                                               }\KeywordTok{as.list}\NormalTok{(),}
+\NormalTok{                                             .SDcols =}\StringTok{ }\OperatorTok{-}\StringTok{"sam"}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{trim_mse }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{transpose}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{.[,}
+    \StringTok{`}\DataTypeTok{:=}\StringTok{`}\NormalTok{(}
+      \DataTypeTok{k =} \KeywordTok{rep}\NormalTok{(}\DecValTok{0}\OperatorTok{:}\DecValTok{9}\NormalTok{, }\DataTypeTok{each =} \DecValTok{2}\NormalTok{),}
+      \DataTypeTok{hat =} \KeywordTok{gl}\NormalTok{(}\DecValTok{2}\NormalTok{, }\DataTypeTok{k =} \DecValTok{1}\NormalTok{, }\DataTypeTok{length =} \DecValTok{2} \OperatorTok{*}\StringTok{ }\DecValTok{10}\NormalTok{, }\DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"mse"}\NormalTok{, }\StringTok{"se"}\NormalTok{))}
+\NormalTok{    )] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{dcast}\NormalTok{(k }\OperatorTok{~}\StringTok{ }\NormalTok{hat, }\DataTypeTok{value.var =} \StringTok{"V1"}\NormalTok{)}
+\CommentTok{#>     k      mse      se}
+\CommentTok{#>  1: 0 9.83e-05 0.00992}
+\CommentTok{#>  2: 1 9.83e-05 0.00992}
+\CommentTok{#>  3: 2 9.83e-05 0.00992}
+\CommentTok{#>  4: 3 9.83e-05 0.00992}
+\CommentTok{#>  5: 4 9.82e-05 0.00992}
+\CommentTok{#>  6: 5 9.83e-05 0.00992}
+\CommentTok{#>  7: 6 9.83e-05 0.00992}
+\CommentTok{#>  8: 7 9.83e-05 0.00992}
+\CommentTok{#>  9: 8 9.83e-05 0.00992}
+\CommentTok{#> 10: 9 9.83e-05 0.00992}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{confidence-interval}{%
+\section{Confidence interval}\label{confidence-interval}}
+
+Remember the meaning of 95\% confidence interval. \emph{If we have 100 samples and construct confidence interval in each sample, 95 intervals would include true parameter}. In this Monte Carlo setting, we know true population distribution, so we can generate multiple samples. Thus, we can reproduce this confidence interval situation.
+
+\hypertarget{empirical-confidence-interval}{%
+\subsection{Empirical confidence interval}\label{empirical-confidence-interval}}
+
+See one of histograms of Figure \ref{fig:meanemp}. Estimates are sorted. Calculating the upper and lower quantiles would give values close to confidence interval. See Figure \ref{fig:absx12}. While the former show symmetric distribution, this is not. 0.25 and 0.975 quantile might be inappropriate. In this case, we should pick the \emph{shortest interval with 95\%}. Best critical region leads to the shortest length of CI given \(\alpha\), so we are finding this one.
+
+\begin{algorithm}[H] \label{alg:algempci}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{distribution $f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \stackrel{iid}{\sim}f$\;
+    Compute $\hat\theta^{(m)} = \hat\theta(\mathbf{\mathbf{X}^{(m)}})$\;
+  }
+  \eIf{Distribution of $\{ \hat\theta^{(m)} \}_1^M$ symmetric}{
+    Sort $\{ \hat\theta^{(1)}, \ldots, \hat\theta^{(M)} \}$ in decreasing order, i.e. $\{ \hat\theta_{(1)}^{(1)}, \ldots, \hat\theta_{(M)}^{(M)} \}$\;
+    Compute $LB= \frac{\alpha}{2} \:\text{sample quantile}$ and $UB= 1 - \frac{\alpha}{2} \:\text{sample quantile}$\;
+  }{
+    \ForEach{$lb < 0.05$ with $ub - lb = 1 - \alpha$}{
+      Candidate interval $(lb, ub)$\;
+      calculate length $l_i = ub - lb$\;
+    }
+    $(LB, UB)$: pick up the interval with the smallest length $l_i$\;
+  }
+  \Output{$(LB, UB)$}
+  \caption{Empirical confidence interval by Monte Carlo method}
+\end{algorithm}
+
+\hypertarget{empirical-confidence-level}{%
+\subsection{Empirical confidence level}\label{empirical-confidence-level}}
+
+On the contrary, we can estiamte confidence level given confidence interval.
+
+\BeginKnitrBlock{example}[Confidence interval for variance]
+\protect\hypertarget{exm:civar}{}{\label{exm:civar} \iffalse (Confidence interval for variance) \fi{} }If \(X_1, \ldots, X_n \stackrel{iid}{\sim}N(\mu, \sigma^2)\), then
+
+\[T = \frac{(n - 1)S^2}{\sigma^2} \sim \chi^2(n - 1)\]
+
+Thus, \(100(1 - \alpha)\%\) confidence interval is given by
+
+\[(0, \frac{(n -1)S^2}{\chi^2_{\alpha}(n - 1)})\]
+\EndKnitrBlock{example}
+
+For each MC sample, compute confidence interval. Just check if \emph{known true parameter} is in the interval. Its proportion becomes the confidence level. It is simpler that estimate confidence interval itself.
+
+\begin{algorithm}[H] \label{alg:algcilev}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{distribution $f$ with parameter $\theta$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \stackrel{iid}{\sim}f$\;
+    Compute the confidence interval $C_m$\;
+    Compute $Y_j = I(\theta \in C_m)$, i.e. whether $\theta$ is in the CI\;
+  }
+  Empirical confidence level $\overline{Y} = \sum\limits_{m = 1}^M Y_m$\; \label{alg:cilevlast}
+  \Output{$\overline{Y}$}
+  \caption{Empirical confidence level by Monte Carlo method}
+\end{algorithm}
+
+Let \(\mu = 0\), \(\sigma = 2\), \(N = 20\), and let \(M = 1000\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ci_var <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, variance, alpha) \{}
+\NormalTok{  n <-}\StringTok{ }\KeywordTok{length}\NormalTok{(x)}
+\NormalTok{  s2 <-}\StringTok{ }\KeywordTok{var}\NormalTok{(x)}
+\NormalTok{  (n }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\NormalTok{s2 }\OperatorTok{/}\StringTok{ }\KeywordTok{qchisq}\NormalTok{(alpha, }\DataTypeTok{df =}\NormalTok{ n }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{>}\StringTok{ }\NormalTok{variance}
+\NormalTok{\}}
+\CommentTok{#---------------------------}
+\NormalTok{ci_lev <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{N =} \DecValTok{20}\NormalTok{, }\DataTypeTok{M =} \DecValTok{1000}\NormalTok{, }\DataTypeTok{mean =} \DecValTok{0}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{2}\NormalTok{)[,}
+\NormalTok{                                                     .(}\DataTypeTok{hat =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{ci_var}\NormalTok{(x, }\DataTypeTok{variance =} \DecValTok{4}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{.05}\NormalTok{))),}
+\NormalTok{                                                     by =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ci_lev[,}
+\NormalTok{       .N,}
+\NormalTok{       by =}\StringTok{ }\NormalTok{hat][,}
+\NormalTok{                 proportion }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\NormalTok{N }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(N)] }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ hat, }\DataTypeTok{y =}\NormalTok{ proportion, }\DataTypeTok{fill =} \KeywordTok{factor}\NormalTok{(hat))) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\DataTypeTok{stat =} \StringTok{"identity"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_discrete}\NormalTok{(}
+    \DataTypeTok{name =} \StringTok{"CI"}\NormalTok{,}
+    \DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"out"}\NormalTok{, }\StringTok{"in"}\NormalTok{)}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(y))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/ciin-1} 
+
+}
+
+\caption{Proportion of $\sigma^2$ in confidence intervals}\label{fig:ciin}
+\end{figure}
+
+This leads to empirical confidence level, i.e.~\emph{sample proportion}. Just follow the last step \(\ref{alg:cilevlast}\) of Algorithm \(\ref{alg:algcilev}\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ci_lev[,}
+\NormalTok{       .(}\DataTypeTok{level =} \KeywordTok{mean}\NormalTok{(hat))]}
+\CommentTok{#>    level}
+\CommentTok{#> 1: 0.952}
+\end{Highlighting}
+\end{Shaded}
+
+It is very close to \(0.95\).
+
+\hypertarget{hypothesis-tests}{%
+\section{Hypothesis tests}\label{hypothesis-tests}}
+
+\hypertarget{empirical-p-value}{%
+\subsection{Empirical p-value}\label{empirical-p-value}}
+
+\hypertarget{empirical-type-i-error-rate}{%
+\subsection{Empirical type-I error rate}\label{empirical-type-i-error-rate}}
+
+\hypertarget{empirical-power}{%
+\subsection{Empirical power}\label{empirical-power}}
+
+\hypertarget{count-five-test-for-equal-variance}{%
+\subsection{Count Five test for equal variance}\label{count-five-test-for-equal-variance}}
+
+\hypertarget{statistical-methods}{%
+\section{Statistical Methods}\label{statistical-methods}}
+
+\hypertarget{bootstrap}{%
+\section{Bootstrap}\label{bootstrap}}
 
 \bibliography{book.bib,packages.bib}
 

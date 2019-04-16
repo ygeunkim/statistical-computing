@@ -1,0 +1,329 @@
+# Monte Carlo Methods in Inference
+
+## Parametric Bootstrap
+
+In this setting, we know distribution of $X$. We can freely generate from this distribution.
+
+```{r paramboot, echo=FALSE, fig.cap="Parametric bootstrap"}
+knitr::include_graphics("images/mcboot.png")
+```
+
+See Figure \@ref(fig:paramboot). From the "true" distribution, we can generate multiple samples. From each sample estimator can be computed. Then we can check these multiple estimates. Multiple estimates are close to motivation of estimator, so it helps exploring statistical inference with simple steps.
+
+```{r}
+mc_data <- function(rand, N = 10000, M = 1000, char = "s", ...) {
+  data.table(
+    x = rand(n = N * M, ...),
+    sam = gl(M, N, labels = paste0("s", 1:M))
+  )
+}
+```
+
+## Monte Carlo Methods for Estimation
+
+```{example, quanint, name = "Any quantity of interest"}
+Suppose that $X_1, X_2 \iid N(0, 1)$. We want to estimate
+
+$$\theta = E\lvert X_1 - X_2 \rvert$$
+```
+
+### Empirical distribution
+
+\begin{algorithm}[H] \label{alg:algx1x2}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{distribution $f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $(X_1^{(m)}, X_2^{(m)}) \iid N(0, 1)$\;
+    Compute $\hat\theta^{(m)} = \lvert X_1^{(m)} - X_2^{(m)} \rvert$\;
+  }
+  Draw a histogram\;
+  \Output{$\bar{\hat\theta} = \frac{1}{M} \sum\limits_{m = 1}^M\hat\theta_m^{(m)}, \{ \hat\theta^{(1)}, \ldots, \hat\theta^{(M)} \}$}
+  \caption{Empirical distribution of $\hat\theta$}
+\end{algorithm}
+
+```{r}
+basicmc <-
+  mc_data(rnorm, N = 2)[,
+                        xname := gl(2, 1, length = 2000, labels = c("x1", "x2"))] %>% 
+  dcast(sam ~ xname, value.var = "x") %>% 
+  .[,
+    .(that = mean(abs(x1 - x2))),
+    by = sam]
+```
+
+```{r}
+basicmc[,
+        .(est = mean(that))]
+```
+
+```{r absx12, fig.cap="Empirical distribution of $\\hat\\theta$ for $\\lvert X_1 - X_2 \\rvert$"}
+basicmc %>% 
+  ggplot(aes(x = that)) +
+  geom_histogram(bins = 30, col = gg_hcl(1), alpha = .7) +
+  xlab(expression(theta))
+```
+
+### Standard error
+
+In Algorithm $\ref{alg:algx1x2}$, we can get standard error by just calculating standard deviation of
+
+$$\{ \hat\theta^{(1)}, \ldots, \hat\theta^{(M)} \}$$
+
+\begin{algorithm}[H] \label{alg:algmcse}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{distribution $f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $(X_1^{(m)}, X_2^{(m)}) \iid N(0, 1)$\;
+    Compute $\hat\theta^{(m)} = \lvert X_1^{(m)} - X_2^{(m)} \rvert$\;
+  }
+  $\bar{\hat\theta} = \frac{1}{M} \sum\limits_{m = 1}^M\hat\theta_m^{(m)}$\;
+  $\widehat{SE}(\hat\theta) = \sqrt{\frac{1}{M - 1}\sum\limits_{m = 1}^M(\hat\theta^{(m)} - \bar{\hat\theta})}$\;
+  \Output{$\widehat{SE}(\hat\theta)$}
+  \caption{Standard error of $\hat\theta$}
+\end{algorithm}
+
+```{r}
+basicmc[,
+        .(se = sd(that))]
+```
+
+### Mean squared error
+
+$MSE$ is used when comparing several estimators.
+
+```{definition, mse, name = "Mean squared error"}
+$$MSE(\hat\theta) := E(\hat\theta - \theta)^2$$
+```
+
+To know $MSE$, however, we should compute expectation. Some of them might be complicated even though we know true distribution. As the last chapter, we can apply Monte carlo method.
+
+```{example, trim, name = "MSE of a trimmed mean"}
+Suppose that $X_1, \ldots, X_n \iid N(2, 1)$. Consider three estimators for $\mu = 2$.
+
+\begin{enumerate}
+  \item mean $\overline{X}$
+  \item median $\tilde{X}$
+  \item $k$th trimmed mean $\overline{X}_{[-k]}$
+\end{enumerate}
+```
+
+\begin{algorithm}[H] \label{alg:algmse}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{distribution $f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $(X_1^{(m)}, \ldots, X_N^{(m)}) \iid N(2, 1)$\;
+    Sort $(X_1^{(m)}, \ldots, X_N^{(m)})$ in increasing order, i.e. $(X_{(1)}^{(m)}, \ldots, X_{(N)}^{(m)})$\;
+    Mean $\overline{X}^{(m)} = \frac{1}{N}\sum\limits_{i = 1}^N X_i^{(m)}$\;
+    Median $\tilde{X}^{(m)} = \begin{cases} X_{\frac{N}{2} + 1}^{(m)} & N \:\text{odd} \\ \frac{X_{\frac{N}{2}}^{(m)} + X_{\frac{N}{2} + 1}^{(m)}}{2} & N \:\text{even} \end{cases}$\;
+    $k$th trimmed mean $\overline{X}_{[-k]}^{(m)} = \frac{1}{N - 2k}\sum\limits_{i = k + 1}^{n - k}X_{(i)}^{(m)}$
+  }
+  $\widehat{MSE}(\overline{X}) = \frac{1}{M} \sum\limits_{m = 1}^M (\overline{X}^{(m)} - 2)^2$\;
+  $\widehat{MSE}(\tilde{X}) = \frac{1}{M} \sum\limits_{m = 1}^M (\tilde{X}^{(m)} - 2)^2$\;
+  $\widehat{MSE}(\overline{X}_{[-k]}) = \frac{1}{M} \sum\limits_{m = 1}^M (\overline{X}_{[-k]}^{(m)} - 2)^2$\;
+  \Output{$\widehat{MSE}(\overline{X}), \widehat{MSE}(\tilde{X}), \:\text{and}\: \widehat{MSE}(\overline{X}_{[-k]})$}
+  \caption{MSE of mean, median, and $k$th trimmed mean}
+\end{algorithm}
+
+```{r}
+trim <- function(x, k = 1) {
+  n <- length(x)
+  x <- sort(x)
+  sum(x[(k + 1):(n - k)]) / (n - 2 * k)
+}
+#--------------------------------------
+mu_list <- function(x, k) {
+  list(mean = mean(x), median = median(x), trim = trim(x, k))
+}
+```
+
+Try $k = 1$.
+
+```{r}
+(trim_mc <-
+  mc_data(rnorm, mean = 2, sd = 1)[,
+                                   unlist(lapply(.SD, mu_list, k = 1)) %>% as.list,
+                                   by = sam])
+```
+
+```{r meanemp, fig.cap="Empirical distribution of each estimator for $\\mu = 2$"}
+trim_mc %>% 
+  melt(id.vars = "sam", variable.name = "hat") %>% 
+  ggplot(aes(x = value, fill = hat)) +
+  geom_histogram(bins = 30, alpha = .3, position = "identity") +
+  xlab(expression(mu)) +
+  geom_vline(xintercept = 2, col = I("red")) +
+  scale_fill_discrete(
+    name = "Estimates",
+    labels = c("Mean", "Median", "Trimmed")
+  )
+```
+
+Here, median shows the largest standard error.
+
+```{r}
+trim_mc[,
+        lapply(.SD, sd),
+        .SDcols = -"sam"]
+```
+
+Now try various $k$ for trimmed mean.
+
+```{r}
+mse_list <- function(x, k) {
+  list(mse = mean((x - 2)^2), se = sd(x))
+}
+#-----------------------------------------
+trim_mse <-
+  mc_data(rnorm, mean = 2, sd = 1)[,
+                                   lapply(.SD, function(x) {
+                                     sapply(0:9, function(k) {
+                                       trim(x = x, k = k)
+                                     })
+                                   }) %>% 
+                                     unlist() %>% 
+                                     as.list(),
+                                   by = sam][,
+                                             lapply(.SD, mse_list) %>% 
+                                               unlist() %>% 
+                                               as.list(),
+                                             .SDcols = -"sam"]
+```
+
+```{r}
+trim_mse %>% 
+  transpose() %>% 
+  .[,
+    `:=`(
+      k = rep(0:9, each = 2),
+      hat = gl(2, k = 1, length = 2 * 10, labels = c("mse", "se"))
+    )] %>% 
+  dcast(k ~ hat, value.var = "V1")
+```
+
+## Confidence interval
+
+Remember the meaning of 95% confidence interval. *If we have 100 samples and construct confidence interval in each sample, 95 intervals would include true parameter*. In this Monte Carlo setting, we know true population distribution, so we can generate multiple samples. Thus, we can reproduce this confidence interval situation.
+
+### Empirical confidence interval
+
+See one of histograms of Figure \@ref(fig:meanemp). Estimates are sorted. Calculating the upper and lower quantiles would give values close to confidence interval. See Figure \@ref(fig:absx12). While the former show symmetric distribution, this is not. 0.25 and 0.975 quantile might be inappropriate. In this case, we should pick the *shortest interval with 95%*. Best critical region leads to the shortest length of CI given $\alpha$, so we are finding this one.
+
+\begin{algorithm}[H] \label{alg:algempci}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{distribution $f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \iid f$\;
+    Compute $\hat\theta^{(m)} = \hat\theta(\mathbf{\mathbf{X}^{(m)}})$\;
+  }
+  \eIf{Distribution of $\{ \hat\theta^{(m)} \}_1^M$ symmetric}{
+    Sort $\{ \hat\theta^{(1)}, \ldots, \hat\theta^{(M)} \}$ in decreasing order, i.e. $\{ \hat\theta_{(1)}^{(1)}, \ldots, \hat\theta_{(M)}^{(M)} \}$\;
+    Compute $LB= \frac{\alpha}{2} \:\text{sample quantile}$ and $UB= 1 - \frac{\alpha}{2} \:\text{sample quantile}$\;
+  }{
+    \ForEach{$lb < 0.05$ with $ub - lb = 1 - \alpha$}{
+      Candidate interval $(lb, ub)$\;
+      calculate length $l_i = ub - lb$\;
+    }
+    $(LB, UB)$: pick up the interval with the smallest length $l_i$\;
+  }
+  \Output{$(LB, UB)$}
+  \caption{Empirical confidence interval by Monte Carlo method}
+\end{algorithm}
+
+### Empirical confidence level
+
+On the contrary, we can estiamte confidence level given confidence interval.
+
+```{example, civar, name = "Confidence interval for variance"}
+If $X_1, \ldots, X_n \iid N(\mu, \sigma^2)$, then
+
+$$T = \frac{(n - 1)S^2}{\sigma^2} \sim \chi^2(n - 1)$$
+
+Thus, $100(1 - \alpha)\%$ confidence interval is given by
+
+$$(0, \frac{(n -1)S^2}{\chi^2_{\alpha}(n - 1)})$$
+```
+
+For each MC sample, compute confidence interval. Just check if *known true parameter* is in the interval. Its proportion becomes the confidence level. It is simpler that estimate confidence interval itself.
+
+\begin{algorithm}[H] \label{alg:algcilev}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{distribution $f$ with parameter $\theta$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \iid f$\;
+    Compute the confidence interval $C_m$\;
+    Compute $Y_j = I(\theta \in C_m)$, i.e. whether $\theta$ is in the CI\;
+  }
+  Empirical confidence level $\overline{Y} = \sum\limits_{m = 1}^M Y_m$\; \label{alg:cilevlast}
+  \Output{$\overline{Y}$}
+  \caption{Empirical confidence level by Monte Carlo method}
+\end{algorithm}
+
+Let $\mu = 0$, $\sigma = 2$, $N = 20$, and let $M = 1000$.
+
+```{r}
+ci_var <- function(x, variance, alpha) {
+  n <- length(x)
+  s2 <- var(x)
+  (n - 1) * s2 / qchisq(alpha, df = n - 1) > variance
+}
+#---------------------------
+ci_lev <-
+  mc_data(rnorm, N = 20, M = 1000, mean = 0, sd = 2)[,
+                                                     .(hat = mean(ci_var(x, variance = 4, alpha = .05))),
+                                                     by = sam]
+```
+
+
+```{r ciin, fig.cap="Proportion of $\\sigma^2$ in confidence intervals"}
+ci_lev[,
+       .N,
+       by = hat][,
+                 proportion := N / sum(N)] %>%
+  ggplot(aes(x = hat, y = proportion, fill = factor(hat))) +
+  geom_bar(stat = "identity") +
+  scale_fill_discrete(
+    name = "CI",
+    labels = c("out", "in")
+  ) +
+  xlab(expression(y))
+```
+
+This leads to empirical confidence level, i.e. *sample proportion*. Just follow the last step $\ref{alg:cilevlast}$ of Algorithm $\ref{alg:algcilev}$.
+
+```{r}
+ci_lev[,
+       .(level = mean(hat))]
+```
+
+It is very close to $0.95$.
+
+
+## Hypothesis tests
+
+### Empirical p-value
+
+### Empirical type-I error rate
+
+### Empirical power
+
+### Count Five test for equal variance
+
+
+## Statistical Methods
+
+
+## Bootstrap
+
+
+
+
