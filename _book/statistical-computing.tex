@@ -2695,17 +2695,238 @@ For each MC sample, compute this statistic \(I_m = I(\mathbf{X}^{m})\). Then emp
   \SetKwInOut{Output}{output}
   \Input{$H_0: \theta \in \Theta_0 \quad \text{vs} \quad H_1: \theta \in \Theta_1$}
   \For{$m \leftarrow 1$ \KwTo $M$}{
-    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \stackrel{H_0}{\sim}f$\;
+    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \stackrel{H_0}{\sim}f$\; \label{alg:gentype1}
     Compute $T_m(\mathbf{X}^{(m)})$\;
     Compute $I_m = \begin{cases} 1 & H_0 \:\text{is rejected} \mid H_0 \\ 0 & \text{otherwise} \end{cases}$\;
   }
-  Empirical Type I error rate $\hat\alpha = \frac{1}{M}\sum\limits_{m = 1}^M I_j$\;
+  Empirical Type I error rate $\hat\alpha = \frac{1}{M}\sum\limits_{m = 1}^M I_m$\;
   \Output{compare $\hat\alpha$ with $\alpha$}
   \caption{Empirical type I error rate by Monte Carlo method}
 \end{algorithm}
 
+\BeginKnitrBlock{example}[Testing normal mean]
+\protect\hypertarget{exm:ttest}{}{\label{exm:ttest} \iffalse (Testing normal mean) \fi{} }Suppose that \(X_1, \ldots, X_{20} \stackrel{iid}{\sim}N(\mu, \sigma^2 = 100)\). Test
+
+\[H_0: \mu = 500 \qquad \text{vs} \qquad H_1: \mu > 500\]
+
+\begin{enumerate}
+  \item $Z$-test: $Z = \frac{\overline{X} - 500}{\sigma^2 / \sqrt{20}} \stackrel{H_0}{\sim}N(0, 1)$
+  \item $t$-test: $T = \frac{\overline{X} - 500}{S / \sqrt{20}} \stackrel{H_0}{\sim}t(20 - 1)$
+\end{enumerate}
+\EndKnitrBlock{example}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{test_list <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, mu, sig, }\DataTypeTok{a =} \FloatTok{.05}\NormalTok{) \{}
+\NormalTok{  n <-}\StringTok{ }\KeywordTok{length}\NormalTok{(x)}
+\NormalTok{  xbar <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(x) }\OperatorTok{-}\StringTok{ }\NormalTok{mu}
+  \KeywordTok{list}\NormalTok{(}
+    \DataTypeTok{z =}\NormalTok{ xbar }\OperatorTok{/}\StringTok{ }\NormalTok{(sig }\OperatorTok{/}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(n)) }\OperatorTok{>}\StringTok{ }\KeywordTok{qnorm}\NormalTok{(a, }\DataTypeTok{lower.tail =} \OtherTok{FALSE}\NormalTok{),}
+    \DataTypeTok{t =}\NormalTok{ xbar }\OperatorTok{/}\StringTok{ }\NormalTok{(}\KeywordTok{sd}\NormalTok{(x) }\OperatorTok{/}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(n)) }\OperatorTok{>}\StringTok{ }\KeywordTok{qt}\NormalTok{(a, }\DataTypeTok{df =}\NormalTok{ n }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{, }\DataTypeTok{lower.tail =} \OtherTok{FALSE}\NormalTok{)}
+\NormalTok{  )}
+\NormalTok{\}}
+\CommentTok{#--------------------}
+\NormalTok{err_mc <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{N =} \DecValTok{20}\NormalTok{, }\DataTypeTok{mean =} \DecValTok{500}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{10}\NormalTok{)[,}
+                                              \KeywordTok{lapply}\NormalTok{(.SD, test_list, }\DataTypeTok{mu =} \DecValTok{500}\NormalTok{, }\DataTypeTok{sig =} \DecValTok{10}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{                                                }\KeywordTok{unlist}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
+\StringTok{                                                }\KeywordTok{as.list}\NormalTok{(),}
+\NormalTok{                                              by =}\StringTok{ }\NormalTok{sam][,}
+                                                        \KeywordTok{lapply}\NormalTok{(.SD, mean),}
+\NormalTok{                                                        .SDcols =}\StringTok{ }\OperatorTok{-}\StringTok{"sam"}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{table}[t]
+
+\caption{\label{tab:errmc}Empirical Type I error for Z and T}
+\centering
+\begin{tabular}{r|r}
+\hline
+Z-test & T-test\\
+\hline
+0.048 & 0.051\\
+\hline
+\end{tabular}
+\end{table}
+
+Both test have Type I error close to \(\alpha\), but \(Z\)-test seems bit better.
+
 \hypertarget{empirical-power}{%
 \subsection{Empirical power}\label{empirical-power}}
+
+Next step is power. See Figure \ref{fig:sizealpha}. Power is different in that this is computed in \emph{alternative distribution, not null distribution}.
+
+\[\beta(\theta_1) = P(\text{reject}\: H_0 \mid \theta_1 \in \Theta_1)\]
+
+\BeginKnitrBlock{lemma}
+\protect\hypertarget{lem:testalt}{}{\label{lem:testalt} }Consider \(H_0: \theta \in \Theta_0 \qquad \text{vs} \qquad H_1: \theta \in \Theta_1\).
+
+Define \(I(\mathbf{X})\) by
+
+\[
+I(\mathbf{X}) = \begin{cases}
+  1 & H_0 \:\text{is rejected} \mid H_1 \\
+  0 & otherwise
+\end{cases}
+\]
+
+For each MC sample, compute this statistic \(I_m = I(\mathbf{X}^{m})\). Then empirical power can be computed as
+
+\[\frac{1}{M}\sum_{m = 1}^M I_m\]
+\EndKnitrBlock{lemma}
+
+Process will be same but we test under \(H_1\). However, this makes a lot difference due to structure of each hypothesis. In many cases, \(H_0\) is simple, i.e.~\(\mu = 500\). In \(\ref{alg:gentype1}\) of Algorithm \(\ref{alg:algtype1}\), we can consider only \(N(\mu = 500, 100)\). Since \(\Theta_0\) and \(\Theta_1\) form partition, alternative hypothesis usually is not simple. In this example, \(\mu > 500\). We cannot specify one distribution for alternatrive. How to deal with this?
+
+Trying many points for \(\mu_1 \in \Theta_1 = \{ \mu : \mu > 500 \}\) might be possible. Our goal is finding larger power. So \emph{find test with larger power for all points in} \(\Theta_1\).
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/powercomp-1} 
+
+}
+
+\caption{Comparing power between two test methods}\label{fig:powercomp}
+\end{figure}
+
+See Figure \ref{fig:powercomp}. One test method has higher \(\beta(\theta)\) function curve in \(\Theta_1\). This test is \emph{powerful than the other}. We would choose this test in this step. So what we have to do is choose some points \(\theta_1 \in \Theta_1\), and draw the power curve.
+
+\begin{algorithm}[H] \label{alg:algpower}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$H_0: \theta \in \Theta_0 \quad \text{vs} \quad H_1: \theta \in \Theta_1$}
+  \ForEach{$\theta_1 \in \Theta_1$}{
+    \For{$m \leftarrow 1$ \KwTo $M$}{
+      Generate $X_1^{(m)}, \ldots, X_n^{(m)} \stackrel{H_0}{\sim}f$\;
+      Compute $T_m(\mathbf{X}^{(m)})$\;
+      Compute $I_m = \begin{cases} 1 & H_0 \:\text{is rejected} \mid H_1 \\ 0 & \text{otherwise} \end{cases}$\;
+    }
+    Empirical power $\hat\beta = \frac{1}{M}\sum\limits_{m = 1}^M I_m$\;
+  }
+  Draw a power curve $\hat\beta$ against $\theta_1$
+  \Output{curve and $\{ \hat\beta \}$}
+  \caption{Empirical power by Monte Carlo method}
+\end{algorithm}
+
+In fact, we can try every \(\theta \in \Theta\) and \emph{draw entire power curve}. Refer to Example \ref{exm:ttest}. \texttt{foreach} library would be additionaly used.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(foreach)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(pw_mc <-}\StringTok{ }
+\StringTok{  }\KeywordTok{foreach}\NormalTok{(}\DataTypeTok{mu1 =} \KeywordTok{seq}\NormalTok{(}\DecValTok{450}\NormalTok{, }\DecValTok{650}\NormalTok{, }\DataTypeTok{by =} \DecValTok{10}\NormalTok{), }\DataTypeTok{.combine =}\NormalTok{ rbind) }\OperatorTok{%do%}\StringTok{ }\NormalTok{\{}
+    \KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{N =} \DecValTok{20}\NormalTok{, }\DataTypeTok{mean =}\NormalTok{ mu1, }\DataTypeTok{sd =} \DecValTok{10}\NormalTok{)[,}
+\NormalTok{                                                h1 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\NormalTok{mu1]}
+\NormalTok{  \})}
+\CommentTok{#>           x   sam  h1}
+\CommentTok{#>      1: 448    s1 450}
+\CommentTok{#>      2: 452    s1 450}
+\CommentTok{#>      3: 453    s1 450}
+\CommentTok{#>      4: 450    s1 450}
+\CommentTok{#>      5: 449    s1 450}
+\CommentTok{#>     ---              }
+\CommentTok{#> 419996: 646 s1000 650}
+\CommentTok{#> 419997: 647 s1000 650}
+\CommentTok{#> 419998: 660 s1000 650}
+\CommentTok{#> 419999: 652 s1000 650}
+\CommentTok{#> 420000: 652 s1000 650}
+\end{Highlighting}
+\end{Shaded}
+
+One column is added from previous process. This is group for \(H_1\). So we should specify \texttt{by\ =\ .(h1,\ sam)}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pw_mc <-}
+\StringTok{  }\NormalTok{pw_mc[,}
+        \KeywordTok{lapply}\NormalTok{(.SD, test_list, }\DataTypeTok{mu =} \DecValTok{500}\NormalTok{, }\DataTypeTok{sig =} \DecValTok{10}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{          }\KeywordTok{unlist}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
+\StringTok{          }\KeywordTok{as.list}\NormalTok{(),}
+\NormalTok{        by =}\StringTok{ }\NormalTok{.(h1, sam)][,}
+                         \KeywordTok{lapply}\NormalTok{(.SD, mean),}
+\NormalTok{                         by =}\StringTok{ }\NormalTok{h1, .SDcols =}\StringTok{ }\OperatorTok{-}\StringTok{"sam"}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pw_mc }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{melt}\NormalTok{(}\DataTypeTok{id.vars =} \StringTok{"h1"}\NormalTok{, }\DataTypeTok{variable.name =} \StringTok{"test"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ h1, }\DataTypeTok{y =}\NormalTok{ value, }\DataTypeTok{colour =}\NormalTok{ test)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_colour_discrete}\NormalTok{(}
+    \DataTypeTok{name =} \StringTok{"Test"}\NormalTok{,}
+    \DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"Z"}\NormalTok{, }\StringTok{"T"}\NormalTok{)}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \KeywordTok{expression}\NormalTok{(mu),}
+    \DataTypeTok{y =} \KeywordTok{expression}\NormalTok{(beta)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/mupwcurve-1} 
+
+}
+
+\caption{Empirical power curve of each z-test and t-test}\label{fig:mupwcurve}
+\end{figure}
+
+Recall that we are estimating power. Instead of \texttt{mean()}, we can use \texttt{sd()}. This would give us \emph{standard error} of our estimator for power. Since it is sample proportion,
+
+\[\widehat{SE}(\hat{p}) = \sqrt{\frac{\hat{p}(1 - \hat{p})}{M}}\]
+
+Consider \(T\)-test.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pw_mc2 <-}\StringTok{ }
+\StringTok{  }\KeywordTok{foreach}\NormalTok{(}\DataTypeTok{mu1 =} \KeywordTok{seq}\NormalTok{(}\DecValTok{450}\NormalTok{, }\DecValTok{650}\NormalTok{, }\DataTypeTok{by =} \DecValTok{10}\NormalTok{), }\DataTypeTok{.combine =}\NormalTok{ rbind) }\OperatorTok{%do%}\StringTok{ }\NormalTok{\{}
+    \KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{N =} \DecValTok{20}\NormalTok{, }\DataTypeTok{mean =}\NormalTok{ mu1, }\DataTypeTok{sd =} \DecValTok{10}\NormalTok{)[,}
+\NormalTok{                                                h1 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\NormalTok{mu1]}
+\NormalTok{  \}}
+\CommentTok{#------------------}
+\NormalTok{pw_mc2 <-}
+\StringTok{  }\NormalTok{pw_mc2[,}
+\NormalTok{         .(}\DataTypeTok{te =} \KeywordTok{t.test}\NormalTok{(x, }\DataTypeTok{alternative =} \StringTok{"greater"}\NormalTok{, }\DataTypeTok{mu =} \DecValTok{500}\NormalTok{)}\OperatorTok{$}\NormalTok{p.value }\OperatorTok{<=}\StringTok{ }\FloatTok{.05}\NormalTok{),}
+\NormalTok{         by =}\StringTok{ }\NormalTok{.(h1, sam)][,}
+\NormalTok{                          .(}\DataTypeTok{te =} \KeywordTok{mean}\NormalTok{(te)),}
+\NormalTok{                          by =}\StringTok{ }\NormalTok{h1][,}
+\NormalTok{                                   se }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(te }\OperatorTok{*}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{te) }\OperatorTok{/}\StringTok{ }\DecValTok{1000}\NormalTok{)]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pw_mc2 }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ h1, }\DataTypeTok{y =}\NormalTok{ te)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_ribbon}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymin =}\NormalTok{ te }\OperatorTok{-}\StringTok{ }\NormalTok{se, }\DataTypeTok{ymax =}\NormalTok{ te }\OperatorTok{+}\StringTok{ }\NormalTok{se), }\DataTypeTok{col =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\DataTypeTok{alpha =} \FloatTok{.7}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \KeywordTok{expression}\NormalTok{(mu),}
+    \DataTypeTok{y =} \KeywordTok{expression}\NormalTok{(beta)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/pwse-1} 
+
+}
+
+\caption{Empirical power curve $\hat{p} \pm \widehat{SE}(\hat{p})$ for t-test}\label{fig:pwse}
+\end{figure}
 
 \hypertarget{count-five-test-for-equal-variance}{%
 \subsection{Count Five test for equal variance}\label{count-five-test-for-equal-variance}}

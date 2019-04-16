@@ -533,25 +533,218 @@ For each MC sample, compute this statistic $I_m = I(\mathbf{X}^{m})$. Then empir
 $$\frac{1}{M}\sum_{m = 1}^M I_m$$
 ```
 
-
 \begin{algorithm}[H] \label{alg:algtype1}
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
   \Input{$H_0: \theta \in \Theta_0 \quad \text{vs} \quad H_1: \theta \in \Theta_1$}
   \For{$m \leftarrow 1$ \KwTo $M$}{
-    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \hsim f$\;
+    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \hsim f$\; \label{alg:gentype1}
     Compute $T_m(\mathbf{X}^{(m)})$\;
     Compute $I_m = \begin{cases} 1 & H_0 \:\text{is rejected} \mid H_0 \\ 0 & \text{otherwise} \end{cases}$\;
   }
-  Empirical Type I error rate $\hat\alpha = \frac{1}{M}\sum\limits_{m = 1}^M I_j$\;
+  Empirical Type I error rate $\hat\alpha = \frac{1}{M}\sum\limits_{m = 1}^M I_m$\;
   \Output{compare $\hat\alpha$ with $\alpha$}
   \caption{Empirical type I error rate by Monte Carlo method}
 \end{algorithm}
 
+```{example, ttest, name = "Testing normal mean"}
+Suppose that $X_1, \ldots, X_{20} \iid N(\mu, \sigma^2 = 100)$. Test
 
+$$H_0: \mu = 500 \qquad \text{vs} \qquad H_1: \mu > 500$$
+
+\begin{enumerate}
+  \item $Z$-test: $Z = \frac{\overline{X} - 500}{\sigma^2 / \sqrt{20}} \hsim N(0, 1)$
+  \item $t$-test: $T = \frac{\overline{X} - 500}{S / \sqrt{20}} \hsim t(20 - 1)$
+\end{enumerate}
+```
+
+```{r}
+test_list <- function(x, mu, sig, a = .05) {
+  n <- length(x)
+  xbar <- mean(x) - mu
+  list(
+    z = xbar / (sig / sqrt(n)) > qnorm(a, lower.tail = FALSE),
+    t = xbar / (sd(x) / sqrt(n)) > qt(a, df = n - 1, lower.tail = FALSE)
+  )
+}
+#--------------------
+err_mc <-
+  mc_data(rnorm, N = 20, mean = 500, sd = 10)[,
+                                              lapply(.SD, test_list, mu = 500, sig = 10) %>% 
+                                                unlist() %>% 
+                                                as.list(),
+                                              by = sam][,
+                                                        lapply(.SD, mean),
+                                                        .SDcols = -"sam"]
+```
+
+```{r errmc, echo=FALSE}
+knitr::kable(err_mc, col.names = c("Z-test", "T-test"), caption = "Empirical Type I error for Z and T")
+```
+
+Both test have Type I error close to $\alpha$, but $Z$-test seems bit better.
 
 ### Empirical power
+
+Next step is power. See Figure \@ref(fig:sizealpha). Power is different in that this is computed in *alternative distribution, not null distribution*.
+
+$$\beta(\theta_1) = P(\text{reject}\: H_0 \mid \theta_1 \in \Theta_1)$$
+
+```{lemma, testalt}
+Consider $H_0: \theta \in \Theta_0 \qquad \text{vs} \qquad H_1: \theta \in \Theta_1$.
+
+Define $I(\mathbf{X})$ by
+
+$$
+I(\mathbf{X}) = \begin{cases}
+  1 & H_0 \:\text{is rejected} \mid H_1 \\
+  0 & otherwise
+\end{cases}
+$$
+
+For each MC sample, compute this statistic $I_m = I(\mathbf{X}^{m})$. Then empirical power can be computed as
+
+$$\frac{1}{M}\sum_{m = 1}^M I_m$$
+```
+
+
+Process will be same but we test under $H_1$. However, this makes a lot difference due to structure of each hypothesis. In many cases, $H_0$ is simple, i.e. $\mu = 500$. In $\ref{alg:gentype1}$ of Algorithm $\ref{alg:algtype1}$, we can consider only $N(\mu = 500, 100)$. Since $\Theta_0$ and $\Theta_1$ form partition, alternative hypothesis usually is not simple. In this example, $\mu > 500$. We cannot specify one distribution for alternatrive. How to deal with this?
+
+Trying many points for $\mu_1 \in \Theta_1 = \{ \mu : \mu > 500 \}$ might be possible. Our goal is finding larger power. So *find test with larger power for all points in* $\Theta_1$.
+
+```{r powercomp, echo=FALSE, fig.cap="Comparing power between two test methods"}
+bcurve <- function(x) {
+  exp(x) / (1 + exp(x))
+}
+bcurve2 <- function(x) {
+  exp(x) / (1 + exp(x - .5))
+}
+#-----------------------
+tibble(x = seq(-6, 6, by = .01)) %>% 
+  mutate(
+    y = bcurve(x),
+    y2 = bcurve2(x),
+    hyp = x <= -3
+  ) %>% 
+  ggplot(aes(x = x)) +
+  geom_line(aes(y = y, colour = hyp, group = 1)) +
+  geom_line(aes(y = y2, colour = hyp, group = 1)) +
+  geom_segment(
+    aes(x = -3, y = bcurve(-3), xend = -6, yend = bcurve(-3)), 
+    arrow = arrow(length = unit(.2, "cm")),
+    col = I("red"),
+    alpha = .5
+  ) +
+  annotate(geom = "text", x = -6.3, y = bcurve(-3), label = "alpha", parse = TRUE) +
+  scale_colour_discrete(
+    name = "Hypothesis",
+    labels = c(expression(Theta[1]), expression(Theta[0]))
+  ) +
+  theme(axis.text.x = element_blank()) +
+  labs(
+    x = expression(theta),
+    y = element_blank()
+  )
+```
+
+See Figure \@ref(fig:powercomp). One test method has higher $\beta(\theta)$ function curve in $\Theta_1$. This test is *powerful than the other*. We would choose this test in this step. So what we have to do is choose some points $\theta_1 \in \Theta_1$, and draw the power curve.
+
+\begin{algorithm}[H] \label{alg:algpower}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$H_0: \theta \in \Theta_0 \quad \text{vs} \quad H_1: \theta \in \Theta_1$}
+  \ForEach{$\theta_1 \in \Theta_1$}{
+    \For{$m \leftarrow 1$ \KwTo $M$}{
+      Generate $X_1^{(m)}, \ldots, X_n^{(m)} \hsim f$\;
+      Compute $T_m(\mathbf{X}^{(m)})$\;
+      Compute $I_m = \begin{cases} 1 & H_0 \:\text{is rejected} \mid H_1 \\ 0 & \text{otherwise} \end{cases}$\;
+    }
+    Empirical power $\hat\beta = \frac{1}{M}\sum\limits_{m = 1}^M I_m$\;
+  }
+  Draw a power curve $\hat\beta$ against $\theta_1$
+  \Output{curve and $\{ \hat\beta \}$}
+  \caption{Empirical power by Monte Carlo method}
+\end{algorithm}
+
+In fact, we can try every $\theta \in \Theta$ and *draw entire power curve*. Refer to Example \@ref(exm:ttest). `foreach` library would be additionaly used.
+
+```{r, eval=FALSE}
+library(foreach)
+```
+
+```{r}
+(pw_mc <- 
+  foreach(mu1 = seq(450, 650, by = 10), .combine = rbind) %do% {
+    mc_data(rnorm, N = 20, mean = mu1, sd = 10)[,
+                                                h1 := mu1]
+  })
+```
+
+One column is added from previous process. This is group for $H_1$. So we should specify `by = .(h1, sam)`.
+
+```{r}
+pw_mc <-
+  pw_mc[,
+        lapply(.SD, test_list, mu = 500, sig = 10) %>% 
+          unlist() %>% 
+          as.list(),
+        by = .(h1, sam)][,
+                         lapply(.SD, mean),
+                         by = h1, .SDcols = -"sam"]
+```
+
+```{r mupwcurve, fig.cap="Empirical power curve of each z-test and t-test"}
+pw_mc %>% 
+  melt(id.vars = "h1", variable.name = "test") %>% 
+  ggplot(aes(x = h1, y = value, colour = test)) +
+  geom_path() +
+  geom_point() +
+  scale_colour_discrete(
+    name = "Test",
+    labels = c("Z", "T")
+  ) +
+  labs(
+    x = expression(mu),
+    y = expression(beta)
+  )
+```
+
+Recall that we are estimating power. Instead of `mean()`, we can use `sd()`. This would give us *standard error* of our estimator for power. Since it is sample proportion,
+
+$$\widehat{SE}(\hat{p}) = \sqrt{\frac{\hat{p}(1 - \hat{p})}{M}}$$
+
+Consider $T$-test.
+
+```{r}
+pw_mc2 <- 
+  foreach(mu1 = seq(450, 650, by = 10), .combine = rbind) %do% {
+    mc_data(rnorm, N = 20, mean = mu1, sd = 10)[,
+                                                h1 := mu1]
+  }
+#------------------
+pw_mc2 <-
+  pw_mc2[,
+         .(te = t.test(x, alternative = "greater", mu = 500)$p.value <= .05),
+         by = .(h1, sam)][,
+                          .(te = mean(te)),
+                          by = h1][,
+                                   se := sqrt(te * (1 - te) / 1000)]
+```
+
+```{r pwse, fig.cap="Empirical power curve $\\hat{p} \\pm \\widehat{SE}(\\hat{p})$ for t-test"}
+pw_mc2 %>% 
+  ggplot(aes(x = h1, y = te)) +
+  geom_ribbon(aes(ymin = te - se, ymax = te + se), col = gg_hcl(1)) +
+  geom_path(alpha = .7) +
+  geom_point() +
+  labs(
+    x = expression(mu),
+    y = expression(beta)
+  )
+```
+
 
 ### Count Five test for equal variance
 
