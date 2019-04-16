@@ -197,7 +197,7 @@ phi_simul <- foreach(y = seq(.1, 2.5, length.out = 10), .combine = bind_rows) %d
 ```
 
 ```{r, echo=FALSE}
-knitr::kable(phi_simul, col.names = c("x", "pnorm", "mc"), caption = "Simple MC estimates of Normal cdf for each x")
+knitr::kable(phi_simul, col.names = c("x", "pnorm", "mc"), caption = "Simple MC estimates of Normal cdf for each x", longtable = TRUE)
 ```
 
 
@@ -402,7 +402,8 @@ mc_var %>%
   mutate(mc_efficient = (mc_variance / hit_variance < 1)) %>% 
   knitr::kable(
     col.names = c("SimpleMC", "Hit-or-Miss", "SimpleMCefficiency"),
-    caption = "Simple MC versus Hit-or-Miss"
+    caption = "Simple MC versus Hit-or-Miss",
+    longtable = TRUE
   )
 ```
 

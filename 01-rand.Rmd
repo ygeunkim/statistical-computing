@@ -225,7 +225,7 @@ pmf <-
 ```{r, exdis, echo=FALSE}
 pmf %>% 
   t() %>% 
-  knitr::kable(format = "pandoc", col.names = NULL, caption = "Example of a Discrete Random Variable")
+  knitr::kable(format = "pandoc", col.names = NULL, caption = "Example of a Discrete Random Variable", longtable = TRUE)
 ```
 
 ```{example, dismass, name = "Discrete Random Variable"}
@@ -575,7 +575,7 @@ A-R method can be also implemented to discrete case such as Example \@ref(exm:di
 ```{r, exdis2, echo=FALSE}
 pmf %>% 
   t() %>% 
-  knitr::kable(format = "pandoc", col.names = NULL, caption = "Example of a Discrete Random Variable")
+  knitr::kable(format = "pandoc", col.names = NULL, caption = "Example of a Discrete Random Variable", longtable = TRUE)
 ```
 
 ```{solution, ardiscretesol, name = "Generating discrete random numbers using A-R methods"}

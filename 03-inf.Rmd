@@ -301,18 +301,255 @@ ci_lev[,
 This leads to empirical confidence level, i.e. *sample proportion*. Just follow the last step $\ref{alg:cilevlast}$ of Algorithm $\ref{alg:algcilev}$.
 
 ```{r}
-ci_lev[,
-       .(level = mean(hat))]
+(ci_lev <-
+  ci_lev[,
+         .(level = mean(hat))])
 ```
 
-It is very close to $0.95$.
+It is very close to $0.95$. One of advantages of simulation study is we can assume various situation. For example, *violation of Gausiannity*.
 
+```{example, nonnormal, name = "Violation of Normal distribution assumption"}
+Refer to Example \@ref(exm:civar). This has assumed that $X_i \iid N(\mu = 2, \sigma^2 = 4)$. What if not? For instance,
+
+$$X_1, \ldots, X_n \iid \chi^2(df = 2)$$
+```
+
+Just change random numbers.
+
+```{r}
+ci_lev2 <-
+  mc_data(rchisq, N = 20, M = 1000, df = 2)[,
+                                            .(hat = mean(ci_var(x, variance = 4, alpha = .05))),
+                                            by = sam][,
+                                                      .(non_normal = mean(hat))]
+```
+
+```{r emlevpop, echo=FALSE}
+cbind(ci_lev, ci_lev2) %>% 
+  knitr::kable(col.names = c("Normal", "Chisq"), caption = "Empirical confidence level for each population", longtable = TRUE)
+```
+
+From Table \@ref(tab:emlevpop), we found that *non-normality lowers confidence level* from `r as.numeric(ci_lev)` to `r as.numeric(ci_lev2)`.
 
 ## Hypothesis tests
 
+Using MC method, we have done point estimation and interval estimation. Now consider *hypothesis testing*.
+
+$$H_0: \theta \in \Theta_0 \qquad \text{vs} \qquad H_1: \theta \in \Theta_1$$
+
+where $\{ \Theta_0, \Theta_1 \}$ is a partition of the parameter space $\Theta$. First of all, we have *test statistic*
+
+$$T(\mathbf{X}) \hsim f$$
+
+and $f$ is called *null distribution*. Given observed data, we compute this test statistic $T_0$. Where $T_0$ is located in the null distribution $f$ decides whether we reject or accept $H_0$. If $T_0$ is very far from the middle, we can say that the realized data set is very rare event under $H_0$. In this case, we reject $H_0$. Otherwise, accept it. This is why we compute the tail probability, p-value.
+
 ### Empirical p-value
 
+```{r, include=FALSE}
+xexp <- c(1.77, 0.78, 0.02, 0.18, 1.34, 0.15, 2.28, 0.65, 0.55, 0.46, 2.40)
+```
+
+```{example, exptest}
+Suppose that $X_1, \ldots, X_{10} \iid Exp(\lambda = 1)$, which are observed as follows
+
+$$`r xexp`$$
+
+Let $\theta = E(X) = \frac{1}{\lambda}$.
+
+$$H_0: \theta = 0.5 \qquad \text{vs} \qquad H_1: \theta > 0.5$$
+
+Test using $T = \frac{\overline{X} - \theta_0}{S / \sqrt{n}}$ statistic.
+```
+
+Before looking at p-value, briefly look at *empirical null distribution* of test statistic.
+
+```{r expemp, fig.cap="Emprirical Null Distribution"}
+mc_data(rexp, rate = 2)[,
+                        .(tstat = t.test(x, mu = .5)$statistic),
+                        by = sam] %>% 
+  ggplot(aes(x = tstat)) +
+  geom_histogram(bins = 30, col = gg_hcl(1), alpha = .7) +
+  geom_vline(xintercept = t.test(xexp, mu = .5)$statistic, col = I("red")) + # xexp: observed data
+  geom_vline(xintercept = -t.test(xexp, mu = .5)$statistic, col = I("red")) +
+  xlab("T")
+```
+
+By proceeding the similar way, we can get empirical distribution of test statistics. Some are out of observed $T_0$, some are not. Motivation is that we just count these. Proportion of these would estimate p-value. Recap what p-value is.
+
+```{definition, pval, name = "p-value"}
+Let $T$ be test statistic and let $T_0$ be observed test statistic given data. Then p-value is
+
+$$
+p-value := \begin{cases}
+  P(\lvert T \rvert \ge T_0 \mid H_0) & \text{both sided} \\
+  P(T \ge T_0 \mid H_0) & \text{one sided} \\
+  P(T \le T_0 \mid H_0) & \text{one sided}
+\end{cases}
+$$
+```
+
+Denote that p-value is probability. So in MC setting, we can estimate this by computing *sample mean of identity function*.
+
+```{lemma, emppval, name = "Empirical p-value"}
+Let $T_0$ be observed test statistic and let $\{ T_1, \ldots, T_M \}$ be test statistic computed in each MC sample.
+
+$$
+\text{Empirical p-value} = \begin{cases}
+  \frac{\Big\lvert \{ T_j : (T_j > \lvert T_0 \rvert) \:\text{or}\: (T_j < -\lvert T_0 \rvert) \} \Big\rvert}{M} & \text{both-sided} \\
+  \frac{\Big\lvert \{ T_j : (T_j > T_0 ) \} \Big\rvert}{M} \:\text{or}\: \frac{\Big\lvert \{ T_j : (T_j < T_0 ) \} \Big\rvert}{M} & \text{one-sided}
+\end{cases}
+$$
+```
+
+
+\begin{algorithm}[H] \label{alg:algpval}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{Given observed data, compute $T_0$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \hsim f$\;
+    Compute $T_m(\mathbf{X}^{(m)})$\;
+  }
+  Empirical p-value $\hat{p} = \begin{cases} \frac{\Big\lvert \{ T_j : (T_j > \lvert T_0 \rvert) \:\text{or}\: (T_j < -\lvert T_0 \rvert) \} \Big\rvert}{M} & \text{both-sided} \\ \frac{\Big\lvert \{ T_j : (T_j > T_0 ) \} \Big\rvert}{M} \:\text{or}\: \frac{\Big\lvert \{ T_j : (T_j < T_0 ) \} \Big\rvert}{M} & \text{one-sided} \end{cases}$\; \label{alg:empp}
+  \Output{$\hat{p}$}
+  \caption{Empirical p-value by Monte Carlo method}
+\end{algorithm}
+
+Go back to Example \@ref(exm:exptest). Only left is computing $\ref{alg:empp}$ of Algorighm $\ref{alg:algpval}$. (Denote that `xexp` in the code is vector object of observed data).
+
+```{r}
+(tt_exp <-
+  mc_data(rexp, rate = 2)[,
+                          .(tstat = t.test(x, mu = .5)$statistic),
+                          by = sam][,
+                                    .(pval = mean(tstat > abs(t.test(xexp, mu = .5)$statistic)))])
+```
+
+It is smaller that `0.05`, so we reject $H_0$.
+
+### Comparing several tests
+
+MC method would be used in comparing tests rather than conducting test itself. By generating random number, we can evaluate tests.
+
+$$H_0: \theta \in \Theta_0 \qquad \text{vs} \qquad H_1: \theta \in \Theta_1$$
+
+As mentioned earlier, $\{ \Theta_0, \Theta_1 \}$ is a partition of the parameter space $\Theta$. For this test, we can perform several tests. Test method 1, test method 2, et cetera. All these methods produce error, but these errors might be different. So we try to compare this.
+
+|what is true|accept $H_0$|reject $H_0$|  
+|:----------:|:----------:|:----------:|  
+| $H_0$ | correct decision | *Type I error* |  
+| $H_1$ | *Type II Error* | correct decision |  
+
+In most tests, we aims to reject $H_0$. By rejecting it, we can evidently say that $H_0$ is not true. In this sense, we treat type I error more importantly that type II error in general. Test strategy becomes to control type I error probability first and then lower type II error probabilty.
+
+```{definition, bpower, name = "Power function"}
+Let $\theta \in \Theta$ be a parameter of a test.
+
+$$\beta(\theta) := P(\text{reject}\: H_0 \mid \theta)$$
+```
+
+With this power function, each type I error and type II error probability is given.
+
+```{lemma, typeerr, name = "typeerr"}
+\begin{enumerate}
+  \item $P(\text{Type I error}) = \beta(\theta_0), \quad \theta_0 \in \Theta_0$
+  \item Power $\beta(\theta_1) = 1 - P(\text{Type II error}), \quad \theta_1 \in \Theta_1$
+\end{enumerate}
+```
+
+Following our test strategy, fixing $P(\text{Type I error})$ and maximizing $\beta(\theta_1)$, we construct following test.
+
+```{definition, sizetest, name = "Size $\\alpha$ Test"}
+A test with $\beta(\theta)$ is called size $\alpha$ test if and only if
+
+$$\alpha := \sup_{\theta \in \Theta_0} \beta(\theta), \quad 0 \le \alpha \le 1$$
+```
+
+```{r sizealpha, echo=FALSE, fig.cap="Size $\\alpha$ Test"}
+bcurve <- function(x) {
+  exp(x) / (1 + exp(x))
+}
+#-----------------------
+tibble(x = seq(-6, 6, by = .01)) %>% 
+  mutate(
+    y = bcurve(x),
+    hyp = x <= -3
+  ) %>% 
+  ggplot(aes(x = x)) +
+  geom_line(aes(y = y, colour = hyp, group = 1)) +
+  geom_segment(
+    aes(x = -3, y = bcurve(-3), xend = -6, yend = bcurve(-3)), 
+    arrow = arrow(length = unit(.2, "cm")),
+    col = I("red"),
+    alpha = .5
+  ) +
+  annotate(geom = "text", x = -6.3, y = bcurve(-3), label = "alpha", parse = TRUE) +
+  scale_colour_discrete(
+    name = "Hypothesis",
+    labels = c(expression(Theta[1]), expression(Theta[0]))
+  ) +
+  theme(axis.text.x = element_blank()) +
+  labs(
+    x = expression(theta),
+    y = element_blank()
+  )
+```
+
+Then how to compare tests? Look at the following example. Three columns of the middle part are type I error rate.
+
+|test methods| $\alpha = 0.01$ | $\alpha = 0.05$ | $\alpha = 0.01$ | Power |  
+|:----------:|:---------------:|:---------------:|:---------------:|:-----:|  
+| Test 1 | 0.09 | 0.04 | 0.01 | 0.7 |
+| Test 2 | 0.11 | 0.06 | 0.01 | 0.65 |  
+| Test 3 | 0.15 | 0.07 | 0.02 | 0.9 |  
+
+Here, we will choose **Test 1**.
+
+1. $\text{Type I error rate} \approx \alpha$
+    - before looking at power, this should be satisfied.
+    - So Test 3 is excluded
+2. Larger power
+    - Thus, we select Test 1.
+
 ### Empirical type-I error rate
+
+Recall Lemma \@ref(lem:typeerr). As in p-value, we just compute sample proportion for each type I error rate and power under null and alternative distribution.
+
+```{lemma, testnull}
+Consider $H_0: \theta \in \Theta_0 \qquad \text{vs} \qquad H_1: \theta \in \Theta_1$.
+
+Define $I(\mathbf{X})$ by
+
+$$
+I(\mathbf{X}) = \begin{cases}
+  1 & H_0 \:\text{is rejected} \mid H_0 \\
+  0 & otherwise
+\end{cases}
+$$
+
+For each MC sample, compute this statistic $I_m = I(\mathbf{X}^{m})$. Then empirical type I error rate can be computed as
+
+$$\frac{1}{M}\sum_{m = 1}^M I_m$$
+```
+
+
+\begin{algorithm}[H] \label{alg:algtype1}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$H_0: \theta \in \Theta_0 \quad \text{vs} \quad H_1: \theta \in \Theta_1$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \hsim f$\;
+    Compute $T_m(\mathbf{X}^{(m)})$\;
+    Compute $I_m = \begin{cases} 1 & H_0 \:\text{is rejected} \mid H_0 \\ 0 & \text{otherwise} \end{cases}$\;
+  }
+  Empirical Type I error rate $\hat\alpha = \frac{1}{M}\sum\limits_{m = 1}^M I_j$\;
+  \Output{compare $\hat\alpha$ with $\alpha$}
+  \caption{Empirical type I error rate by Monte Carlo method}
+\end{algorithm}
+
+
 
 ### Empirical power
 

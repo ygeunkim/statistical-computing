@@ -128,7 +128,8 @@
   \postdate{\par}
     \date{16 Apr, 2019}
 
-%\usepackage{booktabs}
+\usepackage{booktabs}
+\usepackage{longtable}
 \usepackage{float}
 \usepackage{pdfpages}
 \usepackage{hyperref}
@@ -1570,11 +1571,8 @@ Then compute \(\hat\Phi(x)\) for various \(x\) values.
 \end{Highlighting}
 \end{Shaded}
 
-\begin{table}[t]
-
-\caption{\label{tab:unnamed-chunk-35}Simple MC estimates of Normal cdf for each x}
-\centering
-\begin{tabular}{r|r|r}
+\begin{longtable}{r|r|r}
+\caption{\label{tab:unnamed-chunk-35}Simple MC estimates of Normal cdf for each x}\\
 \hline
 x & pnorm & mc\\
 \hline
@@ -1598,8 +1596,7 @@ x & pnorm & mc\\
 \hline
 2.500 & 0.994 & 0.990\\
 \hline
-\end{tabular}
-\end{table}
+\end{longtable}
 
 \hypertarget{hit-or-miss-monte-carlo}{%
 \subsection{Hit-or-Miss Monte Carlo}\label{hit-or-miss-monte-carlo}}
@@ -1864,18 +1861,14 @@ See Figure \ref{fig:simhit}. It is obvious that Hit-or-Miss estimate produces la
 
 In other words, if \(\hat\theta_1\) has smaller variance than \(\hat\theta_2\), then \(\hat\theta_1\) is said to be efficient, which is preferable.
 
-\begin{table}[t]
-
-\caption{\label{tab:unnamed-chunk-46}Simple MC versus Hit-or-Miss}
-\centering
-\begin{tabular}{r|r|l}
+\begin{longtable}{r|r|l}
+\caption{\label{tab:unnamed-chunk-46}Simple MC versus Hit-or-Miss}\\
 \hline
 SimpleMC & Hit-or-Miss & SimpleMCefficiency\\
 \hline
 0 & 0 & TRUE\\
 \hline
-\end{tabular}
-\end{table}
+\end{longtable}
 
 \hypertarget{variance-reduction}{%
 \section{Variance Reduction}\label{variance-reduction}}
@@ -2433,23 +2426,283 @@ This leads to empirical confidence level, i.e.~\emph{sample proportion}. Just fo
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{ci_lev[,}
-\NormalTok{       .(}\DataTypeTok{level =} \KeywordTok{mean}\NormalTok{(hat))]}
+\NormalTok{(ci_lev <-}
+\StringTok{  }\NormalTok{ci_lev[,}
+\NormalTok{         .(}\DataTypeTok{level =} \KeywordTok{mean}\NormalTok{(hat))])}
 \CommentTok{#>    level}
 \CommentTok{#> 1: 0.952}
 \end{Highlighting}
 \end{Shaded}
 
-It is very close to \(0.95\).
+It is very close to \(0.95\). One of advantages of simulation study is we can assume various situation. For example, \emph{violation of Gausiannity}.
+
+\BeginKnitrBlock{example}[Violation of Normal distribution assumption]
+\protect\hypertarget{exm:nonnormal}{}{\label{exm:nonnormal} \iffalse (Violation of Normal distribution assumption) \fi{} }Refer to Example \ref{exm:civar}. This has assumed that \(X_i \stackrel{iid}{\sim}N(\mu = 2, \sigma^2 = 4)\). What if not? For instance,
+
+\[X_1, \ldots, X_n \stackrel{iid}{\sim}\chi^2(df = 2)\]
+\EndKnitrBlock{example}
+
+Just change random numbers.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ci_lev2 <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(rchisq, }\DataTypeTok{N =} \DecValTok{20}\NormalTok{, }\DataTypeTok{M =} \DecValTok{1000}\NormalTok{, }\DataTypeTok{df =} \DecValTok{2}\NormalTok{)[,}
+\NormalTok{                                            .(}\DataTypeTok{hat =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{ci_var}\NormalTok{(x, }\DataTypeTok{variance =} \DecValTok{4}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{.05}\NormalTok{))),}
+\NormalTok{                                            by =}\StringTok{ }\NormalTok{sam][,}
+\NormalTok{                                                      .(}\DataTypeTok{non_normal =} \KeywordTok{mean}\NormalTok{(hat))]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}{r|r}
+\caption{\label{tab:emlevpop}Empirical confidence level for each population}\\
+\hline
+Normal & Chisq\\
+\hline
+0.952 & 0.763\\
+\hline
+\end{longtable}
+
+From Table \ref{tab:emlevpop}, we found that \emph{non-normality lowers confidence level} from 0.952 to 0.763.
 
 \hypertarget{hypothesis-tests}{%
 \section{Hypothesis tests}\label{hypothesis-tests}}
 
+Using MC method, we have done point estimation and interval estimation. Now consider \emph{hypothesis testing}.
+
+\[H_0: \theta \in \Theta_0 \qquad \text{vs} \qquad H_1: \theta \in \Theta_1\]
+
+where \(\{ \Theta_0, \Theta_1 \}\) is a partition of the parameter space \(\Theta\). First of all, we have \emph{test statistic}
+
+\[T(\mathbf{X}) \stackrel{H_0}{\sim}f\]
+
+and \(f\) is called \emph{null distribution}. Given observed data, we compute this test statistic \(T_0\). Where \(T_0\) is located in the null distribution \(f\) decides whether we reject or accept \(H_0\). If \(T_0\) is very far from the middle, we can say that the realized data set is very rare event under \(H_0\). In this case, we reject \(H_0\). Otherwise, accept it. This is why we compute the tail probability, p-value.
+
 \hypertarget{empirical-p-value}{%
 \subsection{Empirical p-value}\label{empirical-p-value}}
 
+\BeginKnitrBlock{example}
+\protect\hypertarget{exm:exptest}{}{\label{exm:exptest} }Suppose that \(X_1, \ldots, X_{10} \stackrel{iid}{\sim}Exp(\lambda = 1)\), which are observed as follows
+
+\[`r xexp`\]
+
+Let \(\theta = E(X) = \frac{1}{\lambda}\).
+
+\[H_0: \theta = 0.5 \qquad \text{vs} \qquad H_1: \theta > 0.5\]
+
+Test using \(T = \frac{\overline{X} - \theta_0}{S / \sqrt{n}}\) statistic.
+\EndKnitrBlock{example}
+
+Before looking at p-value, briefly look at \emph{empirical null distribution} of test statistic.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{mc_data}\NormalTok{(rexp, }\DataTypeTok{rate =} \DecValTok{2}\NormalTok{)[,}
+\NormalTok{                        .(}\DataTypeTok{tstat =} \KeywordTok{t.test}\NormalTok{(x, }\DataTypeTok{mu =} \FloatTok{.5}\NormalTok{)}\OperatorTok{$}\NormalTok{statistic),}
+\NormalTok{                        by =}\StringTok{ }\NormalTok{sam] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ tstat)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\DataTypeTok{col =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{), }\DataTypeTok{alpha =} \FloatTok{.7}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_vline}\NormalTok{(}\DataTypeTok{xintercept =} \KeywordTok{t.test}\NormalTok{(xexp, }\DataTypeTok{mu =} \FloatTok{.5}\NormalTok{)}\OperatorTok{$}\NormalTok{statistic, }\DataTypeTok{col =} \KeywordTok{I}\NormalTok{(}\StringTok{"red"}\NormalTok{)) }\OperatorTok{+}\StringTok{ }\CommentTok{# xexp: observed data}
+\StringTok{  }\KeywordTok{geom_vline}\NormalTok{(}\DataTypeTok{xintercept =} \OperatorTok{-}\KeywordTok{t.test}\NormalTok{(xexp, }\DataTypeTok{mu =} \FloatTok{.5}\NormalTok{)}\OperatorTok{$}\NormalTok{statistic, }\DataTypeTok{col =} \KeywordTok{I}\NormalTok{(}\StringTok{"red"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"T"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/expemp-1} 
+
+}
+
+\caption{Emprirical Null Distribution}\label{fig:expemp}
+\end{figure}
+
+By proceeding the similar way, we can get empirical distribution of test statistics. Some are out of observed \(T_0\), some are not. Motivation is that we just count these. Proportion of these would estimate p-value. Recap what p-value is.
+
+\BeginKnitrBlock{definition}[p-value]
+\protect\hypertarget{def:pval}{}{\label{def:pval} \iffalse (p-value) \fi{} }Let \(T\) be test statistic and let \(T_0\) be observed test statistic given data. Then p-value is
+
+\[
+p-value := \begin{cases}
+  P(\lvert T \rvert \ge T_0 \mid H_0) & \text{both sided} \\
+  P(T \ge T_0 \mid H_0) & \text{one sided} \\
+  P(T \le T_0 \mid H_0) & \text{one sided}
+\end{cases}
+\]
+\EndKnitrBlock{definition}
+
+Denote that p-value is probability. So in MC setting, we can estimate this by computing \emph{sample mean of identity function}.
+
+\BeginKnitrBlock{lemma}[Empirical p-value]
+\protect\hypertarget{lem:emppval}{}{\label{lem:emppval} \iffalse (Empirical p-value) \fi{} }Let \(T_0\) be observed test statistic and let \(\{ T_1, \ldots, T_M \}\) be test statistic computed in each MC sample.
+
+\[
+\text{Empirical p-value} = \begin{cases}
+  \frac{\Big\lvert \{ T_j : (T_j > \lvert T_0 \rvert) \:\text{or}\: (T_j < -\lvert T_0 \rvert) \} \Big\rvert}{M} & \text{both-sided} \\
+  \frac{\Big\lvert \{ T_j : (T_j > T_0 ) \} \Big\rvert}{M} \:\text{or}\: \frac{\Big\lvert \{ T_j : (T_j < T_0 ) \} \Big\rvert}{M} & \text{one-sided}
+\end{cases}
+\]
+\EndKnitrBlock{lemma}
+
+\begin{algorithm}[H] \label{alg:algpval}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{Given observed data, compute $T_0$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \stackrel{H_0}{\sim}f$\;
+    Compute $T_m(\mathbf{X}^{(m)})$\;
+  }
+  Empirical p-value $\hat{p} = \begin{cases} \frac{\Big\lvert \{ T_j : (T_j > \lvert T_0 \rvert) \:\text{or}\: (T_j < -\lvert T_0 \rvert) \} \Big\rvert}{M} & \text{both-sided} \\ \frac{\Big\lvert \{ T_j : (T_j > T_0 ) \} \Big\rvert}{M} \:\text{or}\: \frac{\Big\lvert \{ T_j : (T_j < T_0 ) \} \Big\rvert}{M} & \text{one-sided} \end{cases}$\; \label{alg:empp}
+  \Output{$\hat{p}$}
+  \caption{Empirical p-value by Monte Carlo method}
+\end{algorithm}
+
+Go back to Example \ref{exm:exptest}. Only left is computing \(\ref{alg:empp}\) of Algorighm \(\ref{alg:algpval}\). (Denote that \texttt{xexp} in the code is vector object of observed data).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(tt_exp <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(rexp, }\DataTypeTok{rate =} \DecValTok{2}\NormalTok{)[,}
+\NormalTok{                          .(}\DataTypeTok{tstat =} \KeywordTok{t.test}\NormalTok{(x, }\DataTypeTok{mu =} \FloatTok{.5}\NormalTok{)}\OperatorTok{$}\NormalTok{statistic),}
+                          \DataTypeTok{by =}\NormalTok{ sam][,}
+\NormalTok{                                    .(}\DataTypeTok{pval =} \KeywordTok{mean}\NormalTok{(tstat }\OperatorTok{>}\StringTok{ }\KeywordTok{abs}\NormalTok{(}\KeywordTok{t.test}\NormalTok{(xexp, }\DataTypeTok{mu =} \FloatTok{.5}\NormalTok{)}\OperatorTok{$}\NormalTok{statistic)))])}
+\CommentTok{#>     pval}
+\CommentTok{#> 1: 0.046}
+\end{Highlighting}
+\end{Shaded}
+
+It is smaller that \texttt{0.05}, so we reject \(H_0\).
+
+\hypertarget{comparing-several-tests}{%
+\subsection{Comparing several tests}\label{comparing-several-tests}}
+
+MC method would be used in comparing tests rather than conducting test itself. By generating random number, we can evaluate tests.
+
+\[H_0: \theta \in \Theta_0 \qquad \text{vs} \qquad H_1: \theta \in \Theta_1\]
+
+As mentioned earlier, \(\{ \Theta_0, \Theta_1 \}\) is a partition of the parameter space \(\Theta\). For this test, we can perform several tests. Test method 1, test method 2, et cetera. All these methods produce error, but these errors might be different. So we try to compare this.
+
+\begin{longtable}[]{@{}ccc@{}}
+\toprule
+what is true & accept \(H_0\) & reject \(H_0\)\tabularnewline
+\midrule
+\endhead
+\(H_0\) & correct decision & \emph{Type I error}\tabularnewline
+\(H_1\) & \emph{Type II Error} & correct decision\tabularnewline
+\bottomrule
+\end{longtable}
+
+In most tests, we aims to reject \(H_0\). By rejecting it, we can evidently say that \(H_0\) is not true. In this sense, we treat type I error more importantly that type II error in general. Test strategy becomes to control type I error probability first and then lower type II error probabilty.
+
+\BeginKnitrBlock{definition}[Power function]
+\protect\hypertarget{def:bpower}{}{\label{def:bpower} \iffalse (Power function) \fi{} }Let \(\theta \in \Theta\) be a parameter of a test.
+
+\[\beta(\theta) := P(\text{reject}\: H_0 \mid \theta)\]
+\EndKnitrBlock{definition}
+
+With this power function, each type I error and type II error probability is given.
+
+\BeginKnitrBlock{lemma}[typeerr]
+\protect\hypertarget{lem:typeerr}{}{\label{lem:typeerr} \iffalse (typeerr) \fi{} }
+
+\begin{enumerate}
+  \item $P(\text{Type I error}) = \beta(\theta_0), \quad \theta_0 \in \Theta_0$
+  \item Power $\beta(\theta_1) = 1 - P(\text{Type II error}), \quad \theta_1 \in \Theta_1$
+\end{enumerate}
+\EndKnitrBlock{lemma}
+
+Following our test strategy, fixing \(P(\text{Type I error})\) and maximizing \(\beta(\theta_1)\), we construct following test.
+
+\BeginKnitrBlock{definition}[Size $\alpha$ Test]
+\protect\hypertarget{def:sizetest}{}{\label{def:sizetest} \iffalse (Size \(\alpha\) Test) \fi{} }A test with \(\beta(\theta)\) is called size \(\alpha\) test if and only if
+
+\[\alpha := \sup_{\theta \in \Theta_0} \beta(\theta), \quad 0 \le \alpha \le 1\]
+\EndKnitrBlock{definition}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/sizealpha-1} 
+
+}
+
+\caption{Size $\alpha$ Test}\label{fig:sizealpha}
+\end{figure}
+
+Then how to compare tests? Look at the following example. Three columns of the middle part are type I error rate.
+
+\begin{longtable}[]{@{}ccccc@{}}
+\toprule
+test methods & \(\alpha = 0.01\) & \(\alpha = 0.05\) & \(\alpha = 0.01\) & Power\tabularnewline
+\midrule
+\endhead
+Test 1 & 0.09 & 0.04 & 0.01 & 0.7\tabularnewline
+Test 2 & 0.11 & 0.06 & 0.01 & 0.65\tabularnewline
+Test 3 & 0.15 & 0.07 & 0.02 & 0.9\tabularnewline
+\bottomrule
+\end{longtable}
+
+Here, we will choose \textbf{Test 1}.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \(\text{Type I error rate} \approx \alpha\)
+
+  \begin{itemize}
+  \tightlist
+  \item
+    before looking at power, this should be satisfied.
+  \item
+    So Test 3 is excluded
+  \end{itemize}
+\item
+  Larger power
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Thus, we select Test 1.
+  \end{itemize}
+\end{enumerate}
+
 \hypertarget{empirical-type-i-error-rate}{%
 \subsection{Empirical type-I error rate}\label{empirical-type-i-error-rate}}
+
+Recall Lemma \ref{lem:typeerr}. As in p-value, we just compute sample proportion for each type I error rate and power under null and alternative distribution.
+
+\BeginKnitrBlock{lemma}
+\protect\hypertarget{lem:testnull}{}{\label{lem:testnull} }Consider \(H_0: \theta \in \Theta_0 \qquad \text{vs} \qquad H_1: \theta \in \Theta_1\).
+
+Define \(I(\mathbf{X})\) by
+
+\[
+I(\mathbf{X}) = \begin{cases}
+  1 & H_0 \:\text{is rejected} \mid H_0 \\
+  0 & otherwise
+\end{cases}
+\]
+
+For each MC sample, compute this statistic \(I_m = I(\mathbf{X}^{m})\). Then empirical type I error rate can be computed as
+
+\[\frac{1}{M}\sum_{m = 1}^M I_m\]
+\EndKnitrBlock{lemma}
+
+\begin{algorithm}[H] \label{alg:algtype1}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$H_0: \theta \in \Theta_0 \quad \text{vs} \quad H_1: \theta \in \Theta_1$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $X_1^{(m)}, \ldots, X_n^{(m)} \stackrel{H_0}{\sim}f$\;
+    Compute $T_m(\mathbf{X}^{(m)})$\;
+    Compute $I_m = \begin{cases} 1 & H_0 \:\text{is rejected} \mid H_0 \\ 0 & \text{otherwise} \end{cases}$\;
+  }
+  Empirical Type I error rate $\hat\alpha = \frac{1}{M}\sum\limits_{m = 1}^M I_j$\;
+  \Output{compare $\hat\alpha$ with $\alpha$}
+  \caption{Empirical type I error rate by Monte Carlo method}
+\end{algorithm}
 
 \hypertarget{empirical-power}{%
 \subsection{Empirical power}\label{empirical-power}}
