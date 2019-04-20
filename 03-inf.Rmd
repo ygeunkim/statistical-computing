@@ -748,6 +748,66 @@ pw_mc2 %>%
 
 ### Count Five test for equal variance
 
+Commonly, F-test is used for equality of two population variances. @McGrath:2005kx suggests nonparametric testing without Normal assumption, so called *Count Five*. Instead, this method requires some conditions.
+
+1. same mean
+2. same sample size
+
+\begin{algorithm}[H] \label{alg:algcfive}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$X_1, \ldots, X_{n_x} \ind Y_1, \ldots, Y_{n_y}$ \\ $H_0: \sigma_X^2 = \sigma_Y^2$}
+  Compute $C_X = \Big\lvert \{ i : \lvert X_i - \overline{X} \rvert > \max_j \lvert Y_j - \overline{Y} \rvert \} \Big\rvert$\;
+  \uIf{$C_X \ge 5$}{
+    \Return reject $H_0$\;
+  }
+  \Else{
+    \Return accept $H_0$\;
+  }
+  \caption{Count Five test}
+\end{algorithm}
+
+```{r}
+gauss <-
+  tibble(
+    x1 = rnorm(20, mean = 0, sd = 1),
+    x2 = rnorm(20, mean = 0, sd = 1.5)
+  )
+```
+
+```{r sigbox, fig.cap="Side-by-side boxplot"}
+gauss %>% 
+  gather(key = "variable", value = "value") %>% 
+  ggplot(aes(x = variable, y = value, fill = variable)) +
+  geom_boxplot() +
+  geom_point(alpha = .5)
+```
+
+We would perform *Count Five* test for multiple simulated data sets such as in Figure \@ref(fig:sigbox).
+
+$$X_1^{(m)}, \ldots, X_{20}^{(m)} \sim N(0, 1) \ind Y_1^{(m)}, \ldots, Y_{20}^{(m)} \sim N(0, 1.5)$$
+
+```{r}
+count5test <- function(x, y) {
+  X <- x - mean(x)
+  Y <- x - mean(y)
+  outx <- sum(X > max(Y)) + sum(X < min(Y))
+  outy <- sum(Y > max(X)) + sum(Y < min(X))
+  max(c(outx, outy)) > 5
+}
+```
+
+Apply MC method to get *empirical type I error*.
+
+```{r}
+mc_data(rnorm, N = 20, M = 1000)[,
+                                 x2 := rnorm(20 * 1000)][,
+                                                         .(chat = count5test(x = x, y = x2)),
+                                                         by = sam][,
+                                                                   .(chat = mean(chat))]
+```
+
 
 ## Statistical Methods
 

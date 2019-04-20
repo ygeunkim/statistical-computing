@@ -1079,17 +1079,227 @@ A stochastic process is a collection $\{ X(t) : t \in T \}$ of random variables 
 A State space is called te set of possible values that $X(t)$ can take.
 ```
 
+```{definition, dmc, name = "Discrete Time Markov Chain"}
+$\{ X_n : n = 0, 1, 2, \ldots \}$ is a Discrete time markov chain on $S$ if and only if
+
+\begin{enumerate}
+  \item $S$ is at most countable
+  \item Markov property $P(X_{n + 1} = j \mid X_n = i, X_{n - 1} = i_{n - 1}, \ldots, X_0 = i_0) = P(X_{n + 1} = j \mid X_n = i) = P_{ij}$
+\end{enumerate}
+
+If $P_{ij}$ is fixed, then $\{ X_n \}$ is called time homogeneous. Otherwise, it is called nonhomogeneous.
+```
+
+```{definition, rwm, name = "Random walk model"}
+Let $\{ Y_n : n \in \mathbb{N} \}$ be an IID process on $S$ s.t.
+
+$$P(Y_n = k) = p_k$$
+
+Define
+
+$$
+S_n := \begin{cases}
+  0 & n = 0 \\
+  S_0 + Y_1 + \cdots + Y_n & n \in \mathbb{N}
+\end{cases}
+$$
+```
+
+### Gambler's ruin model
+
+```{definition, gambler, name = "Gambler\'s ruin model"}
+Let $\{ Y_n : n \in \mathbb{N} \}$ be a process on $\{ -1, 1 \}$ s.t.
+
+$$P(Y_n = 1) = p, \quad P(Y_n = -1) = 1 - p$$
+
+Define
+
+$$
+X_n := \begin{cases}
+  a & n = 0 \\
+  a + Y_1 + \cdots + Y_n & n \in \mathbb{N}
+\end{cases}
+$$
+```
+
+```{example, gamble, name = "Gambling with coin"}
+Suppose that A and B each start with a stake of \$10, and bet \$1 on consecutive coin flips. The game ends when either one of the players has all the money. Let $S_n$ be the fortune of player A at time $n$ Then $\{ S_n, n \ge 0 \}$ is a symmetric random walk with absorbing barriers at 0 and 20. Simulate a realization of the process $\{ S_n, n \ge 0 \}$ and plot $S_n$ vs the time index from time $0$ until a barrier is reached.
+```
+
+Here we have
+
+$$P(Y_n = 1) = P(Y_n = -1) = \frac{1}{2}$$
+
+$$
+X_n := \begin{cases}
+  10 & n = 0 \\
+  10 + Y_1 + \cdots + Y_n & n \in \mathbb{N}
+\end{cases}
+$$
+
+```{r}
+gambling <- function(begin = 10, betting = 1, prob = .5) {
+  N <- begin * 2
+  sa <- begin
+  record <- tibble(a = begin, b = begin)
+  while(all(record > 0)) {
+    sa <- ifelse(runif(1) >= prob, sa + betting, sa - betting)
+    record <-
+      record %>% 
+      bind_rows(c(a = sa, b = N - sa))
+    if (sa == N) break()
+  }
+  record %>% 
+    mutate(idx = 1:n()) %>% 
+    select(idx, a, b)
+}
+```
+
+```{r gambfig, fig.cap="Sample path of Gambler\'s ruin model"}
+gambling(begin = 10, betting = 1, prob = .5) %>% 
+  gather(-idx, key = "player", value = "fortune") %>% 
+  ggplot(aes(x = idx, y = fortune, colour = player)) +
+  geom_path() +
+  geom_point(alpha = .5, size = 1) +
+  geom_hline(yintercept = c(0, 20), col = I("grey")) +
+  labs(
+    x = "Betting",
+    y = "Fortune"
+  )
+```
+
+In Figure \@ref(fig:gambfig), we can see the result of process with $p = \frac{1}{2}$. In fact, this process with probability $0.5$ is also called *symmetric random walk*.
 
 ### Homogeneous poisson process
 
+```{definition, coutpr, name = "Count process"}
+A stochastic process $\{ N(t) : t \ge 0 \}$ where $N(t)$ is total number of events that occur by time $t$ is called counting process.
+
+\begin{enumerate}
+  \item $N(t) \ge 0$
+  \item $N(t) \in \mathbb{Z}$
+  \item $s \le t \Rightarrow N(s) \le N(t)$
+  \item For $s < t$, $N(t) - N(s) = \:\text{the number of events that occur in}\: (s,t]$
+\end{enumerate}
+```
+
+*Poisson process* is one of this counting process.
+
+```{definition, ppdef, name = "Poisson process"}
+The counting process $\{ N(t), t \ge 0 \}$ is said to be a Poisson process with rate $\lambda >0$
+
+\begin{enumerate}
+  \item $N(0) = 0$
+  \item $N(t) \ind N(t + s) - N(t)$
+  \item Distribution of $N(t + s) - N(t)$ is the same for all values of $t$
+  \item $\lim\limits_{h \rightarrow 0} \frac{P(N(h) = 1)}{h} = \lambda$
+  \item $\lim\limits_{h \rightarrow 0} \frac{P(N(h) \ge 2)}{h} = 0$
+\end{enumerate}
+```
+
+```{remark}
+$$\{ N(t), t \ge 0 \} \sim PP(\lambda) \Rightarrow N(t) \sim Poisson(\lambda t)$$
+```
+
+We can generate Poisson process using this relationship. However, it is slow. Thus, we find another way.
+
+```{theorem, campbell, name = "Campbell\'s Theorem"}
+Let $\{ N(t), t \ge 0 \} \sim PP(\lambda)$, let $X_t$ be the interarrival time, and let $S_{t}$ be the waiting time until $t$-th event, i.e. $S_t := \sum_{i = 1}^t X_i$. Then
+
+$$S_1, S_2, \ldots, S_n \mid N(t) = n \stackrel{d}{=} (U_{(1)}, U_{(2)}, \ldots, U_{(n)})$$
+
+where $U_i \sim unif(0, t)$.
+```
+
+This Campbell's theorem gives solution to the PP generation.
+
+\begin{algorithm}[H] \label{alg:algpp}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{end time $T$}
+  Generate $N \sim Poisson(\lambda T)$\;
+  For $N$, generate $U_1, \ldots, U_N \stackrel{iid}{\sim} unif(0, T)$\;
+  Sort $U_1, \ldots, U_N$ in ascending order, i.e. $\{ U_{(1)}, \ldots, U_{(N)} \}$\;
+  Set $S_1 = U_{(1)}, \ldots, S_N = U_{(N)}$\;
+  \Output{$\begin{bmatrix} 1 & S_1 \\ 2 & S_2 \\ \cdots & \cdots \\ N & S_n \end{bmatrix}$ \\ $\Rightarrow \{ N(S_n) \} \sim PP(\lambda) \: \text{on} \: [0, T]$}
+  \caption{Fast algorithm for Poisson Process}
+\end{algorithm}
+
+```{r}
+rpp <- function(lambda, t0) {
+  N <- rpois(1, lambda = lambda * t0)
+  tibble(sn = runif(N) * t0) %>% 
+    arrange(sn) %>% # arrival time
+    mutate(pp = 1:n()) # N(sn) ~ PP
+}
+```
+
+```{r ppfig, fig.cap="Sample path of Poisson process"}
+rpp(lambda = 1, t0 = 50) %>% 
+  mutate(
+    true_mean = sn, # sn * lambda
+    true_sd = sqrt(sn) # sn * lambda
+  ) %>% 
+  ggplot(aes(x = sn)) +
+  geom_ribbon(
+    aes(ymin = true_mean - true_sd, ymax = true_mean + true_sd), 
+    fill = "grey70", 
+    alpha = .5
+  ) +
+  geom_line(aes(y = true_mean), col = I("white"), size = 2) +
+  geom_path(aes(y = pp)) +
+  labs(
+    x = "t",
+    y = expression(N(t))
+  )
+```
+
 ### Nonhomogeneous poisson process
 
-### Symmetric random walk
+Last section, what we have seen was homogeneous PP whose distribution does not depend on $t$. On the other hand, this condition can be broken.
 
+```{definition, npp, name = "Nonhomogeneous Poisson Process"}
+The counting process $\{ N(t), t \ge 0 \}$ is said to be a Nonhomogeneous Poisson process with rate $\lambda(t) >0$ if the third condition does not hold.
 
+\begin{enumerate}
+  \item $N(0) = 0$
+  \item $N(t) \ind N(t + s) - N(t)$
+  \item $\lim\limits_{h \rightarrow 0} \frac{P(N(h) = 1)}{h} = \lambda$
+  \item $\lim\limits_{h \rightarrow 0} \frac{P(N(h) \ge 2)}{h} = 0$
+\end{enumerate}
 
+$\lambda(t)$ is called intensity at time $t$.
 
+$m(t) := \int_0^t \lambda(s) ds, t \ge 0$ is called mean-value function.
+```
 
+We can generate this NPP by Bernoulli splitting, which is called *thining approach*.
+
+```{lemma, thin, name = "Thinning approach"}
+Choosing $\lambda$ s.t. $\forall t \le T \lambda(t) \le \lambda$. If an event of $PP(\lambda)$ counted with
+
+$$p(t) = \frac{\lambda(t)}{\lambda}$$
+
+then the process follows $NPP(\lambda(t))$ on $[0, T]$
+```
+
+\begin{algorithm}[H] \label{alg:algnpp}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  Set $t = 0, N = 0$\;
+  \Repeat{$t > T$}{
+    Generate $Y \sim Exp(\lambda)$\;
+    Set $t \leftarrow t + Y$\;
+    Generate $U \sim unif(0, 1)$\;
+    \uIf{$U \le \frac{\lambda(t)}{\lambda}$}{
+      Set $N \leftarrow N + 1$\;
+      Set $S(N) \leftarrow t$\;
+    }
+  }
+  \caption{Thinning algorithm}
+\end{algorithm}
 
 
 

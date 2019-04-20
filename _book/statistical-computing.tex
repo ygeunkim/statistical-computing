@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{16 Apr, 2019}
+    \date{21 Apr, 2019}
 
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -1423,14 +1423,255 @@ where \(Q\) is an upper triangular matrix.
 A State space is called te set of possible values that \(X(t)\) can take.
 \EndKnitrBlock{definition}
 
+\BeginKnitrBlock{definition}[Discrete Time Markov Chain]
+\protect\hypertarget{def:dmc}{}{\label{def:dmc} \iffalse (Discrete Time Markov Chain) \fi{} }\(\{ X_n : n = 0, 1, 2, \ldots \}\) is a Discrete time markov chain on \(S\) if and only if
+
+\begin{enumerate}
+  \item $S$ is at most countable
+  \item Markov property $P(X_{n + 1} = j \mid X_n = i, X_{n - 1} = i_{n - 1}, \ldots, X_0 = i_0) = P(X_{n + 1} = j \mid X_n = i) = P_{ij}$
+\end{enumerate}
+
+If \(P_{ij}\) is fixed, then \(\{ X_n \}\) is called time homogeneous. Otherwise, it is called nonhomogeneous.
+\EndKnitrBlock{definition}
+
+\BeginKnitrBlock{definition}[Random walk model]
+\protect\hypertarget{def:rwm}{}{\label{def:rwm} \iffalse (Random walk model) \fi{} }Let \(\{ Y_n : n \in \mathbb{N} \}\) be an IID process on \(S\) s.t.
+
+\[P(Y_n = k) = p_k\]
+
+Define
+
+\[
+S_n := \begin{cases}
+  0 & n = 0 \\
+  S_0 + Y_1 + \cdots + Y_n & n \in \mathbb{N}
+\end{cases}
+\]
+\EndKnitrBlock{definition}
+
+\hypertarget{gamblers-ruin-model}{%
+\subsection{Gambler's ruin model}\label{gamblers-ruin-model}}
+
+\BeginKnitrBlock{definition}[Gambler's ruin model]
+\protect\hypertarget{def:gambler}{}{\label{def:gambler} \iffalse (Gambler's ruin model) \fi{} }Let \(\{ Y_n : n \in \mathbb{N} \}\) be a process on \(\{ -1, 1 \}\) s.t.
+
+\[P(Y_n = 1) = p, \quad P(Y_n = -1) = 1 - p\]
+
+Define
+
+\[
+X_n := \begin{cases}
+  a & n = 0 \\
+  a + Y_1 + \cdots + Y_n & n \in \mathbb{N}
+\end{cases}
+\]
+\EndKnitrBlock{definition}
+
+\BeginKnitrBlock{example}[Gambling with coin]
+\protect\hypertarget{exm:gamble}{}{\label{exm:gamble} \iffalse (Gambling with coin) \fi{} }Suppose that A and B each start with a stake of \$10, and bet \$1 on consecutive coin flips. The game ends when either one of the players has all the money. Let \(S_n\) be the fortune of player A at time \(n\) Then \(\{ S_n, n \ge 0 \}\) is a symmetric random walk with absorbing barriers at 0 and 20. Simulate a realization of the process \(\{ S_n, n \ge 0 \}\) and plot \(S_n\) vs the time index from time \(0\) until a barrier is reached.
+\EndKnitrBlock{example}
+
+Here we have
+
+\[P(Y_n = 1) = P(Y_n = -1) = \frac{1}{2}\]
+
+\[
+X_n := \begin{cases}
+  10 & n = 0 \\
+  10 + Y_1 + \cdots + Y_n & n \in \mathbb{N}
+\end{cases}
+\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{gambling <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(}\DataTypeTok{begin =} \DecValTok{10}\NormalTok{, }\DataTypeTok{betting =} \DecValTok{1}\NormalTok{, }\DataTypeTok{prob =} \FloatTok{.5}\NormalTok{) \{}
+\NormalTok{  N <-}\StringTok{ }\NormalTok{begin }\OperatorTok{*}\StringTok{ }\DecValTok{2}
+\NormalTok{  sa <-}\StringTok{ }\NormalTok{begin}
+\NormalTok{  record <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{a =}\NormalTok{ begin, }\DataTypeTok{b =}\NormalTok{ begin)}
+  \ControlFlowTok{while}\NormalTok{(}\KeywordTok{all}\NormalTok{(record }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{)) \{}
+\NormalTok{    sa <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(}\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{>=}\StringTok{ }\NormalTok{prob, sa }\OperatorTok{+}\StringTok{ }\NormalTok{betting, sa }\OperatorTok{-}\StringTok{ }\NormalTok{betting)}
+\NormalTok{    record <-}
+\StringTok{      }\NormalTok{record }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{bind_rows}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DataTypeTok{a =}\NormalTok{ sa, }\DataTypeTok{b =}\NormalTok{ N }\OperatorTok{-}\StringTok{ }\NormalTok{sa))}
+    \ControlFlowTok{if}\NormalTok{ (sa }\OperatorTok{==}\StringTok{ }\NormalTok{N) }\ControlFlowTok{break}\NormalTok{()}
+\NormalTok{  \}}
+\NormalTok{  record }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{idx =} \DecValTok{1}\OperatorTok{:}\KeywordTok{n}\NormalTok{()) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{select}\NormalTok{(idx, a, b)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{gambling}\NormalTok{(}\DataTypeTok{begin =} \DecValTok{10}\NormalTok{, }\DataTypeTok{betting =} \DecValTok{1}\NormalTok{, }\DataTypeTok{prob =} \FloatTok{.5}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{gather}\NormalTok{(}\OperatorTok{-}\NormalTok{idx, }\DataTypeTok{key =} \StringTok{"player"}\NormalTok{, }\DataTypeTok{value =} \StringTok{"fortune"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ idx, }\DataTypeTok{y =}\NormalTok{ fortune, }\DataTypeTok{colour =}\NormalTok{ player)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{(}\DataTypeTok{alpha =} \FloatTok{.5}\NormalTok{, }\DataTypeTok{size =} \DecValTok{1}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_hline}\NormalTok{(}\DataTypeTok{yintercept =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{20}\NormalTok{), }\DataTypeTok{col =} \KeywordTok{I}\NormalTok{(}\StringTok{"grey"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \StringTok{"Betting"}\NormalTok{,}
+    \DataTypeTok{y =} \StringTok{"Fortune"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/gambfig-1} 
+
+}
+
+\caption{Sample path of Gambler's ruin model}\label{fig:gambfig}
+\end{figure}
+
+In Figure \ref{fig:gambfig}, we can see the result of process with \(p = \frac{1}{2}\). In fact, this process with probability \(0.5\) is also called \emph{symmetric random walk}.
+
 \hypertarget{homogeneous-poisson-process}{%
 \subsection{Homogeneous poisson process}\label{homogeneous-poisson-process}}
+
+\BeginKnitrBlock{definition}[Count process]
+\protect\hypertarget{def:coutpr}{}{\label{def:coutpr} \iffalse (Count process) \fi{} }A stochastic process \(\{ N(t) : t \ge 0 \}\) where \(N(t)\) is total number of events that occur by time \(t\) is called counting process.
+
+\begin{enumerate}
+  \item $N(t) \ge 0$
+  \item $N(t) \in \mathbb{Z}$
+  \item $s \le t \Rightarrow N(s) \le N(t)$
+  \item For $s < t$, $N(t) - N(s) = \:\text{the number of events that occur in}\: (s,t]$
+\end{enumerate}
+\EndKnitrBlock{definition}
+
+\emph{Poisson process} is one of this counting process.
+
+\BeginKnitrBlock{definition}[Poisson process]
+\protect\hypertarget{def:ppdef}{}{\label{def:ppdef} \iffalse (Poisson process) \fi{} }The counting process \(\{ N(t), t \ge 0 \}\) is said to be a Poisson process with rate \(\lambda >0\)
+
+\begin{enumerate}
+  \item $N(0) = 0$
+  \item $N(t) \perp\!\!\!\perp N(t + s) - N(t)$
+  \item Distribution of $N(t + s) - N(t)$ is the same for all values of $t$
+  \item $\lim\limits_{h \rightarrow 0} \frac{P(N(h) = 1)}{h} = \lambda$
+  \item $\lim\limits_{h \rightarrow 0} \frac{P(N(h) \ge 2)}{h} = 0$
+\end{enumerate}
+\EndKnitrBlock{definition}
+
+\BeginKnitrBlock{remark}
+\iffalse{} {Remark. } \fi{}\[\{ N(t), t \ge 0 \} \sim PP(\lambda) \Rightarrow N(t) \sim Poisson(\lambda t)\]
+\EndKnitrBlock{remark}
+
+We can generate Poisson process using this relationship. However, it is slow. Thus, we find another way.
+
+\BeginKnitrBlock{theorem}[Campbell's Theorem]
+\protect\hypertarget{thm:campbell}{}{\label{thm:campbell} \iffalse (Campbell's Theorem) \fi{} }Let \(\{ N(t), t \ge 0 \} \sim PP(\lambda)\), let \(X_t\) be the interarrival time, and let \(S_{t}\) be the waiting time until \(t\)-th event, i.e.~\(S_t := \sum_{i = 1}^t X_i\). Then
+
+\[S_1, S_2, \ldots, S_n \mid N(t) = n \stackrel{d}{=} (U_{(1)}, U_{(2)}, \ldots, U_{(n)})\]
+
+where \(U_i \sim unif(0, t)\).
+\EndKnitrBlock{theorem}
+
+This Campbell's theorem gives solution to the PP generation.
+
+\begin{algorithm}[H] \label{alg:algpp}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{end time $T$}
+  Generate $N \sim Poisson(\lambda T)$\;
+  For $N$, generate $U_1, \ldots, U_N \stackrel{iid}{\sim} unif(0, T)$\;
+  Sort $U_1, \ldots, U_N$ in ascending order, i.e. $\{ U_{(1)}, \ldots, U_{(N)} \}$\;
+  Set $S_1 = U_{(1)}, \ldots, S_N = U_{(N)}$\;
+  \Output{$\begin{bmatrix} 1 & S_1 \\ 2 & S_2 \\ \cdots & \cdots \\ N & S_n \end{bmatrix}$ \\ $\Rightarrow \{ N(S_n) \} \sim PP(\lambda) \: \text{on} \: [0, T]$}
+  \caption{Fast algorithm for Poisson Process}
+\end{algorithm}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rpp <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(lambda, t0) \{}
+\NormalTok{  N <-}\StringTok{ }\KeywordTok{rpois}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DataTypeTok{lambda =}\NormalTok{ lambda }\OperatorTok{*}\StringTok{ }\NormalTok{t0)}
+  \KeywordTok{tibble}\NormalTok{(}\DataTypeTok{sn =} \KeywordTok{runif}\NormalTok{(N) }\OperatorTok{*}\StringTok{ }\NormalTok{t0) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{arrange}\NormalTok{(sn) }\OperatorTok{%>%}\StringTok{ }\CommentTok{# arrival time}
+\StringTok{    }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{pp =} \DecValTok{1}\OperatorTok{:}\KeywordTok{n}\NormalTok{()) }\CommentTok{# N(sn) ~ PP}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{rpp}\NormalTok{(}\DataTypeTok{lambda =} \DecValTok{1}\NormalTok{, }\DataTypeTok{t0 =} \DecValTok{50}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}
+    \DataTypeTok{true_mean =}\NormalTok{ sn, }\CommentTok{# sn * lambda}
+    \DataTypeTok{true_sd =} \KeywordTok{sqrt}\NormalTok{(sn) }\CommentTok{# sn * lambda}
+\NormalTok{  ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ sn)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_ribbon}\NormalTok{(}
+    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymin =}\NormalTok{ true_mean }\OperatorTok{-}\StringTok{ }\NormalTok{true_sd, }\DataTypeTok{ymax =}\NormalTok{ true_mean }\OperatorTok{+}\StringTok{ }\NormalTok{true_sd), }
+    \DataTypeTok{fill =} \StringTok{"grey70"}\NormalTok{, }
+    \DataTypeTok{alpha =} \FloatTok{.5}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ true_mean), }\DataTypeTok{col =} \KeywordTok{I}\NormalTok{(}\StringTok{"white"}\NormalTok{), }\DataTypeTok{size =} \DecValTok{2}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ pp)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \StringTok{"t"}\NormalTok{,}
+    \DataTypeTok{y =} \KeywordTok{expression}\NormalTok{(}\KeywordTok{N}\NormalTok{(t))}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/ppfig-1} 
+
+}
+
+\caption{Sample path of Poisson process}\label{fig:ppfig}
+\end{figure}
 
 \hypertarget{nonhomogeneous-poisson-process}{%
 \subsection{Nonhomogeneous poisson process}\label{nonhomogeneous-poisson-process}}
 
-\hypertarget{symmetric-random-walk}{%
-\subsection{Symmetric random walk}\label{symmetric-random-walk}}
+Last section, what we have seen was homogeneous PP whose distribution does not depend on \(t\). On the other hand, this condition can be broken.
+
+\BeginKnitrBlock{definition}[Nonhomogeneous Poisson Process]
+\protect\hypertarget{def:npp}{}{\label{def:npp} \iffalse (Nonhomogeneous Poisson Process) \fi{} }The counting process \(\{ N(t), t \ge 0 \}\) is said to be a Nonhomogeneous Poisson process with rate \(\lambda(t) >0\) if the third condition does not hold.
+
+\begin{enumerate}
+  \item $N(0) = 0$
+  \item $N(t) \perp\!\!\!\perp N(t + s) - N(t)$
+  \item $\lim\limits_{h \rightarrow 0} \frac{P(N(h) = 1)}{h} = \lambda$
+  \item $\lim\limits_{h \rightarrow 0} \frac{P(N(h) \ge 2)}{h} = 0$
+\end{enumerate}
+
+\(\lambda(t)\) is called intensity at time \(t\).
+
+\(m(t) := \int_0^t \lambda(s) ds, t \ge 0\) is called mean-value function.
+\EndKnitrBlock{definition}
+
+We can generate this NPP by Bernoulli splitting, which is called \emph{thining approach}.
+
+\BeginKnitrBlock{lemma}[Thinning approach]
+\protect\hypertarget{lem:thin}{}{\label{lem:thin} \iffalse (Thinning approach) \fi{} }Choosing \(\lambda\) s.t. \(\forall t \le T \lambda(t) \le \lambda\). If an event of \(PP(\lambda)\) counted with
+
+\[p(t) = \frac{\lambda(t)}{\lambda}\]
+
+then the process follows \(NPP(\lambda(t))\) on \([0, T]\)
+\EndKnitrBlock{lemma}
+
+\begin{algorithm}[H] \label{alg:algnpp}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  Set $t = 0, N = 0$\;
+  \Repeat{$t > T$}{
+    Generate $Y \sim Exp(\lambda)$\;
+    Set $t \leftarrow t + Y$\;
+    Generate $U \sim unif(0, 1)$\;
+    \uIf{$U \le \frac{\lambda(t)}{\lambda}$}{
+      Set $N \leftarrow N + 1$\;
+      Set $S(N) \leftarrow t$\;
+    }
+  }
+\end{algorithm}
 
 \hypertarget{mcint}{%
 \chapter{Monte Carlo Integration and Variance Reduction}\label{mcint}}
@@ -1572,7 +1813,7 @@ Then compute \(\hat\Phi(x)\) for various \(x\) values.
 \end{Shaded}
 
 \begin{longtable}{r|r|r}
-\caption{\label{tab:unnamed-chunk-35}Simple MC estimates of Normal cdf for each x}\\
+\caption{\label{tab:unnamed-chunk-38}Simple MC estimates of Normal cdf for each x}\\
 \hline
 x & pnorm & mc\\
 \hline
@@ -1862,7 +2103,7 @@ See Figure \ref{fig:simhit}. It is obvious that Hit-or-Miss estimate produces la
 In other words, if \(\hat\theta_1\) has smaller variance than \(\hat\theta_2\), then \(\hat\theta_1\) is said to be efficient, which is preferable.
 
 \begin{longtable}{r|r|l}
-\caption{\label{tab:unnamed-chunk-46}Simple MC versus Hit-or-Miss}\\
+\caption{\label{tab:unnamed-chunk-49}Simple MC versus Hit-or-Miss}\\
 \hline
 SimpleMC & Hit-or-Miss & SimpleMCefficiency\\
 \hline
@@ -2930,6 +3171,91 @@ Consider \(T\)-test.
 
 \hypertarget{count-five-test-for-equal-variance}{%
 \subsection{Count Five test for equal variance}\label{count-five-test-for-equal-variance}}
+
+Commonly, F-test is used for equality of two population variances. \citet{McGrath:2005kx} suggests nonparametric testing without Normal assumption, so called \emph{Count Five}. Instead, this method requires some conditions.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  same mean
+\item
+  same sample size
+\end{enumerate}
+
+\begin{algorithm}[H] \label{alg:algcfive}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$X_1, \ldots, X_{n_x} \perp\!\!\!\perp Y_1, \ldots, Y_{n_y}$ \\ $H_0: \sigma_X^2 = \sigma_Y^2$}
+  Compute $C_X = \Big\lvert \{ i : \lvert X_i - \overline{X} \rvert > \max_j \lvert Y_j - \overline{Y} \rvert \} \Big\rvert$\;
+  \uIf{$C_X \ge 5$}{
+    \Return reject $H_0$\;
+  }
+  \Else{
+    \Return accept $H_0$\;
+  }
+  \caption{Count Five test}
+\end{algorithm}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{gauss <-}
+\StringTok{  }\KeywordTok{tibble}\NormalTok{(}
+    \DataTypeTok{x1 =} \KeywordTok{rnorm}\NormalTok{(}\DecValTok{20}\NormalTok{, }\DataTypeTok{mean =} \DecValTok{0}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{1}\NormalTok{),}
+    \DataTypeTok{x2 =} \KeywordTok{rnorm}\NormalTok{(}\DecValTok{20}\NormalTok{, }\DataTypeTok{mean =} \DecValTok{0}\NormalTok{, }\DataTypeTok{sd =} \FloatTok{1.5}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{gauss }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{gather}\NormalTok{(}\DataTypeTok{key =} \StringTok{"variable"}\NormalTok{, }\DataTypeTok{value =} \StringTok{"value"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ variable, }\DataTypeTok{y =}\NormalTok{ value, }\DataTypeTok{fill =}\NormalTok{ variable)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_boxplot}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{(}\DataTypeTok{alpha =} \FloatTok{.5}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/sigbox-1} 
+
+}
+
+\caption{Side-by-side boxplot}\label{fig:sigbox}
+\end{figure}
+
+We would perform \emph{Count Five} test for multiple simulated data sets such as in Figure \ref{fig:sigbox}.
+
+\[X_1^{(m)}, \ldots, X_{20}^{(m)} \sim N(0, 1) \perp\!\!\!\perp Y_1^{(m)}, \ldots, Y_{20}^{(m)} \sim N(0, 1.5)\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{count5test <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, y) \{}
+\NormalTok{  X <-}\StringTok{ }\NormalTok{x }\OperatorTok{-}\StringTok{ }\KeywordTok{mean}\NormalTok{(x)}
+\NormalTok{  Y <-}\StringTok{ }\NormalTok{x }\OperatorTok{-}\StringTok{ }\KeywordTok{mean}\NormalTok{(y)}
+\NormalTok{  outx <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(X }\OperatorTok{>}\StringTok{ }\KeywordTok{max}\NormalTok{(Y)) }\OperatorTok{+}\StringTok{ }\KeywordTok{sum}\NormalTok{(X }\OperatorTok{<}\StringTok{ }\KeywordTok{min}\NormalTok{(Y))}
+\NormalTok{  outy <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(Y }\OperatorTok{>}\StringTok{ }\KeywordTok{max}\NormalTok{(X)) }\OperatorTok{+}\StringTok{ }\KeywordTok{sum}\NormalTok{(Y }\OperatorTok{<}\StringTok{ }\KeywordTok{min}\NormalTok{(X))}
+  \KeywordTok{max}\NormalTok{(}\KeywordTok{c}\NormalTok{(outx, outy)) }\OperatorTok{>}\StringTok{ }\DecValTok{5}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Apply MC method to get \emph{empirical type I error}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{N =} \DecValTok{20}\NormalTok{, }\DataTypeTok{M =} \DecValTok{1000}\NormalTok{)[,}
+\NormalTok{                                 x2 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{20} \OperatorTok{*}\StringTok{ }\DecValTok{1000}\NormalTok{)][,}
+\NormalTok{                                                         .(}\DataTypeTok{chat =} \KeywordTok{count5test}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ x2)),}
+\NormalTok{                                                         by =}\StringTok{ }\NormalTok{sam][,}
+\NormalTok{                                                                   .(}\DataTypeTok{chat =} \KeywordTok{mean}\NormalTok{(chat))]}
+\CommentTok{#>     chat}
+\CommentTok{#> 1: 0.026}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{statistical-methods}{%
 \section{Statistical Methods}\label{statistical-methods}}
