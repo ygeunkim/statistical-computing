@@ -294,14 +294,20 @@ rcustom <- function(n) {
 ```
 
 ```{r randmass, fig.cap="Generated discrete random numbers"}
-tibble(
-  x = rcustom(100)
-) %>% 
-  ggplot(aes(x = x)) +
-  geom_histogram(aes(y = ..ndensity..), binwidth = .1)
+tibble(x = rcustom(100)) %>% 
+  count(x) %>% 
+  mutate(n = n / sum(n)) %>% 
+  bind_cols(px = pmf %>% select(p)) %>% 
+  gather(-x, key = "key", value = "value") %>% 
+  ggplot(aes(x = x, fill = key)) +
+  geom_bar(aes(y = value), stat = "identity", position = "dodge", width = .2) +
+  scale_fill_discrete(
+    name = "Compare",
+    labels = c("InvTrans", expression(p(x)))
+  )
 ```
 
-See Figure \@ref(fig:massfun) and \@ref(fig:randmass). Comparing the two, the result can be said okay.
+See Figure \@ref(fig:randmass). Comparing random numbers to true pmf, the result can be said okay.
 
 ### Problems with inverse transformation
 

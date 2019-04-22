@@ -645,10 +645,9 @@ See Equation \@ref(eq:mcsol). Then we can compute antithetic estimator by
 ```{r}
 theta_anti <-
   mc_data(runif, N = N / 2, M = M)[,
-                                   u2 := exp(1 - u)][,
-                                                     u := exp(u)][,
-                                                                  .(anti = mean((u + u2) / 2)),
-                                                                  keyby = sam]
+                                   u2 := 1 - u][,
+                                                .(anti = mean((exp(u) + exp(u2)) / 2)),
+                                                keyby = sam]
 ```
 
 Now look at the results of the two.
@@ -848,8 +847,8 @@ In fact, we can use Equation \@ref(eq:controlreg) directly: `predict(lm, newdata
 
 ```{r}
 mc_data(runif, N = N, M = M)[,
-                             .(con = predict(lm(exp(u) ~ u), 
-                                             newdata = data.frame(u = mean(u)))),
+                             .(con = predict(lm(exp(u) ~ u, data = .SD), 
+                                             newdata = data.table(u = 1 / 2))),
                              by = sam]
 ```
 

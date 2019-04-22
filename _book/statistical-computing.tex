@@ -538,11 +538,17 @@ Remembering the algorithm, we can implement \texttt{dplyr::case\_when()} here.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{tibble}\NormalTok{(}
-  \DataTypeTok{x =} \KeywordTok{rcustom}\NormalTok{(}\DecValTok{100}\NormalTok{)}
-\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x)) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ ..ndensity..), }\DataTypeTok{binwidth =} \FloatTok{.1}\NormalTok{)}
+\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{rcustom}\NormalTok{(}\DecValTok{100}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{count}\NormalTok{(x) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ n }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(n)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{bind_cols}\NormalTok{(}\DataTypeTok{px =}\NormalTok{ pmf }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(p)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{gather}\NormalTok{(}\OperatorTok{-}\NormalTok{x, }\DataTypeTok{key =} \StringTok{"key"}\NormalTok{, }\DataTypeTok{value =} \StringTok{"value"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{fill =}\NormalTok{ key)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ value), }\DataTypeTok{stat =} \StringTok{"identity"}\NormalTok{, }\DataTypeTok{position =} \StringTok{"dodge"}\NormalTok{, }\DataTypeTok{width =} \FloatTok{.2}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_discrete}\NormalTok{(}
+    \DataTypeTok{name =} \StringTok{"Compare"}\NormalTok{,}
+    \DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"InvTrans"}\NormalTok{, }\KeywordTok{expression}\NormalTok{(}\KeywordTok{p}\NormalTok{(x)))}
+\NormalTok{  )}
 \end{Highlighting}
 \end{Shaded}
 
@@ -555,7 +561,7 @@ Remembering the algorithm, we can implement \texttt{dplyr::case\_when()} here.
 \caption{Generated discrete random numbers}\label{fig:randmass}
 \end{figure}
 
-See Figure \ref{fig:massfun} and \ref{fig:randmass}. Comparing the two, the result can be said okay.
+See Figure \ref{fig:randmass}. Comparing random numbers to true pmf, the result can be said okay.
 
 \hypertarget{problems-with-inverse-transformation}{%
 \subsection{Problems with inverse transformation}\label{problems-with-inverse-transformation}}
@@ -2390,10 +2396,9 @@ See Equation \eqref{eq:mcsol}. Then we can compute antithetic estimator by
 \begin{Highlighting}[]
 \NormalTok{theta_anti <-}
 \StringTok{  }\KeywordTok{mc_data}\NormalTok{(runif, }\DataTypeTok{N =}\NormalTok{ N }\OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{, }\DataTypeTok{M =}\NormalTok{ M)[,}
-\NormalTok{                                   u2 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{u)][,}
-\NormalTok{                                                     u }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\KeywordTok{exp}\NormalTok{(u)][,}
-\NormalTok{                                                                  .(}\DataTypeTok{anti =} \KeywordTok{mean}\NormalTok{((u }\OperatorTok{+}\StringTok{ }\NormalTok{u2) }\OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{)),}
-\NormalTok{                                                                  keyby =}\StringTok{ }\NormalTok{sam]}
+\NormalTok{                                   u2 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{u][,}
+\NormalTok{                                                .(}\DataTypeTok{anti =} \KeywordTok{mean}\NormalTok{((}\KeywordTok{exp}\NormalTok{(u) }\OperatorTok{+}\StringTok{ }\KeywordTok{exp}\NormalTok{(u2)) }\OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{)),}
+\NormalTok{                                                keyby =}\StringTok{ }\NormalTok{sam]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -2642,21 +2647,21 @@ In fact, we can use Equation \eqref{eq:controlreg} directly: \texttt{predict(lm,
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{mc_data}\NormalTok{(runif, }\DataTypeTok{N =}\NormalTok{ N, }\DataTypeTok{M =}\NormalTok{ M)[,}
-\NormalTok{                             .(}\DataTypeTok{con =} \KeywordTok{predict}\NormalTok{(}\KeywordTok{lm}\NormalTok{(}\KeywordTok{exp}\NormalTok{(u) }\OperatorTok{~}\StringTok{ }\NormalTok{u), }
-                                             \DataTypeTok{newdata =} \KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{u =} \KeywordTok{mean}\NormalTok{(u)))),}
+\NormalTok{                             .(}\DataTypeTok{con =} \KeywordTok{predict}\NormalTok{(}\KeywordTok{lm}\NormalTok{(}\KeywordTok{exp}\NormalTok{(u) }\OperatorTok{~}\StringTok{ }\NormalTok{u, }\DataTypeTok{data =}\NormalTok{ .SD), }
+                                             \DataTypeTok{newdata =} \KeywordTok{data.table}\NormalTok{(}\DataTypeTok{u =} \DecValTok{1} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{))),}
 \NormalTok{                             by =}\StringTok{ }\NormalTok{sam]}
 \CommentTok{#>         sam  con}
-\CommentTok{#>    1:    s1 1.71}
-\CommentTok{#>    2:    s2 1.70}
-\CommentTok{#>    3:    s3 1.75}
-\CommentTok{#>    4:    s4 1.66}
-\CommentTok{#>    5:    s5 1.69}
+\CommentTok{#>    1:    s1 1.73}
+\CommentTok{#>    2:    s2 1.71}
+\CommentTok{#>    3:    s3 1.71}
+\CommentTok{#>    4:    s4 1.72}
+\CommentTok{#>    5:    s5 1.72}
 \CommentTok{#>   ---           }
-\CommentTok{#>  996:  s996 1.75}
-\CommentTok{#>  997:  s997 1.70}
-\CommentTok{#>  998:  s998 1.71}
-\CommentTok{#>  999:  s999 1.61}
-\CommentTok{#> 1000: s1000 1.72}
+\CommentTok{#>  996:  s996 1.72}
+\CommentTok{#>  997:  s997 1.72}
+\CommentTok{#>  998:  s998 1.72}
+\CommentTok{#>  999:  s999 1.72}
+\CommentTok{#> 1000: s1000 1.71}
 \end{Highlighting}
 \end{Shaded}
 
