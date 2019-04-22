@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{21 Apr, 2019}
+    \date{22 Apr, 2019}
 
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -1671,6 +1671,7 @@ then the process follows \(NPP(\lambda(t))\) on \([0, T]\)
       Set $S(N) \leftarrow t$\;
     }
   }
+  \caption{Thinning algorithm}
 \end{algorithm}
 
 \hypertarget{mcint}{%
@@ -2259,14 +2260,672 @@ Obviously, variance has been reduced.
 \hypertarget{control-variates}{%
 \subsection{Control Variates}\label{control-variates}}
 
-Recall that we are trying to estimate \(\theta = EX\) here in MC integration. Consider other output random variable. Suppose that \(\mu_Y \equiv E(Y)\) is known. Then
+Recall that we are trying to estimate \(\theta = Eg(X)\) here in MC integration. Consider other output random variable. Suppose that \(\mu_f \equiv Ef(Y)\) is known. It is obvious that
 
-\[X + c(Y - \mu_Y)\]
+\begin{equation}
+  \hat\theta_c = g(X) + c\Big(f(Y) - \mu_f\Big)
+  \label{eq:controlest}
+\end{equation}
 
-is an unbiased estimator for \(\theta\) for any \(c \in \mathbb{R}\).
+is an unbiased estimator for \(\theta\) for any \(c \in \mathbb{R}\). Then we have
+
+\begin{equation}
+  Var\hat\theta_c = Varg(X) + c^2 Varf(X) + 2cCov(g(X), f(X))
+  \label{eq:controlvar}
+\end{equation}
+
+Recall that our goal is to minimize this \(Var\hat\theta_c\). What value of \(c\) is to be determined? Note that Equation \eqref{eq:controlvar} is quadratic function of \(c\).
+
+\begin{equation}
+  \begin{split}
+    Var\hat\theta_c & = Varf(X) c^2 + 2cCov(g(X), f(X)) + Varg(X) \\
+    & = Var f(X) \bigg( c + \frac{Cov(g(X), f(X))}{Var f(X)} \bigg)^2 + Var g(X) - \frac{Cov(g(X), f(X))^2}{Var f(X)}
+  \end{split}
+  \label{eq:controlc}
+\end{equation}
+
+From Equation \eqref{eq:controlc}, the variance is minimized at
+
+\begin{equation}
+  c^{\ast} = - \frac{Cov(g(X), f(X))}{Var f(X)}
+  \label{eq:controlsol}
+\end{equation}
+
+with minimum variance
+
+\[Var\hat\theta_{c^{\ast}} = Var g(X) - \frac{Cov(g(X), f(X))^2}{Var f(X)}\]
+
+By this, we can reduce the variance of estimation as much as possible (using \(f(X)\)). Here, \(f(X)\) is called a \emph{control variate} for \(g(X)\).
+
+\begin{algorithm}[H] \label{alg:algcontrol}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$g$, control variate $f$ with mean $\mu_f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $U_1^{(m)}, \ldots, U_N^{(m)} \stackrel{iid}{\sim}unif$\;
+    Set $g = g(U_i)$ and $f = f(U_i)$\;
+    Compute $\hat{c}^{\ast(m)} = - \frac{\widehat{Cov}(g, f)}{\widehat{Var}(f)}$\;
+    $\hat\theta_{c^{\ast}}^{(j)} = g + c^{\ast(m)}(f - \mu_f)$\;
+  }
+  $\bar{\hat\theta} = \frac{1}{M} \sum \hat\theta_{c^{\ast}}^{(j)}$\;
+  $\widehat{Var}(\hat\theta) = \frac{1}{M - 1} \sum (\hat\theta_{c^{\ast}}^{(j)} - \bar{\hat\theta})^2$\;
+  \Output{$\widehat{Var}(\hat\theta)$}
+  \caption{Variance of $\hat\theta$ using control variables}
+\end{algorithm}
+
+\BeginKnitrBlock{example}[Variance reduction by control variate]
+\protect\hypertarget{exm:intex}{}{\label{exm:intex} \iffalse (Variance reduction by control variate) \fi{} }Apply each simple MC, antithtic variate, and control variate to
+
+\[\int_0^1 e^x dx\]
+\EndKnitrBlock{example}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{N <-}\StringTok{ }\DecValTok{100}
+\NormalTok{M <-}\StringTok{ }\DecValTok{1000}
+\end{Highlighting}
+\end{Shaded}
+
+Denote that the true value is
+
+\[\int_0^1 e^x dx = e - 1 = 1.718\]
+
+We might compare each estimate to this.
+
+\BeginKnitrBlock{solution}[Simple MC]
+\iffalse{} {Solution (Simple MC). } \fi{}We only need \(U \sim unif(0, 1)\).
+
+\begin{equation}
+  \begin{split}
+    \theta & = \int_0^1 e^x dx \\
+    & = \int_0^1 e^x I_{(0,1)}(x)dx \\
+    & \approx \frac{1}{N} \sum_{i = 1}^N e^{u_i}, \qquad u_i \stackrel{iid}{\sim}unif(0, 1)
+  \end{split}
+  \label{eq:mcsol}
+\end{equation}
+\EndKnitrBlock{solution}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{theta_sim <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(runif, }\DataTypeTok{N =}\NormalTok{ N, }\DataTypeTok{M =}\NormalTok{ M)[,}
+\NormalTok{                               .(}\DataTypeTok{mc =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{exp}\NormalTok{(u))),}
+\NormalTok{                               keyby =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+#>         sam   mc
+#>    1:    s1 1.70
+#>    2:    s2 1.71
+#>    3:    s3 1.76
+#>    4:    s4 1.71
+#>    5:    s5 1.73
+#>   ---           
+#>  996:  s996 1.79
+#>  997:  s997 1.82
+#>  998:  s998 1.68
+#>  999:  s999 1.73
+#> 1000: s1000 1.76
+\end{verbatim}
+
+\BeginKnitrBlock{solution}[Antithetic variate]
+\iffalse{} {Solution (Antithetic variate). } \fi{}For \(N^{\prime} = \frac{N}{2}\),
+
+Consider \(u_1, \ldots, u_{N^{\prime}} \stackrel{iid}{\sim}unif(0,1)\) and \(1 - u_{1}, \ldots, 1 - u_{N^{\prime}} \stackrel{iid}{\sim}unif(0,1)\).
+
+See Equation \eqref{eq:mcsol}. Then we can compute antithetic estimator by
+
+\begin{equation*}
+  \begin{split}
+    \hat\theta_A & = \frac{1}{N} \sum_{i = 1}^{N / 2} \Big( e^{u_i} + e^{1 - u_i} \Big) \\
+    & = \frac{1}{N / 2} \sum_{i = 1}^{N / 2} \bigg( \frac{e^{u_i} + e^{1 - u_i}}{2} \bigg) \\
+    & = \text{sample mean}
+  \end{split}
+\end{equation*}
+\EndKnitrBlock{solution}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{theta_anti <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(runif, }\DataTypeTok{N =}\NormalTok{ N }\OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{, }\DataTypeTok{M =}\NormalTok{ M)[,}
+\NormalTok{                                   u2 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{u)][,}
+\NormalTok{                                                     u }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\KeywordTok{exp}\NormalTok{(u)][,}
+\NormalTok{                                                                  .(}\DataTypeTok{anti =} \KeywordTok{mean}\NormalTok{((u }\OperatorTok{+}\StringTok{ }\NormalTok{u2) }\OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{)),}
+\NormalTok{                                                                  keyby =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+Now look at the results of the two.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{theta_sim[theta_anti] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{melt}\NormalTok{(}\DataTypeTok{id.vars =} \StringTok{"sam"}\NormalTok{, }\DataTypeTok{variable.name =} \StringTok{"simul"}\NormalTok{, }\DataTypeTok{value.name =} \StringTok{"integral"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ integral, }\DataTypeTok{fill =}\NormalTok{ simul)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\DataTypeTok{position =} \StringTok{"identity"}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{.5}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(theta)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_vline}\NormalTok{(}\DataTypeTok{xintercept =} \KeywordTok{exp}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{, }\DataTypeTok{col =} \KeywordTok{I}\NormalTok{(}\StringTok{"red"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_discrete}\NormalTok{(}
+    \DataTypeTok{name =} \StringTok{"MC"}\NormalTok{,}
+    \DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"Simple"}\NormalTok{, }\StringTok{"Antithetic"}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/compantihat-1} 
+
+}
+
+\caption{Antithetic variate estimator}\label{fig:compantihat}
+\end{figure}
+
+It is clear that antithetic variate have reduced variance.
+
+\BeginKnitrBlock{solution}[Control variate]
+\iffalse{} {Solution (Control variate). } \fi{}Consider
+
+\[g(U) = e^U\]
+
+and
+
+\[f(U) = U\]
+
+with \(U \sim unif(0, 1)\).
+
+Note that
+
+\[E(U) = \frac{1}{2}\]
+
+Then
+
+\[\hat\theta_C = e^U + c\bigg(U - \frac{1}{2}\bigg)\]
+
+is an unbiased estimator of \(\theta = \int_0^1 e^xdx\).
+
+To reduce variance, we need to set \(c\) to be
+
+\[c^{\ast} = -\frac{Cov(e^U, U)}{Var(U)}\]
+\EndKnitrBlock{solution}
+
+Since we do not know the exact number, we estimate this from each Monte Carlo sample.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{theta_con <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(runif, }\DataTypeTok{N =}\NormalTok{ N, }\DataTypeTok{M =}\NormalTok{ M)[,}
+\NormalTok{                               chat }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\OperatorTok{-}\StringTok{ }\KeywordTok{cov}\NormalTok{(}\KeywordTok{exp}\NormalTok{(u), u) }\OperatorTok{/}\StringTok{ }\KeywordTok{var}\NormalTok{(u),}
+\NormalTok{                               by =}\StringTok{ }\NormalTok{sam][,}
+\NormalTok{                                         .(}\DataTypeTok{con =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{exp}\NormalTok{(u) }\OperatorTok{+}\StringTok{ }\NormalTok{chat }\OperatorTok{*}\StringTok{ }\NormalTok{(u }\OperatorTok{-}\StringTok{ }\DecValTok{1} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{))),}
+\NormalTok{                                         keyby =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{thetahat <-}\StringTok{ }\NormalTok{theta_sim[theta_anti][theta_con]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{thetahat }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{melt}\NormalTok{(}\DataTypeTok{id.vars =} \StringTok{"sam"}\NormalTok{, }\DataTypeTok{variable.name =} \StringTok{"simul"}\NormalTok{, }\DataTypeTok{value.name =} \StringTok{"integral"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ integral, }\DataTypeTok{fill =}\NormalTok{ simul)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\DataTypeTok{position =} \StringTok{"identity"}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{.5}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(theta)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_vline}\NormalTok{(}\DataTypeTok{xintercept =} \KeywordTok{exp}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{, }\DataTypeTok{col =} \KeywordTok{I}\NormalTok{(}\StringTok{"red"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_discrete}\NormalTok{(}
+    \DataTypeTok{name =} \StringTok{"MC"}\NormalTok{,}
+    \DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"Simple"}\NormalTok{, }\StringTok{"Antithetic"}\NormalTok{, }\StringTok{"Control"}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/compcontrol-1} 
+
+}
+
+\caption{Use of Control variable}\label{fig:compcontrol}
+\end{figure}
+
+It looks like control variate have less variance, but what is more important is that both methods successfully have reduced it.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{thetahat[,}
+         \KeywordTok{lapply}\NormalTok{(.SD, sd),}
+\NormalTok{         ,.SDcols =}\StringTok{ }\OperatorTok{-}\StringTok{"sam"}\NormalTok{]}
+\CommentTok{#>       mc    anti     con}
+\CommentTok{#> 1: 0.049 0.00872 0.00643}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{antithetic-variate-as-control-variate}{%
+\subsection{Antithetic variate as control variate}\label{antithetic-variate-as-control-variate}}
+
+Both antithetic variate and control variate reduce variance using covariance between two random variables. Actually, \emph{antithetic variate is a special case of control variate}. See Equation \eqref{eq:controlest}.
+
+\BeginKnitrBlock{lemma}
+\protect\hypertarget{lem:unnamed-chunk-64}{}{\label{lem:unnamed-chunk-64} }Control variate estimator is a linear combination of unbiased estimators of \(\theta\).
+\EndKnitrBlock{lemma}
+
+Consider any two unbiased estimator \(\hat\theta_1\) and \(\hat\theta_2\) for \(\theta = Eg(X)\). Build control variate as following.
+
+\[\hat\theta_c = c\hat\theta_1 + (1 - c)\hat\theta_2\]
+
+It is obvious that \(\hat\theta_c\) is also unbiased of \(\theta\) for every \(c \in \mathbb{R}\).
+
+\begin{equation}
+  Var(\hat\theta_c) = Var(\hat\theta_2) + c^2 Var(\hat\theta_1 - \hat\theta_2) 2c Cov(\hat\theta_2, \hat\theta_1 - \hat\theta_2)
+  \label{eq:controlvar2}
+\end{equation}
+
+Let \(\hat\theta_1\) and \(\hat\theta_2\) be antithetic variate choice. Recall that \emph{antithetic variate} give that for \(\hat\theta_1\) and \(\hat\theta_2\),
+
+\[\hat\theta_1, \hat\theta_2 \sim IID, \quad Corr(\hat\theta_1, \hat\theta_2) = -1\]
+
+It follows that
+
+\[Cov(\hat\theta_1, \hat\theta_2) = - Var(\hat\theta_1)\]
+
+and that
+
+\[Var(\hat\theta_c) = (4c^2 - 4c + 1)Var(\hat\theta_1)\]
+
+Hence, it leads to choosing optimal
+
+\[\hat\theta_{c^{\ast}} = \frac{\hat\theta_1 + \hat\theta_2}{2}\]
+
+which we have been used in antithetic variate.
+
+\hypertarget{several-control-variates}{%
+\subsection{Several control variates}\label{several-control-variates}}
+
+To summarize, control variate try to reduce variance by combining unbiased estimatros of the target parameter. We have used one variate \(f(X)\). It might be possible to extend to multiple variates, so to speak, \(f_1(X), \ldots, f_k(X)\). Thanks to the linearity of expectation,
+
+\[\hat\theta_c = g(X) + \sum_{i = 1}^k c_i \Big(f_i (X) - \mu_i\Big)\]
+
+is also unbiased estimator, where \(\mu_i = E f_i(X)\). How to get each \(c_i^{\ast}\)? Rather than using variance and covariance, we can \emph{fitting linear regression}.
+
+\hypertarget{control-variates-and-regression}{%
+\subsection{Control variates and regression}\label{control-variates-and-regression}}
+
+See Equation \eqref{eq:controlest} and Equation \eqref{eq:controlsol}. It can be found that we were estimating linear regression coefficient as LSE.
+
+\BeginKnitrBlock{lemma}[Least squares estimator]
+\protect\hypertarget{lem:lse}{}{\label{lem:lse} \iffalse (Least squares estimator) \fi{} }Consider \(Y_i = \beta_0 + \beta_1 X_i + \epsilon_i\). Then
+
+\[\hat\beta_1 = \frac{\sum(X_i - \overline{X})(Y_i - \overline{Y})}{\sum (Y_i - \overline{Y})} = \frac{\widehat{Cov}(X, Y)}{\widehat{Var}(Y)}\]
+\EndKnitrBlock{lemma}
+
+Control variate estimator \(\hat\theta_c = g(X) + c\Big(f(Y) - \mu_f\Big)\) can be expressed in regression model as
+
+\[Eg(X) = \beta_0 + \beta_1 E f(X)\]
+
+Then
+
+\begin{equation}
+  \hat\beta_1 = \text{LSE of}\: g(X) \:\text{on}\: f(X) = \frac{\widehat{Cov}(g(X), f(X))}{\widehat{Var}(f(X))} = -\hat{c}^{\ast}
+  \label{eq:controlbeta}
+\end{equation}
+
+Note that
+
+\[\hat\beta_0 = \overline{g(X)} + \hat{c}^{\ast} \overline{f(X)}\]
+
+This matches to \(\hat\theta_{c^{\ast}}\) in previous section.
+
+\begin{equation}
+  \hat\beta_0 + \hat\beta_1 \mu_f = \overline{g(X)} + \hat{c}^{\ast} (\overline{f(X)} - \mu_f) = \hat\theta_{c^{\ast}}
+  \label{eq:controlreg}
+\end{equation}
+
+Also, we can get the error variance estimate
+
+\[\hat\sigma^2 = \widehat{Var}(X + \hat{c}^{\ast}Y) = MSE\]
+
+and
+
+\[\widehat{Var}\hat\theta_c^{\ast} = \frac{\hat\sigma^2}{N}\]
+
+From Example \ref{exm:intex}, we can change the code computing \(c^{\ast}\) \texttt{-\ cov(exp(u),\ u)\ /\ var(u)} to \texttt{lm(exp(u)\ \textasciitilde{}\ u)\$coef{[}2{]}}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{mc_data}\NormalTok{(runif, }\DataTypeTok{N =}\NormalTok{ N, }\DataTypeTok{M =}\NormalTok{ M) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{.[,}
+\NormalTok{    chat }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\KeywordTok{lm}\NormalTok{(}\KeywordTok{exp}\NormalTok{(u) }\OperatorTok{~}\StringTok{ }\NormalTok{u)}\OperatorTok{$}\NormalTok{coef[}\DecValTok{2}\NormalTok{],}
+\NormalTok{    by =}\StringTok{ }\NormalTok{sam] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{.[,}
+\NormalTok{    .(}\DataTypeTok{con =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{exp}\NormalTok{(u) }\OperatorTok{+}\StringTok{ }\NormalTok{chat }\OperatorTok{*}\StringTok{ }\NormalTok{(u }\OperatorTok{-}\StringTok{ }\DecValTok{1} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{))),}
+\NormalTok{    by =}\StringTok{ }\NormalTok{sam]}
+\CommentTok{#>         sam  con}
+\CommentTok{#>    1:    s1 1.82}
+\CommentTok{#>    2:    s2 1.93}
+\CommentTok{#>    3:    s3 1.62}
+\CommentTok{#>    4:    s4 1.62}
+\CommentTok{#>    5:    s5 1.76}
+\CommentTok{#>   ---           }
+\CommentTok{#>  996:  s996 1.46}
+\CommentTok{#>  997:  s997 1.72}
+\CommentTok{#>  998:  s998 1.61}
+\CommentTok{#>  999:  s999 1.59}
+\CommentTok{#> 1000: s1000 1.71}
+\end{Highlighting}
+\end{Shaded}
+
+In fact, we can use Equation \eqref{eq:controlreg} directly: \texttt{predict(lm,\ newdata\ =\ data.frame(u\ =\ mean(u)))}.
+
+\begin{algorithm}[H] \label{alg:algconreg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$g$, control variate $f$ with mean $\mu_f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $U_1^{(m)}, \ldots, U_N^{(m)} \stackrel{iid}{\sim}unif$\;
+    Set $g = g(U_i)$ and $f = f(U_i)$\;
+    Regression $g \sim f$\;
+    Predict the regression at $\overline{U}^{(m)}$. It is $\hat\theta_{c^{\ast}}^{(j)}$\;
+  }
+  $\bar{\hat\theta} = \frac{1}{M} \sum \hat\theta_{c^{\ast}}^{(j)}$\;
+  $\widehat{Var}(\hat\theta) = \frac{1}{M - 1} \sum (\hat\theta_{c^{\ast}}^{(j)} - \bar{\hat\theta})^2$\;
+  \Output{$\widehat{Var}(\hat\theta)$}
+  \caption{Control variables and regression}
+\end{algorithm}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{mc_data}\NormalTok{(runif, }\DataTypeTok{N =}\NormalTok{ N, }\DataTypeTok{M =}\NormalTok{ M)[,}
+\NormalTok{                             .(}\DataTypeTok{con =} \KeywordTok{predict}\NormalTok{(}\KeywordTok{lm}\NormalTok{(}\KeywordTok{exp}\NormalTok{(u) }\OperatorTok{~}\StringTok{ }\NormalTok{u), }
+                                             \DataTypeTok{newdata =} \KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{u =} \KeywordTok{mean}\NormalTok{(u)))),}
+\NormalTok{                             by =}\StringTok{ }\NormalTok{sam]}
+\CommentTok{#>         sam  con}
+\CommentTok{#>    1:    s1 1.71}
+\CommentTok{#>    2:    s2 1.70}
+\CommentTok{#>    3:    s3 1.75}
+\CommentTok{#>    4:    s4 1.66}
+\CommentTok{#>    5:    s5 1.69}
+\CommentTok{#>   ---           }
+\CommentTok{#>  996:  s996 1.75}
+\CommentTok{#>  997:  s997 1.70}
+\CommentTok{#>  998:  s998 1.71}
+\CommentTok{#>  999:  s999 1.61}
+\CommentTok{#> 1000: s1000 1.72}
+\end{Highlighting}
+\end{Shaded}
+
+Now, how to deal with multiple control variates?
+
+\[X = \beta_0 + \sum_{i = 1}^k \beta_i Y_i + \epsilon\]
+
+Using \emph{multiple linear regression} model, we can choose optimal \(c^{\ast}\) and estimate control variate estimate.
 
 \hypertarget{importance-sampling}{%
 \section{Importance Sampling}\label{importance-sampling}}
+
+Simple MC computes
+
+\[\int_A g(x) f(x) dx = E g(X) = \theta\]
+
+for some density function \(f\). This method uses random number from \(f\) itself so that
+
+\[\int_A g(x) f(x) dx \approx \frac{1}{N} \sum_{i = 1}^N g(X_i)\]
+
+where \(X_1, \ldots, X_N \stackrel{iid}{\sim}f\). This is why MC integration is called \emph{direct sampling}. Sometimes, however, we face unkown distribution. In this case, generating from \(f\) directly is not easy. Even we can, it can be inefficient. The solution is \emph{indirect method}: draw a sample from another pdf \(h\). This is called \textbf{importance sampling}.
+
+\hypertarget{importance-sampling-1}{%
+\subsection{Importance sampling}\label{importance-sampling-1}}
+
+Consdier MC integration as before.
+
+\[\int_A g(x) f(x) dx = E g(X) = \theta\]
+
+How about uniform random number set with simple MC as before? However, uniform random numbers does not apply to unbounded intervals. When the target function is not that uniform, especially, generating numbers uniformly can be inefficient.
+
+\begin{equation}
+  \begin{split}
+    E_f g(X) & = \int_A g(x) f(x) dx \\
+    & = \int_A g(x) \frac{f(x)}{\phi(x)}\phi(x) dx, \qquad \phi: \text{density on}\: A \\
+    & = E_{\phi}\frac{g(X)f(X)}{\phi(X)} \\
+    & \approx \frac{1}{N} \sum_{i = 1}^N \frac{g(X_i)f(X_i)}{\phi(X_i)}, \qquad X_i \stackrel{iid}{\sim}\phi
+  \end{split}
+  \label{eq:impsample}
+\end{equation}
+
+Here, \(\phi\) is called the \emph{envelope} or the \emph{importance sampling function}. This is just simple arithmetic, so it is possible to choose any density \(\phi\). However, we should take good one. Typically, one should select \(\phi\) so that
+
+\begin{equation}
+  \phi(x) \approx \lvert g(x) \rvert f(x) \quad \text{on}\: A
+  \label{eq:goodphi}
+\end{equation}
+
+with finite variance.
+
+\BeginKnitrBlock{example}[Choice of importance function]
+\protect\hypertarget{exm:whatphi}{}{\label{exm:whatphi} \iffalse (Choice of importance function) \fi{} }Obtain MC estimate of
+
+\[\int_0^1 \frac{e^{-x}}{1 + x^2} dx\]
+
+by importance sampling.
+\EndKnitrBlock{example}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{g_target <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+  \KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\NormalTok{x }\OperatorTok{-}\StringTok{ }\KeywordTok{log}\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2}\NormalTok{)) }\OperatorTok{*}\StringTok{ }\NormalTok{(x }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{*}\StringTok{ }\NormalTok{(x }\OperatorTok{<}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Consider candiate envelopes
+
+\[
+\begin{cases}
+  \phi_0(x) = 1, & 0 < x < 1 \\
+  \phi_1(x) = e^{-x}, & 0 < x < \infty \\
+  \phi_2(x) = \frac{1}{\pi(1 + x^2)}, & x \in \mathbb{R}\\
+  \phi_3(x) = \frac{e^{-x}}{1 - e^{-1}}, & 0 < x < 1 \\
+  \phi_4(x) = \frac{4}{\pi(1 + x^2)} & 0 < x < 1
+\end{cases}
+\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{f0 <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+\NormalTok{  (x }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{*}\StringTok{ }\NormalTok{(x }\OperatorTok{<}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\NormalTok{\}}
+\CommentTok{#------------------}
+\NormalTok{f1 <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+  \KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\NormalTok{x) }\OperatorTok{*}\StringTok{ }\NormalTok{(x }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{)}
+\NormalTok{\}}
+\CommentTok{#------------------}
+\NormalTok{f2 <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+  \DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{(pi }\OperatorTok{*}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2}\NormalTok{))}
+\NormalTok{\}}
+\CommentTok{#------------------}
+\NormalTok{f3 <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+  \KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\NormalTok{x) }\OperatorTok{/}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\DecValTok{1}\NormalTok{)) }\OperatorTok{*}\StringTok{ }\NormalTok{(x }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{*}\StringTok{ }\NormalTok{(x }\OperatorTok{<}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\NormalTok{\}}
+\CommentTok{#------------------}
+\NormalTok{f4 <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+  \DecValTok{4} \OperatorTok{/}\StringTok{ }\NormalTok{(pi }\OperatorTok{*}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2}\NormalTok{)) }\OperatorTok{*}\StringTok{ }\NormalTok{(x }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{) }\OperatorTok{*}\StringTok{ }\NormalTok{(x }\OperatorTok{<}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{seq}\NormalTok{(.}\DecValTok{01}\NormalTok{, }\FloatTok{.99}\NormalTok{, }\DataTypeTok{by =} \FloatTok{.01}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate_all}\NormalTok{(}\DataTypeTok{.funs =} \KeywordTok{list}\NormalTok{(}\OperatorTok{~}\NormalTok{g_target, }\OperatorTok{~}\NormalTok{f0, }\OperatorTok{~}\NormalTok{f1, }\OperatorTok{~}\NormalTok{f2, }\OperatorTok{~}\NormalTok{f3, }\OperatorTok{~}\NormalTok{f4)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{gather}\NormalTok{(}\OperatorTok{-}\NormalTok{x, }\DataTypeTok{key =} \StringTok{"funs"}\NormalTok{, }\DataTypeTok{value =} \StringTok{"value"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ value, }\DataTypeTok{colour =}\NormalTok{ funs)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/candimp-1} 
+
+}
+
+\caption{Importance funtions $\phi_0, \ldots, \phi_4$}\label{fig:candimp}
+\end{figure}
+
+Each importance function is drawn in Figure \ref{fig:candimp}. \(f_1\) shows similar patterns to \(g\).
+
+\hypertarget{variance-in-importance-sampling}{%
+\subsection{Variance in importance sampling}\label{variance-in-importance-sampling}}
+
+From Equation \eqref{eq:impsample},
+
+\[\theta = \int_A g(x)dx = \int_A \frac{g(x)}{\phi(x)}\phi(x) dx = E\bigg[ \frac{g(X)}{\phi(X)} \bigg] \approx \frac{1}{N} \sum \frac{g(X_i)}{\phi(X_i)}\]
+
+where \(X_1, \ldots, X_N \stackrel{iid}{\sim}\phi\). Then
+
+\begin{equation*}
+  \begin{split}
+    Var\hat\theta & = E\hat\theta^2 - (E\hat\theta)^2 \\
+    & = \int_A \bigg(\frac{g(x)}{\phi(x)}\bigg)^2 \phi(x) dx - \theta^2 \\
+    & = \int_A \frac{g(x)^2}{\phi(x)} dx - \theta^2
+  \end{split}
+\end{equation*}
+
+Hence, the mimimum variance
+
+\[\bigg( \int_A \lvert g(x) \rvert dx \bigg)^2 - \theta^2\]
+
+is obtained when
+
+\[\phi(x) = \frac{\lvert g(x) \rvert}{\int_A \lvert g(x) \rvert dx}\]
+
+But we do not know the value of denominator. It might be hart to get the exact function giving the minimum variance, but choosing \(\phi\) close to the shape of \(\lvert g \rvert\) would produce good result. To check our criterion \eqref{eq:goodphi} more clearly, compute \(\frac{g}{\phi_i}\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{seq}\NormalTok{(.}\DecValTok{01}\NormalTok{, }\FloatTok{.99}\NormalTok{, }\DataTypeTok{by =} \FloatTok{.01}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate_all}\NormalTok{(}\DataTypeTok{.funs =} \KeywordTok{list}\NormalTok{(}\OperatorTok{~}\NormalTok{g_target, }\OperatorTok{~}\NormalTok{f0, }\OperatorTok{~}\NormalTok{f1, }\OperatorTok{~}\NormalTok{f2, }\OperatorTok{~}\NormalTok{f3, }\OperatorTok{~}\NormalTok{f4)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{gather}\NormalTok{(}\OperatorTok{-}\NormalTok{x, }\OperatorTok{-}\NormalTok{g_target, }\DataTypeTok{key =} \StringTok{"funs"}\NormalTok{, }\DataTypeTok{value =} \StringTok{"value"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{value =}\NormalTok{ g_target }\OperatorTok{/}\StringTok{ }\NormalTok{value) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ value, }\DataTypeTok{colour =}\NormalTok{ funs)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/candimp2-1} 
+
+}
+
+\caption{Ratio $\frac{g}{\phi_i}$}\label{fig:candimp2}
+\end{figure}
+
+What is the closest to \(1\)? \(f_1\), of course. Would this function produce the best result, i.e.~variance?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{theta_imp0 <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(runif, }\DataTypeTok{N =} \DecValTok{100}\NormalTok{)[,}
+\NormalTok{                          .(}\DataTypeTok{phi0 =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{g_target}\NormalTok{(u) }\OperatorTok{/}\StringTok{ }\KeywordTok{f0}\NormalTok{(u))),}
+\NormalTok{                          keyby =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{theta_imp1 <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(rexp, }\DataTypeTok{N =} \DecValTok{100}\NormalTok{, }\DataTypeTok{rate =} \DecValTok{1}\NormalTok{)[,}
+\NormalTok{                                   .(}\DataTypeTok{phi1 =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{g_target}\NormalTok{(u) }\OperatorTok{/}\StringTok{ }\KeywordTok{f1}\NormalTok{(u))),}
+\NormalTok{                                   keyby =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rf2 <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n) \{}
+\NormalTok{  x <-}\StringTok{ }\KeywordTok{rcauchy}\NormalTok{(n)}
+\NormalTok{  x[(x }\OperatorTok{>}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{|}\StringTok{ }\NormalTok{(x }\OperatorTok{<}\StringTok{ }\DecValTok{0}\NormalTok{)] <-}\StringTok{ }\DecValTok{2} \CommentTok{# catch overflow errors in g}
+\NormalTok{  x}
+\NormalTok{\}}
+\NormalTok{theta_imp2 <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(rf2, }\DataTypeTok{N =} \DecValTok{100}\NormalTok{)[,}
+\NormalTok{                        .(}\DataTypeTok{phi2 =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{g_target}\NormalTok{(u) }\OperatorTok{/}\StringTok{ }\KeywordTok{f2}\NormalTok{(u))),}
+\NormalTok{                        keyby =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rf3 <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n) \{}
+\NormalTok{  u <-}\StringTok{ }\KeywordTok{runif}\NormalTok{(n)}
+\NormalTok{  x <-}\StringTok{ }\OperatorTok{-}\KeywordTok{log}\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{u }\OperatorTok{*}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\DecValTok{1}\NormalTok{))) }\CommentTok{# inverse transformation method}
+\NormalTok{  x}
+\NormalTok{\}}
+\CommentTok{#---------------------------}
+\NormalTok{theta_imp3 <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(rf3, }\DataTypeTok{N =} \DecValTok{100}\NormalTok{)[,}
+\NormalTok{                        .(}\DataTypeTok{phi3 =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{g_target}\NormalTok{(u) }\OperatorTok{/}\StringTok{ }\KeywordTok{f3}\NormalTok{(u))),}
+\NormalTok{                        keyby =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rf4 <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n) \{}
+\NormalTok{  u <-}\StringTok{ }\KeywordTok{runif}\NormalTok{(n)}
+  \KeywordTok{tan}\NormalTok{(pi }\OperatorTok{*}\StringTok{ }\NormalTok{u }\OperatorTok{/}\StringTok{ }\DecValTok{4}\NormalTok{) }\CommentTok{# inverse transformation method}
+\NormalTok{\}}
+\CommentTok{#--------------------}
+\NormalTok{theta_imp4 <-}
+\StringTok{  }\KeywordTok{mc_data}\NormalTok{(rf4, }\DataTypeTok{N =} \DecValTok{100}\NormalTok{)[,}
+\NormalTok{                        .(}\DataTypeTok{phi4 =} \KeywordTok{mean}\NormalTok{(}\KeywordTok{g_target}\NormalTok{(u) }\OperatorTok{/}\StringTok{ }\KeywordTok{f4}\NormalTok{(u))),}
+\NormalTok{                        keyby =}\StringTok{ }\NormalTok{sam]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{theta_imp <-}\StringTok{ }\NormalTok{theta_imp0[theta_imp1][theta_imp2][theta_imp3][theta_imp4]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{theta_imp }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{melt}\NormalTok{(}\DataTypeTok{id.vars =} \StringTok{"sam"}\NormalTok{, }\DataTypeTok{variable.name =} \StringTok{"imp_fun"}\NormalTok{, }\DataTypeTok{value.name =} \StringTok{"integral"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ integral, }\DataTypeTok{fill =}\NormalTok{ imp_fun)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\DataTypeTok{position =} \StringTok{"identity"}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{.5}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(theta))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/impcomp-1} 
+
+}
+
+\caption{Empirical distribution of each importance sampling}\label{fig:impcomp}
+\end{figure}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{theta_imp[,}
+          \KeywordTok{lapply}\NormalTok{(.SD, sd),}
+\NormalTok{          , .SDcols =}\StringTok{ }\OperatorTok{-}\StringTok{"sam"}\NormalTok{]}
+\CommentTok{#>      phi0  phi1   phi2    phi3   phi4}
+\CommentTok{#> 1: 0.0246 0.042 0.0941 0.00977 0.0144}
+\end{Highlighting}
+\end{Shaded}
+
+\(f_3\) and possibly \(f_4\) yields the lowest variance. What happened to \(f_1\)? Its support is \((0, \infty)\), so many values would be generated outside of \((0,1)\). This results in many zeros in the sum of \(\frac{g}{f}\).
 
 \hypertarget{monte-carlo-methods-in-inference}{%
 \chapter{Monte Carlo Methods in Inference}\label{monte-carlo-methods-in-inference}}

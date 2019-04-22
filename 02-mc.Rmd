@@ -531,28 +531,541 @@ phi2[phi2_anti] %>%
 
 ### Control Variates
 
-Recall that we are trying to estimate $\theta = EX$ here in MC integration. Consider other output random variable. Suppose that $\mu_Y \equiv E(Y)$ is known. Then
+Recall that we are trying to estimate $\theta = Eg(X)$ here in MC integration. Consider other output random variable. Suppose that $\mu_f \equiv Ef(Y)$ is known. It is obvious that
 
-$$X + c(Y - \mu_Y)$$
+\begin{equation}
+  \hat\theta_c = g(X) + c\Big(f(Y) - \mu_f\Big)
+  (\#eq:controlest)
+\end{equation}
 
-is an unbiased estimator for $\theta$ for any $c \in \R$.
+is an unbiased estimator for $\theta$ for any $c \in \R$. Then we have
 
+\begin{equation}
+  Var\hat\theta_c = Varg(X) + c^2 Varf(X) + 2cCov(g(X), f(X))
+  (\#eq:controlvar)
+\end{equation}
 
+Recall that our goal is to minimize this $Var\hat\theta_c$. What value of $c$ is to be determined? Note that Equation \@ref(eq:controlvar) is quadratic function of $c$.
 
+\begin{equation}
+  \begin{split}
+    Var\hat\theta_c & = Varf(X) c^2 + 2cCov(g(X), f(X)) + Varg(X) \\
+    & = Var f(X) \bigg( c + \frac{Cov(g(X), f(X))}{Var f(X)} \bigg)^2 + Var g(X) - \frac{Cov(g(X), f(X))^2}{Var f(X)}
+  \end{split}
+  (\#eq:controlc)
+\end{equation}
 
+From Equation \@ref(eq:controlc), the variance is minimized at
+
+\begin{equation}
+  c^{\ast} = - \frac{Cov(g(X), f(X))}{Var f(X)}
+  (\#eq:controlsol)
+\end{equation}
+
+with minimum variance
+
+$$Var\hat\theta_{c^{\ast}} = Var g(X) - \frac{Cov(g(X), f(X))^2}{Var f(X)}$$
+
+By this, we can reduce the variance of estimation as much as possible (using $f(X)$). Here, $f(X)$ is called a *control variate* for $g(X)$.
+
+\begin{algorithm}[H] \label{alg:algcontrol}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$g$, control variate $f$ with mean $\mu_f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $U_1^{(m)}, \ldots, U_N^{(m)} \iid unif$\;
+    Set $g = g(U_i)$ and $f = f(U_i)$\;
+    Compute $\hat{c}^{\ast(m)} = - \frac{\widehat{Cov}(g, f)}{\widehat{Var}(f)}$\;
+    $\hat\theta_{c^{\ast}}^{(j)} = g + c^{\ast(m)}(f - \mu_f)$\;
+  }
+  $\bar{\hat\theta} = \frac{1}{M} \sum \hat\theta_{c^{\ast}}^{(j)}$\;
+  $\widehat{Var}(\hat\theta) = \frac{1}{M - 1} \sum (\hat\theta_{c^{\ast}}^{(j)} - \bar{\hat\theta})^2$\;
+  \Output{$\widehat{Var}(\hat\theta)$}
+  \caption{Variance of $\hat\theta$ using control variables}
+\end{algorithm}
+
+```{example, intex, name = "Variance reduction by control variate"}
+Apply each simple MC, antithtic variate, and control variate to
+
+$$\int_0^1 e^x dx$$
+```
+
+```{r}
+N <- 100
+M <- 1000
+```
+
+Denote that the true value is
+
+$$\int_0^1 e^x dx = e - 1 = `r exp(1) - 1`$$
+
+We might compare each estimate to this.
+
+```{solution, name = "Simple MC"}
+We only need $U \sim unif(0, 1)$.
+
+\begin{equation}
+  \begin{split}
+    \theta & = \int_0^1 e^x dx \\
+    & = \int_0^1 e^x I_{(0,1)}(x)dx \\
+    & \approx \frac{1}{N} \sum_{i = 1}^N e^{u_i}, \qquad u_i \iid unif(0, 1)
+  \end{split}
+  (\#eq:mcsol)
+\end{equation}
+```
+
+```{r}
+theta_sim <-
+  mc_data(runif, N = N, M = M)[,
+                               .(mc = mean(exp(u))),
+                               keyby = sam]
+```
+
+```{r, echo=FALSE}
+theta_sim
+```
+
+```{solution, name = "Antithetic variate"}
+For $N^{\prime} = \frac{N}{2}$,
+
+Consider $u_1, \ldots, u_{N^{\prime}} \iid unif(0,1)$ and $1 - u_{1}, \ldots, 1 - u_{N^{\prime}} \iid unif(0,1)$.
+
+See Equation \@ref(eq:mcsol). Then we can compute antithetic estimator by
+
+\begin{equation*}
+  \begin{split}
+    \hat\theta_A & = \frac{1}{N} \sum_{i = 1}^{N / 2} \Big( e^{u_i} + e^{1 - u_i} \Big) \\
+    & = \frac{1}{N / 2} \sum_{i = 1}^{N / 2} \bigg( \frac{e^{u_i} + e^{1 - u_i}}{2} \bigg) \\
+    & = \text{sample mean}
+  \end{split}
+\end{equation*}
+```
+
+```{r}
+theta_anti <-
+  mc_data(runif, N = N / 2, M = M)[,
+                                   u2 := exp(1 - u)][,
+                                                     u := exp(u)][,
+                                                                  .(anti = mean((u + u2) / 2)),
+                                                                  keyby = sam]
+```
+
+Now look at the results of the two.
+
+```{r compantihat, fig.cap="Antithetic variate estimator"}
+theta_sim[theta_anti] %>% 
+  melt(id.vars = "sam", variable.name = "simul", value.name = "integral") %>% 
+  ggplot(aes(x = integral, fill = simul)) +
+  geom_histogram(bins = 30, position = "identity", alpha = .5) +
+  xlab(expression(theta)) +
+  geom_vline(xintercept = exp(1) - 1, col = I("red")) +
+  scale_fill_discrete(
+    name = "MC",
+    labels = c("Simple", "Antithetic")
+  )
+```
+
+It is clear that antithetic variate have reduced variance.
+
+```{solution, name = "Control variate"}
+Consider
+
+$$g(U) = e^U$$
+
+and
+
+$$f(U) = U$$
+
+with $U \sim unif(0, 1)$.
+
+Note that
+
+$$E(U) = \frac{1}{2}$$
+
+Then
+
+$$\hat\theta_C = e^U + c\bigg(U - \frac{1}{2}\bigg)$$
+
+is an unbiased estimator of $\theta = \int_0^1 e^xdx$.
+
+To reduce variance, we need to set $c$ to be
+
+$$c^{\ast} = -\frac{Cov(e^U, U)}{Var(U)}$$
+```
+
+Since we do not know the exact number, we estimate this from each Monte Carlo sample.
+
+```{r}
+theta_con <-
+  mc_data(runif, N = N, M = M)[,
+                               chat := - cov(exp(u), u) / var(u),
+                               by = sam][,
+                                         .(con = mean(exp(u) + chat * (u - 1 / 2))),
+                                         keyby = sam]
+```
+
+```{r}
+thetahat <- theta_sim[theta_anti][theta_con]
+```
+
+```{r compcontrol, fig.cap="Use of Control variable"}
+thetahat %>% 
+  melt(id.vars = "sam", variable.name = "simul", value.name = "integral") %>% 
+  ggplot(aes(x = integral, fill = simul)) +
+  geom_histogram(bins = 30, position = "identity", alpha = .5) +
+  xlab(expression(theta)) +
+  geom_vline(xintercept = exp(1) - 1, col = I("red")) +
+  scale_fill_discrete(
+    name = "MC",
+    labels = c("Simple", "Antithetic", "Control")
+  )
+```
+
+It looks like control variate have less variance, but what is more important is that both methods successfully have reduced it.
+
+```{r}
+thetahat[,
+         lapply(.SD, sd),
+         ,.SDcols = -"sam"]
+```
+
+### Antithetic variate as control variate
+
+Both antithetic variate and control variate reduce variance using covariance between two random variables. Actually, *antithetic variate is a special case of control variate*. See Equation \@ref(eq:controlest).
+
+```{lemma}
+Control variate estimator is a linear combination of unbiased estimators of $\theta$.
+```
+
+Consider any two unbiased estimator $\hat\theta_1$ and $\hat\theta_2$ for $\theta = Eg(X)$. Build control variate as following.
+
+$$\hat\theta_c = c\hat\theta_1 + (1 - c)\hat\theta_2$$
+
+It is obvious that $\hat\theta_c$ is also unbiased of $\theta$ for every $c \in \R$.
+
+\begin{equation}
+  Var(\hat\theta_c) = Var(\hat\theta_2) + c^2 Var(\hat\theta_1 - \hat\theta_2) 2c Cov(\hat\theta_2, \hat\theta_1 - \hat\theta_2)
+  (\#eq:controlvar2)
+\end{equation}
+
+Let $\hat\theta_1$ and $\hat\theta_2$ be antithetic variate choice. Recall that *antithetic variate* give that for $\hat\theta_1$ and $\hat\theta_2$,
+
+$$\hat\theta_1, \hat\theta_2 \sim IID, \quad Corr(\hat\theta_1, \hat\theta_2) = -1$$
+
+It follows that
+
+$$Cov(\hat\theta_1, \hat\theta_2) = - Var(\hat\theta_1)$$
+
+and that
+
+$$Var(\hat\theta_c) = (4c^2 - 4c + 1)Var(\hat\theta_1)$$
+
+Hence, it leads to choosing optimal
+
+$$\hat\theta_{c^{\ast}} = \frac{\hat\theta_1 + \hat\theta_2}{2}$$
+
+which we have been used in antithetic variate.
+
+### Several control variates
+
+To summarize, control variate try to reduce variance by combining unbiased estimatros of the target parameter. We have used one variate $f(X)$. It might be possible to extend to multiple variates, so to speak, $f_1(X), \ldots, f_k(X)$. Thanks to the linearity of expectation,
+
+$$\hat\theta_c = g(X) + \sum_{i = 1}^k c_i \Big(f_i (X) - \mu_i\Big)$$
+
+is also unbiased estimator, where $\mu_i = E f_i(X)$. How to get each $c_i^{\ast}$? Rather than using variance and covariance, we can *fitting linear regression*.
+
+### Control variates and regression
+
+See Equation \@ref(eq:controlest) and Equation \@ref(eq:controlsol). It can be found that we were estimating linear regression coefficient as LSE.
+
+```{lemma, lse, name = "Least squares estimator"}
+Consider $Y_i = \beta_0 + \beta_1 X_i + \epsilon_i$. Then
+
+$$\hat\beta_1 = \frac{\sum(X_i - \overline{X})(Y_i - \overline{Y})}{\sum (Y_i - \overline{Y})} = \frac{\widehat{Cov}(X, Y)}{\widehat{Var}(Y)}$$
+```
+
+Control variate estimator $\hat\theta_c = g(X) + c\Big(f(Y) - \mu_f\Big)$ can be expressed in regression model as
+
+$$Eg(X) = \beta_0 + \beta_1 E f(X)$$
+
+Then
+
+\begin{equation}
+  \hat\beta_1 = \text{LSE of}\: g(X) \:\text{on}\: f(X) = \frac{\widehat{Cov}(g(X), f(X))}{\widehat{Var}(f(X))} = -\hat{c}^{\ast}
+  (\#eq:controlbeta)
+\end{equation}
+
+Note that
+
+$$\hat\beta_0 = \overline{g(X)} + \hat{c}^{\ast} \overline{f(X)}$$
+
+This matches to $\hat\theta_{c^{\ast}}$ in previous section.
+
+\begin{equation}
+  \hat\beta_0 + \hat\beta_1 \mu_f = \overline{g(X)} + \hat{c}^{\ast} (\overline{f(X)} - \mu_f) = \hat\theta_{c^{\ast}}
+  (\#eq:controlreg)
+\end{equation}
+
+Also, we can get the error variance estimate
+
+$$\hat\sigma^2 = \widehat{Var}(X + \hat{c}^{\ast}Y) = MSE$$
+
+and
+
+$$\widehat{Var}\hat\theta_c^{\ast} = \frac{\hat\sigma^2}{N}$$
+
+From Example \@ref(exm:intex), we can change the code computing $c^{\ast}$ `- cov(exp(u), u) / var(u)` to `lm(exp(u) ~ u)$coef[2]`.
+
+```{r}
+mc_data(runif, N = N, M = M) %>% 
+  .[,
+    chat := lm(exp(u) ~ u)$coef[2],
+    by = sam] %>% 
+  .[,
+    .(con = mean(exp(u) + chat * (u - 1 / 2))),
+    by = sam]
+```
+
+In fact, we can use Equation \@ref(eq:controlreg) directly: `predict(lm, newdata = data.frame(u = mean(u)))`.
+
+\begin{algorithm}[H] \label{alg:algconreg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$g$, control variate $f$ with mean $\mu_f$}
+  \For{$m \leftarrow 1$ \KwTo $M$}{
+    Generate $U_1^{(m)}, \ldots, U_N^{(m)} \iid unif$\;
+    Set $g = g(U_i)$ and $f = f(U_i)$\;
+    Regression $g \sim f$\;
+    Predict the regression at $\overline{U}^{(m)}$. It is $\hat\theta_{c^{\ast}}^{(j)}$\;
+  }
+  $\bar{\hat\theta} = \frac{1}{M} \sum \hat\theta_{c^{\ast}}^{(j)}$\;
+  $\widehat{Var}(\hat\theta) = \frac{1}{M - 1} \sum (\hat\theta_{c^{\ast}}^{(j)} - \bar{\hat\theta})^2$\;
+  \Output{$\widehat{Var}(\hat\theta)$}
+  \caption{Control variables and regression}
+\end{algorithm}
+
+```{r}
+mc_data(runif, N = N, M = M)[,
+                             .(con = predict(lm(exp(u) ~ u), 
+                                             newdata = data.frame(u = mean(u)))),
+                             by = sam]
+```
+
+Now, how to deal with multiple control variates?
+
+$$X = \beta_0 + \sum_{i = 1}^k \beta_i Y_i + \epsilon$$
+
+Using *multiple linear regression* model, we can choose optimal $c^{\ast}$ and estimate control variate estimate.
 
 
 ## Importance Sampling
 
+Simple MC computes
+
+$$\int_A g(x) f(x) dx = E g(X) = \theta$$
+
+for some density function $f$. This method uses random number from $f$ itself so that
+
+$$\int_A g(x) f(x) dx \approx \frac{1}{N} \sum_{i = 1}^N g(X_i)$$
+
+where $X_1, \ldots, X_N \iid f$. This is why MC integration is called *direct sampling*. Sometimes, however, we face unkown distribution. In this case, generating from $f$ directly is not easy. Even we can, it can be inefficient. The solution is *indirect method*: draw a sample from another pdf $h$. This is called **importance sampling**.
+
+### Importance sampling
+
+Consdier MC integration as before.
+
+$$\int_A g(x) f(x) dx = E g(X) = \theta$$
+
+How about uniform random number set with simple MC as before? However, uniform random numbers does not apply to unbounded intervals. When the target function is not that uniform, especially, generating numbers uniformly can be inefficient.
+
+\begin{equation}
+  \begin{split}
+    E_f g(X) & = \int_A g(x) f(x) dx \\
+    & = \int_A g(x) \frac{f(x)}{\phi(x)}\phi(x) dx, \qquad \phi: \text{density on}\: A \\
+    & = E_{\phi}\frac{g(X)f(X)}{\phi(X)} \\
+    & \approx \frac{1}{N} \sum_{i = 1}^N \frac{g(X_i)f(X_i)}{\phi(X_i)}, \qquad X_i \iid \phi
+  \end{split}
+  (\#eq:impsample)
+\end{equation}
+
+Here, $\phi$ is called the *envelope* or the *importance sampling function*. This is just simple arithmetic, so it is possible to choose any density $\phi$. However, we should take good one. Typically, one should select $\phi$ so that
+
+\begin{equation}
+  \phi(x) \approx \lvert g(x) \rvert f(x) \quad \text{on}\: A
+  (\#eq:goodphi)
+\end{equation}
+
+with finite variance.
+
+```{example, whatphi, name = "Choice of importance function"}
+Obtain MC estimate of
+
+$$\int_0^1 \frac{e^{-x}}{1 + x^2} dx$$
+
+by importance sampling.
+```
+
+```{r}
+g_target <- function(x) {
+  exp(-x - log(1 + x^2)) * (x > 0) * (x < 1)
+}
+```
 
 
+Consider candiate envelopes
+
+$$
+\begin{cases}
+  \phi_0(x) = 1, & 0 < x < 1 \\
+  \phi_1(x) = e^{-x}, & 0 < x < \infty \\
+  \phi_2(x) = \frac{1}{\pi(1 + x^2)}, & x \in \R \\
+  \phi_3(x) = \frac{e^{-x}}{1 - e^{-1}}, & 0 < x < 1 \\
+  \phi_4(x) = \frac{4}{\pi(1 + x^2)} & 0 < x < 1
+\end{cases}
+$$
+
+```{r}
+f0 <- function(x) {
+  (x > 0) * (x < 1)
+}
+#------------------
+f1 <- function(x) {
+  exp(-x) * (x > 0)
+}
+#------------------
+f2 <- function(x) {
+  1 / (pi * (1 + x^2))
+}
+#------------------
+f3 <- function(x) {
+  exp(-x) / (1 - exp(-1)) * (x > 0) * (x < 1)
+}
+#------------------
+f4 <- function(x) {
+  4 / (pi * (1 + x^2)) * (x > 0) * (x < 1)
+}
+```
 
 
+```{r candimp, fig.cap="Importance funtions $\\phi_0, \\ldots, \\phi_4$"}
+tibble(x = seq(.01, .99, by = .01)) %>% 
+  mutate_all(.funs = list(~g_target, ~f0, ~f1, ~f2, ~f3, ~f4)) %>% 
+  gather(-x, key = "funs", value = "value") %>% 
+  ggplot(aes(x = x, y = value, colour = funs)) +
+  geom_path()
+```
 
+Each importance function is drawn in Figure \@ref(fig:candimp). $f_1$ shows similar patterns to $g$.
 
+### Variance in importance sampling
 
+From Equation \@ref(eq:impsample),
 
+$$\theta = \int_A g(x)dx = \int_A \frac{g(x)}{\phi(x)}\phi(x) dx = E\bigg[ \frac{g(X)}{\phi(X)} \bigg] \approx \frac{1}{N} \sum \frac{g(X_i)}{\phi(X_i)}$$
 
+where $X_1, \ldots, X_N \iid \phi$. Then
+
+\begin{equation*}
+  \begin{split}
+    Var\hat\theta & = E\hat\theta^2 - (E\hat\theta)^2 \\
+    & = \int_A \bigg(\frac{g(x)}{\phi(x)}\bigg)^2 \phi(x) dx - \theta^2 \\
+    & = \int_A \frac{g(x)^2}{\phi(x)} dx - \theta^2
+  \end{split}
+\end{equation*}
+
+Hence, the mimimum variance
+
+$$\bigg( \int_A \lvert g(x) \rvert dx \bigg)^2 - \theta^2$$
+
+is obtained when
+
+$$\phi(x) = \frac{\lvert g(x) \rvert}{\int_A \lvert g(x) \rvert dx}$$
+
+But we do not know the value of denominator. It might be hart to get the exact function giving the minimum variance, but choosing $\phi$ close to the shape of $\lvert g \rvert$ would produce good result. To check our criterion \@ref(eq:goodphi) more clearly, compute $\frac{g}{\phi_i}$.
+
+```{r candimp2, fig.cap="Ratio $\\frac{g}{\\phi_i}$"}
+tibble(x = seq(.01, .99, by = .01)) %>% 
+  mutate_all(.funs = list(~g_target, ~f0, ~f1, ~f2, ~f3, ~f4)) %>% 
+  gather(-x, -g_target, key = "funs", value = "value") %>% 
+  mutate(value = g_target / value) %>% 
+  ggplot(aes(x = x, y = value, colour = funs)) +
+  geom_path()
+```
+
+What is the closest to $1$? $f_1$, of course. Would this function produce the best result, i.e. variance?
+
+```{r}
+theta_imp0 <-
+  mc_data(runif, N = 100)[,
+                          .(phi0 = mean(g_target(u) / f0(u))),
+                          keyby = sam]
+```
+
+```{r}
+theta_imp1 <-
+  mc_data(rexp, N = 100, rate = 1)[,
+                                   .(phi1 = mean(g_target(u) / f1(u))),
+                                   keyby = sam]
+```
+
+```{r}
+rf2 <- function(n) {
+  x <- rcauchy(n)
+  x[(x > 1) | (x < 0)] <- 2 # catch overflow errors in g
+  x
+}
+theta_imp2 <-
+  mc_data(rf2, N = 100)[,
+                        .(phi2 = mean(g_target(u) / f2(u))),
+                        keyby = sam]
+```
+
+```{r}
+rf3 <- function(n) {
+  u <- runif(n)
+  x <- -log(1 - u * (1 - exp(-1))) # inverse transformation method
+  x
+}
+#---------------------------
+theta_imp3 <-
+  mc_data(rf3, N = 100)[,
+                        .(phi3 = mean(g_target(u) / f3(u))),
+                        keyby = sam]
+```
+
+```{r}
+rf4 <- function(n) {
+  u <- runif(n)
+  tan(pi * u / 4) # inverse transformation method
+}
+#--------------------
+theta_imp4 <-
+  mc_data(rf4, N = 100)[,
+                        .(phi4 = mean(g_target(u) / f4(u))),
+                        keyby = sam]
+```
+
+```{r}
+theta_imp <- theta_imp0[theta_imp1][theta_imp2][theta_imp3][theta_imp4]
+```
+
+```{r impcomp, fig.cap="Empirical distribution of each importance sampling"}
+theta_imp %>% 
+  melt(id.vars = "sam", variable.name = "imp_fun", value.name = "integral") %>% 
+  ggplot(aes(x = integral, fill = imp_fun)) +
+  geom_histogram(bins = 30, position = "identity", alpha = .5) +
+  xlab(expression(theta))
+```
+
+```{r}
+theta_imp[,
+          lapply(.SD, sd),
+          , .SDcols = -"sam"]
+```
+
+$f_3$ and possibly $f_4$ yields the lowest variance. What happened to $f_1$? Its support is $(0, \infty)$, so many values would be generated outside of $(0,1)$. This results in many zeros in the sum of $\frac{g}{f}$.
 
 
 
