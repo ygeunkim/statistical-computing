@@ -1487,7 +1487,7 @@ Here we have
 \[P(Y_n = 1) = P(Y_n = -1) = \frac{1}{2}\]
 
 \[
-X_n := \begin{cases}
+S_n := \begin{cases}
   10 & n = 0 \\
   10 + Y_1 + \cdots + Y_n & n \in \mathbb{N}
 \end{cases}
@@ -1500,7 +1500,7 @@ X_n := \begin{cases}
 \NormalTok{  sa <-}\StringTok{ }\NormalTok{begin}
 \NormalTok{  record <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{a =}\NormalTok{ begin, }\DataTypeTok{b =}\NormalTok{ begin)}
   \ControlFlowTok{while}\NormalTok{(}\KeywordTok{all}\NormalTok{(record }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{)) \{}
-\NormalTok{    sa <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(}\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{>=}\StringTok{ }\NormalTok{prob, sa }\OperatorTok{+}\StringTok{ }\NormalTok{betting, sa }\OperatorTok{-}\StringTok{ }\NormalTok{betting)}
+\NormalTok{    sa <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(}\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<=}\StringTok{ }\NormalTok{prob, sa }\OperatorTok{+}\StringTok{ }\NormalTok{betting, sa }\OperatorTok{-}\StringTok{ }\NormalTok{betting)}
 \NormalTok{    record <-}
 \StringTok{      }\NormalTok{record }\OperatorTok{%>%}\StringTok{ }
 \StringTok{      }\KeywordTok{bind_rows}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DataTypeTok{a =}\NormalTok{ sa, }\DataTypeTok{b =}\NormalTok{ N }\OperatorTok{-}\StringTok{ }\NormalTok{sa))}

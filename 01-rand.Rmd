@@ -1142,7 +1142,7 @@ Here we have
 $$P(Y_n = 1) = P(Y_n = -1) = \frac{1}{2}$$
 
 $$
-X_n := \begin{cases}
+S_n := \begin{cases}
   10 & n = 0 \\
   10 + Y_1 + \cdots + Y_n & n \in \mathbb{N}
 \end{cases}
@@ -1154,7 +1154,7 @@ gambling <- function(begin = 10, betting = 1, prob = .5) {
   sa <- begin
   record <- tibble(a = begin, b = begin)
   while(all(record > 0)) {
-    sa <- ifelse(runif(1) >= prob, sa + betting, sa - betting)
+    sa <- ifelse(runif(1) <= prob, sa + betting, sa - betting)
     record <-
       record %>% 
       bind_rows(c(a = sa, b = N - sa))
