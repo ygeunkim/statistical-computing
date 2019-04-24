@@ -297,14 +297,15 @@ rcustom <- function(n) {
 tibble(x = rcustom(100)) %>% 
   count(x) %>% 
   mutate(n = n / sum(n)) %>% 
-  bind_cols(px = pmf %>% select(p)) %>% 
+  bind_cols(px = pmf %>% select(p)) %>% # pmf table
   gather(-x, key = "key", value = "value") %>% 
   ggplot(aes(x = x, fill = key)) +
   geom_bar(aes(y = value), stat = "identity", position = "dodge", width = .2) +
   scale_fill_discrete(
     name = "Compare",
     labels = c("InvTrans", expression(p(x)))
-  )
+  ) +
+  ylab("prob")
 ```
 
 See Figure \@ref(fig:randmass). Comparing random numbers to true pmf, the result can be said okay.
@@ -862,7 +863,7 @@ Generate a random sample of size $1000$ from a normal location mixture with comp
 $$F_X = p_1 F_{X_1} + (1 - p_1) F_{X_2}$$
 ```
 
-For easy combining samples, we use `foreach` library.
+To combine samples easily, we use `foreach` library.
 
 ```{r, eval=FALSE}
 library(foreach)
@@ -881,12 +882,12 @@ $$
 mix_norm <- function(n, p1, mean1, sd1, mean2, sd2) {
   x1 <- rnorm(n, mean = mean1, sd = sd1)
   x2 <- rnorm(n, mean = mean2, sd = sd2)
-  k <- as.integer(runif(n) > p1)
+  k <- as.integer(runif(n) <= p1)
   k * x1 + (1 - k) * x2
 }
 ```
 
-Try various $p_1$, from 0.1 to 1
+Try various $p_1$, from 0.1 to 1. We would loop and combine by `dplyr::bind_rows()`. Reason for binding is to plot.
 
 ```{r}
 mixture <-
@@ -898,6 +899,8 @@ mixture <-
   }
 ```
 
+Output is long data format. So we can easily draw a line for each group (`key`).
+
 ```{r bimodal, fig.cap="Mixture normal random number for each mixing probability"}
 mixture %>% 
   ggplot(aes(x = value, colour = factor(key))) +
@@ -908,6 +911,8 @@ mixture %>%
   ) +
   xlab("x")
 ```
+
+As $p_1$ becomes larger to $1$, the distribution becomes $N(0, 1)$. On the contrary, $p_1 = 0$ results in $N(3, 1)$.
 
 
 ## Multivariate Normal Random Vector
@@ -1307,6 +1312,42 @@ then the process follows $NPP(\lambda(t))$ on $[0, T]$
   \caption{Thinning algorithm}
 \end{algorithm}
 
+```{r}
+npp <- function(lambda, t0, intensity) {
+  t <- 0
+  N <- 0
+  S <- tibble(t = t, N = N)
+  while (t <= t0) {
+    t <- t + rexp(1, lambda)
+    U <- runif(1)
+    if ( U <= intensity(t) / lambda) {
+      N <- N + 1
+      S <-
+        S %>% 
+        bind_rows(tibble(t = t, N = N))
+    }
+  }
+  S %>% slice(-1)
+}
+```
+
+```{r nppfig, fig.cap="Sample path of nonhomogeneous poisson process"}
+intensity <- function(x) {
+  tt <- x %% 480
+  rate <-
+    case_when(
+      tt >= 0 && tt <= 120 ~ .5,
+      tt > 120 && tt <= 240 ~ 1,
+      tt > 240 && tt <= 360 ~ 2,
+      tt > 360 && tt <= 480 ~ 1.5
+    )
+  rate
+}
+#--------------------------
+npp(2, 480, intensity = intensity) %>% 
+  ggplot(aes(x = t, y = N)) +
+  geom_path()
+```
 
 
 

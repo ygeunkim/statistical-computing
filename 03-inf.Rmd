@@ -668,19 +668,29 @@ See Figure \@ref(fig:powercomp). One test method has higher $\beta(\theta)$ func
   \caption{Empirical power by Monte Carlo method}
 \end{algorithm}
 
-In fact, we can try every $\theta \in \Theta$ and *draw entire power curve*. Refer to Example \@ref(exm:ttest). `foreach` library would be additionaly used.
+In fact, we can try every $\theta \in \Theta$ and *draw entire power curve*. Refer to Example \@ref(exm:ttest).
 
-```{r, eval=FALSE}
-library(foreach)
-```
+<!-- ```{r, eval=FALSE} -->
+<!-- library(foreach) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- (pw_mc <- -->
+<!--   foreach(mu1 = seq(450, 650, by = 10), .combine = rbind) %do% { -->
+<!--     mc_data(rnorm, N = 20, mean = mu1, sd = 10)[, -->
+<!--                                                 h1 := mu1] -->
+<!--   }) -->
+<!-- ``` -->
 
 ```{r}
-(pw_mc <- 
-  foreach(mu1 = seq(450, 650, by = 10), .combine = rbind) %do% {
-    mc_data(rnorm, N = 20, mean = mu1, sd = 10)[,
-                                                h1 := mu1]
+pw_mc <-
+  lapply(seq(450, 650, by = 10), function(mu) {
+    mc_data(rnorm, N = 20, mean = mu, sd = 10)[,
+                                               h1 := mu]
   })
+pw_mc <- rbindlist(pw_mc)
 ```
+
 
 One column is added from previous process. This is group for $H_1$. So we should specify `by = .(h1, sam)`.
 
@@ -717,12 +727,20 @@ $$\widehat{SE}(\hat{p}) = \sqrt{\frac{\hat{p}(1 - \hat{p})}{M}}$$
 
 Consider $T$-test.
 
+<!-- ```{r} -->
+<!-- pw_mc2 <-  -->
+<!--   foreach(mu1 = seq(450, 650, by = 10), .combine = rbind) %do% { -->
+<!--     mc_data(rnorm, N = 20, mean = mu1, sd = 10)[, -->
+<!--                                                 h1 := mu1] -->
+<!--   } -->
+<!-- ``` -->
+
 ```{r}
-pw_mc2 <- 
-  foreach(mu1 = seq(450, 650, by = 10), .combine = rbind) %do% {
-    mc_data(rnorm, N = 20, mean = mu1, sd = 10)[,
-                                                h1 := mu1]
-  }
+pw_mc2 <- lapply(seq(450, 650, by = 10), function(mu) {
+  mc_data(rnorm, N = 20, mean = mu, sd = 10)[,
+                                             h1 := mu]
+})
+pw_mc2 <- rbindlist(pw_mc2)
 #------------------
 pw_mc2 <-
   pw_mc2[,

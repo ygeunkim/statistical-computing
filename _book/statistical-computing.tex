@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{22 Apr, 2019}
+    \date{24 Apr, 2019}
 
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -541,14 +541,15 @@ Remembering the algorithm, we can implement \texttt{dplyr::case\_when()} here.
 \KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{rcustom}\NormalTok{(}\DecValTok{100}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{count}\NormalTok{(x) }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ n }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(n)) }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{bind_cols}\NormalTok{(}\DataTypeTok{px =}\NormalTok{ pmf }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(p)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{bind_cols}\NormalTok{(}\DataTypeTok{px =}\NormalTok{ pmf }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(p)) }\OperatorTok{%>%}\StringTok{ }\CommentTok{# pmf table}
 \StringTok{  }\KeywordTok{gather}\NormalTok{(}\OperatorTok{-}\NormalTok{x, }\DataTypeTok{key =} \StringTok{"key"}\NormalTok{, }\DataTypeTok{value =} \StringTok{"value"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{fill =}\NormalTok{ key)) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ value), }\DataTypeTok{stat =} \StringTok{"identity"}\NormalTok{, }\DataTypeTok{position =} \StringTok{"dodge"}\NormalTok{, }\DataTypeTok{width =} \FloatTok{.2}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{scale_fill_discrete}\NormalTok{(}
     \DataTypeTok{name =} \StringTok{"Compare"}\NormalTok{,}
     \DataTypeTok{labels =} \KeywordTok{c}\NormalTok{(}\StringTok{"InvTrans"}\NormalTok{, }\KeywordTok{expression}\NormalTok{(}\KeywordTok{p}\NormalTok{(x)))}
-\NormalTok{  )}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"prob"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1147,7 +1148,7 @@ where constants \(\theta_i\) are called the mixing weights or mixing probabiliti
 \[F_X = p_1 F_{X_1} + (1 - p_1) F_{X_2}\]
 \EndKnitrBlock{example}
 
-For easy combining samples, we use \texttt{foreach} library.
+To combine samples easily, we use \texttt{foreach} library.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1169,13 +1170,13 @@ As in A-R method, Bernoullin splitting would be used.
 \NormalTok{mix_norm <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n, p1, mean1, sd1, mean2, sd2) \{}
 \NormalTok{  x1 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(n, }\DataTypeTok{mean =}\NormalTok{ mean1, }\DataTypeTok{sd =}\NormalTok{ sd1)}
 \NormalTok{  x2 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(n, }\DataTypeTok{mean =}\NormalTok{ mean2, }\DataTypeTok{sd =}\NormalTok{ sd2)}
-\NormalTok{  k <-}\StringTok{ }\KeywordTok{as.integer}\NormalTok{(}\KeywordTok{runif}\NormalTok{(n) }\OperatorTok{>}\StringTok{ }\NormalTok{p1)}
+\NormalTok{  k <-}\StringTok{ }\KeywordTok{as.integer}\NormalTok{(}\KeywordTok{runif}\NormalTok{(n) }\OperatorTok{<=}\StringTok{ }\NormalTok{p1)}
 \NormalTok{  k }\OperatorTok{*}\StringTok{ }\NormalTok{x1 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{k) }\OperatorTok{*}\StringTok{ }\NormalTok{x2}
 \NormalTok{\}}
 \end{Highlighting}
 \end{Shaded}
 
-Try various \(p_1\), from 0.1 to 1
+Try various \(p_1\), from 0.1 to 1. We would loop and combine by \texttt{dplyr::bind\_rows()}. Reason for binding is to plot.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1188,6 +1189,8 @@ Try various \(p_1\), from 0.1 to 1
 \NormalTok{  \}}
 \end{Highlighting}
 \end{Shaded}
+
+Output is long data format. So we can easily draw a line for each group (\texttt{key}).
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1210,6 +1213,8 @@ Try various \(p_1\), from 0.1 to 1
 
 \caption{Mixture normal random number for each mixing probability}\label{fig:bimodal}
 \end{figure}
+
+As \(p_1\) becomes larger to \(1\), the distribution becomes \(N(0, 1)\). On the contrary, \(p_1 = 0\) results in \(N(3, 1)\).
 
 \hypertarget{multivariate-normal-random-vector}{%
 \section{Multivariate Normal Random Vector}\label{multivariate-normal-random-vector}}
@@ -1680,6 +1685,56 @@ then the process follows \(NPP(\lambda(t))\) on \([0, T]\)
   \caption{Thinning algorithm}
 \end{algorithm}
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{npp <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(lambda, t0, intensity) \{}
+\NormalTok{  t <-}\StringTok{ }\DecValTok{0}
+\NormalTok{  N <-}\StringTok{ }\DecValTok{0}
+\NormalTok{  S <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{t =}\NormalTok{ t, }\DataTypeTok{N =}\NormalTok{ N)}
+  \ControlFlowTok{while}\NormalTok{ (t }\OperatorTok{<=}\StringTok{ }\NormalTok{t0) \{}
+\NormalTok{    t <-}\StringTok{ }\NormalTok{t }\OperatorTok{+}\StringTok{ }\KeywordTok{rexp}\NormalTok{(}\DecValTok{1}\NormalTok{, lambda)}
+\NormalTok{    U <-}\StringTok{ }\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+    \ControlFlowTok{if}\NormalTok{ ( U }\OperatorTok{<=}\StringTok{ }\KeywordTok{intensity}\NormalTok{(t) }\OperatorTok{/}\StringTok{ }\NormalTok{lambda) \{}
+\NormalTok{      N <-}\StringTok{ }\NormalTok{N }\OperatorTok{+}\StringTok{ }\DecValTok{1}
+\NormalTok{      S <-}
+\StringTok{        }\NormalTok{S }\OperatorTok{%>%}\StringTok{ }
+\StringTok{        }\KeywordTok{bind_rows}\NormalTok{(}\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{t =}\NormalTok{ t, }\DataTypeTok{N =}\NormalTok{ N))}
+\NormalTok{    \}}
+\NormalTok{  \}}
+\NormalTok{  S }\OperatorTok{%>%}\StringTok{ }\KeywordTok{slice}\NormalTok{(}\OperatorTok{-}\DecValTok{1}\NormalTok{)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{intensity <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+\NormalTok{  tt <-}\StringTok{ }\NormalTok{x }\OperatorTok{%%}\StringTok{ }\DecValTok{480}
+\NormalTok{  rate <-}
+\StringTok{    }\KeywordTok{case_when}\NormalTok{(}
+\NormalTok{      tt }\OperatorTok{>=}\StringTok{ }\DecValTok{0} \OperatorTok{&&}\StringTok{ }\NormalTok{tt }\OperatorTok{<=}\StringTok{ }\DecValTok{120} \OperatorTok{~}\StringTok{ }\FloatTok{.5}\NormalTok{,}
+\NormalTok{      tt }\OperatorTok{>}\StringTok{ }\DecValTok{120} \OperatorTok{&&}\StringTok{ }\NormalTok{tt }\OperatorTok{<=}\StringTok{ }\DecValTok{240} \OperatorTok{~}\StringTok{ }\DecValTok{1}\NormalTok{,}
+\NormalTok{      tt }\OperatorTok{>}\StringTok{ }\DecValTok{240} \OperatorTok{&&}\StringTok{ }\NormalTok{tt }\OperatorTok{<=}\StringTok{ }\DecValTok{360} \OperatorTok{~}\StringTok{ }\DecValTok{2}\NormalTok{,}
+\NormalTok{      tt }\OperatorTok{>}\StringTok{ }\DecValTok{360} \OperatorTok{&&}\StringTok{ }\NormalTok{tt }\OperatorTok{<=}\StringTok{ }\DecValTok{480} \OperatorTok{~}\StringTok{ }\FloatTok{1.5}
+\NormalTok{    )}
+\NormalTok{  rate}
+\NormalTok{\}}
+\CommentTok{#--------------------------}
+\KeywordTok{npp}\NormalTok{(}\DecValTok{2}\NormalTok{, }\DecValTok{480}\NormalTok{, }\DataTypeTok{intensity =}\NormalTok{ intensity) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ t, }\DataTypeTok{y =}\NormalTok{ N)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/nppfig-1} 
+
+}
+
+\caption{Sample path of nonhomogeneous poisson process}\label{fig:nppfig}
+\end{figure}
+
 \hypertarget{mcint}{%
 \chapter{Monte Carlo Integration and Variance Reduction}\label{mcint}}
 
@@ -1820,7 +1875,7 @@ Then compute \(\hat\Phi(x)\) for various \(x\) values.
 \end{Shaded}
 
 \begin{longtable}{r|r|r}
-\caption{\label{tab:unnamed-chunk-38}Simple MC estimates of Normal cdf for each x}\\
+\caption{\label{tab:unnamed-chunk-39}Simple MC estimates of Normal cdf for each x}\\
 \hline
 x & pnorm & mc\\
 \hline
@@ -2110,7 +2165,7 @@ See Figure \ref{fig:simhit}. It is obvious that Hit-or-Miss estimate produces la
 In other words, if \(\hat\theta_1\) has smaller variance than \(\hat\theta_2\), then \(\hat\theta_1\) is said to be efficient, which is preferable.
 
 \begin{longtable}{r|r|l}
-\caption{\label{tab:unnamed-chunk-49}Simple MC versus Hit-or-Miss}\\
+\caption{\label{tab:unnamed-chunk-50}Simple MC versus Hit-or-Miss}\\
 \hline
 SimpleMC & Hit-or-Miss & SimpleMCefficiency\\
 \hline
@@ -2517,7 +2572,7 @@ It looks like control variate have less variance, but what is more important is 
 Both antithetic variate and control variate reduce variance using covariance between two random variables. Actually, \emph{antithetic variate is a special case of control variate}. See Equation \eqref{eq:controlest}.
 
 \BeginKnitrBlock{lemma}
-\protect\hypertarget{lem:unnamed-chunk-64}{}{\label{lem:unnamed-chunk-64} }Control variate estimator is a linear combination of unbiased estimators of \(\theta\).
+\protect\hypertarget{lem:unnamed-chunk-65}{}{\label{lem:unnamed-chunk-65} }Control variate estimator is a linear combination of unbiased estimators of \(\theta\).
 \EndKnitrBlock{lemma}
 
 Consider any two unbiased estimator \(\hat\theta_1\) and \(\hat\theta_2\) for \(\theta = Eg(X)\). Build control variate as following.
@@ -3714,33 +3769,16 @@ See Figure \ref{fig:powercomp}. One test method has higher \(\beta(\theta)\) fun
   \caption{Empirical power by Monte Carlo method}
 \end{algorithm}
 
-In fact, we can try every \(\theta \in \Theta\) and \emph{draw entire power curve}. Refer to Example \ref{exm:ttest}. \texttt{foreach} library would be additionaly used.
+In fact, we can try every \(\theta \in \Theta\) and \emph{draw entire power curve}. Refer to Example \ref{exm:ttest}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(foreach)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{(pw_mc <-}\StringTok{ }
-\StringTok{  }\KeywordTok{foreach}\NormalTok{(}\DataTypeTok{mu1 =} \KeywordTok{seq}\NormalTok{(}\DecValTok{450}\NormalTok{, }\DecValTok{650}\NormalTok{, }\DataTypeTok{by =} \DecValTok{10}\NormalTok{), }\DataTypeTok{.combine =}\NormalTok{ rbind) }\OperatorTok{%do%}\StringTok{ }\NormalTok{\{}
-    \KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{N =} \DecValTok{20}\NormalTok{, }\DataTypeTok{mean =}\NormalTok{ mu1, }\DataTypeTok{sd =} \DecValTok{10}\NormalTok{)[,}
-\NormalTok{                                                h1 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\NormalTok{mu1]}
+\NormalTok{pw_mc <-}
+\StringTok{  }\KeywordTok{lapply}\NormalTok{(}\KeywordTok{seq}\NormalTok{(}\DecValTok{450}\NormalTok{, }\DecValTok{650}\NormalTok{, }\DataTypeTok{by =} \DecValTok{10}\NormalTok{), }\ControlFlowTok{function}\NormalTok{(mu) \{}
+    \KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{N =} \DecValTok{20}\NormalTok{, }\DataTypeTok{mean =}\NormalTok{ mu, }\DataTypeTok{sd =} \DecValTok{10}\NormalTok{)[,}
+\NormalTok{                                               h1 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\NormalTok{mu]}
 \NormalTok{  \})}
-\CommentTok{#>           x   sam  h1}
-\CommentTok{#>      1: 448    s1 450}
-\CommentTok{#>      2: 452    s1 450}
-\CommentTok{#>      3: 453    s1 450}
-\CommentTok{#>      4: 450    s1 450}
-\CommentTok{#>      5: 449    s1 450}
-\CommentTok{#>     ---              }
-\CommentTok{#> 419996: 646 s1000 650}
-\CommentTok{#> 419997: 647 s1000 650}
-\CommentTok{#> 419998: 660 s1000 650}
-\CommentTok{#> 419999: 652 s1000 650}
-\CommentTok{#> 420000: 652 s1000 650}
+\NormalTok{pw_mc <-}\StringTok{ }\KeywordTok{rbindlist}\NormalTok{(pw_mc)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -3794,11 +3832,11 @@ Consider \(T\)-test.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{pw_mc2 <-}\StringTok{ }
-\StringTok{  }\KeywordTok{foreach}\NormalTok{(}\DataTypeTok{mu1 =} \KeywordTok{seq}\NormalTok{(}\DecValTok{450}\NormalTok{, }\DecValTok{650}\NormalTok{, }\DataTypeTok{by =} \DecValTok{10}\NormalTok{), }\DataTypeTok{.combine =}\NormalTok{ rbind) }\OperatorTok{%do%}\StringTok{ }\NormalTok{\{}
-    \KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{N =} \DecValTok{20}\NormalTok{, }\DataTypeTok{mean =}\NormalTok{ mu1, }\DataTypeTok{sd =} \DecValTok{10}\NormalTok{)[,}
-\NormalTok{                                                h1 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\NormalTok{mu1]}
-\NormalTok{  \}}
+\NormalTok{pw_mc2 <-}\StringTok{ }\KeywordTok{lapply}\NormalTok{(}\KeywordTok{seq}\NormalTok{(}\DecValTok{450}\NormalTok{, }\DecValTok{650}\NormalTok{, }\DataTypeTok{by =} \DecValTok{10}\NormalTok{), }\ControlFlowTok{function}\NormalTok{(mu) \{}
+  \KeywordTok{mc_data}\NormalTok{(rnorm, }\DataTypeTok{N =} \DecValTok{20}\NormalTok{, }\DataTypeTok{mean =}\NormalTok{ mu, }\DataTypeTok{sd =} \DecValTok{10}\NormalTok{)[,}
+\NormalTok{                                             h1 }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\NormalTok{mu]}
+\NormalTok{\})}
+\NormalTok{pw_mc2 <-}\StringTok{ }\KeywordTok{rbindlist}\NormalTok{(pw_mc2)}
 \CommentTok{#------------------}
 \NormalTok{pw_mc2 <-}
 \StringTok{  }\NormalTok{pw_mc2[,}
