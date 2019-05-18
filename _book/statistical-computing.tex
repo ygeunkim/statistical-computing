@@ -126,11 +126,12 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{24 Apr, 2019}
+    \date{18 May, 2019}
 
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{float}
+\usepackage{xcolor}
 \usepackage{pdfpages}
 \usepackage{hyperref}
 \usepackage[boxruled, linesnumbered]{algorithm2e}
@@ -141,6 +142,12 @@
 \newcommand{\hsim}{\stackrel{H_0}{\sim}}
 \newcommand{\ind}{\perp\!\!\!\perp}
 \newcommand{\R}{\mathbb{R}}
+\newcommand\vertarrowbox[3][6ex]{%
+  \begin{array}[t]{@{}c@{}} #2 \\
+  \left\uparrow\vcenter{\hrule height #1}\right.\kern-\nulldelimiterspace\\
+  \makebox[0pt]{\scriptsize#3}
+  \end{array}%
+}
 \DeclareMathOperator*{\argmin}{argmin}
 
 \let\oldmaketitle\maketitle
@@ -180,7 +187,7 @@
 \chapter*{Welcome}\label{welcome}}
 \addcontentsline{toc}{chapter}{Welcome}
 
-Statistical computing mainly treats useful simulation methods.
+ Statistical computing mainly treats useful simulation methods.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -692,7 +699,7 @@ Hence,
 
 \[E(N) = \frac{1}{p} = c\]
 
-We can say that the method is efficient when the acceptance rate \(p\) is large, i.e.~\(c\) small.
+We can say that the method is efficient when the acceptance rate \(p\) is large, i.e. \(c\) small.
 \EndKnitrBlock{proof}
 
 \BeginKnitrBlock{corollary}[Efficiency of A-R Method]
@@ -719,7 +726,7 @@ have small \(c\).
 \EndKnitrBlock{example}
 
 \BeginKnitrBlock{solution}[Generating Beta(a,b) with A-R method]
-\iffalse{} {Solution (Generating Beta(a,b) with A-R method). } \fi{}Consider proposal density \(g(x) = I_{(0, 1)}(x)\), i.e.~\(unif(0, 1)\).
+\iffalse{} {Solution (Generating Beta(a,b) with A-R method). } \fi{}Consider proposal density \(g(x) = I_{(0, 1)}(x)\), i.e. \(unif(0, 1)\).
 
 To determine the optimal \(c\) s.t.
 
@@ -1574,7 +1581,7 @@ In Figure \ref{fig:gambfig}, we can see the result of process with \(p = \frac{1
 We can generate Poisson process using this relationship. However, it is slow. Thus, we find another way.
 
 \BeginKnitrBlock{theorem}[Campbell's Theorem]
-\protect\hypertarget{thm:campbell}{}{\label{thm:campbell} \iffalse (Campbell's Theorem) \fi{} }Let \(\{ N(t), t \ge 0 \} \sim PP(\lambda)\), let \(X_t\) be the interarrival time, and let \(S_{t}\) be the waiting time until \(t\)-th event, i.e.~\(S_t := \sum_{i = 1}^t X_i\). Then
+\protect\hypertarget{thm:campbell}{}{\label{thm:campbell} \iffalse (Campbell's Theorem) \fi{} }Let \(\{ N(t), t \ge 0 \} \sim PP(\lambda)\), let \(X_t\) be the interarrival time, and let \(S_{t}\) be the waiting time until \(t\)-th event, i.e. \(S_t := \sum_{i = 1}^t X_i\). Then
 
 \[S_1, S_2, \ldots, S_n \mid N(t) = n \stackrel{d}{=} (U_{(1)}, U_{(2)}, \ldots, U_{(n)})\]
 
@@ -1784,7 +1791,7 @@ Let \(g\) be a measurable function. Then
 \[\hat\theta_M = \frac{1}{N} \sum_{i = 1}^N g(X_i)\]
 \EndKnitrBlock{theorem}
 
-Suppose that we have a distribution \(f(x) = I_{spt g}(x)\), i.e.~\emph{uniform distribution}. Let \(spt g = (a, b)\).
+Suppose that we have a distribution \(f(x) = I_{spt g}(x)\), i.e. \emph{uniform distribution}. Let \(spt g = (a, b)\).
 
 \begin{equation}
   \begin{split}
@@ -3382,7 +3389,7 @@ Let \(\mu = 0\), \(\sigma = 2\), \(N = 20\), and let \(M = 1000\).
 \caption{Proportion of $\sigma^2$ in confidence intervals}\label{fig:ciin}
 \end{figure}
 
-This leads to empirical confidence level, i.e.~\emph{sample proportion}. Just follow the last step \(\ref{alg:cilevlast}\) of Algorithm \(\ref{alg:algcilev}\).
+This leads to empirical confidence level, i.e. \emph{sample proportion}. Just follow the last step \(\ref{alg:cilevlast}\) of Algorithm \(\ref{alg:algcilev}\).
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -3736,7 +3743,7 @@ For each MC sample, compute this statistic \(I_m = I(\mathbf{X}^{m})\). Then emp
 \[\frac{1}{M}\sum_{m = 1}^M I_m\]
 \EndKnitrBlock{lemma}
 
-Process will be same but we test under \(H_1\). However, this makes a lot difference due to structure of each hypothesis. In many cases, \(H_0\) is simple, i.e.~\(\mu = 500\). In \(\ref{alg:gentype1}\) of Algorithm \(\ref{alg:algtype1}\), we can consider only \(N(\mu = 500, 100)\). Since \(\Theta_0\) and \(\Theta_1\) form partition, alternative hypothesis usually is not simple. In this example, \(\mu > 500\). We cannot specify one distribution for alternatrive. How to deal with this?
+Process will be same but we test under \(H_1\). However, this makes a lot difference due to structure of each hypothesis. In many cases, \(H_0\) is simple, i.e. \(\mu = 500\). In \(\ref{alg:gentype1}\) of Algorithm \(\ref{alg:algtype1}\), we can consider only \(N(\mu = 500, 100)\). Since \(\Theta_0\) and \(\Theta_1\) form partition, alternative hypothesis usually is not simple. In this example, \(\mu > 500\). We cannot specify one distribution for alternatrive. How to deal with this?
 
 Trying many points for \(\mu_1 \in \Theta_1 = \{ \mu : \mu > 500 \}\) might be possible. Our goal is finding larger power. So \emph{find test with larger power for all points in} \(\Theta_1\).
 
@@ -3964,6 +3971,191 @@ Apply MC method to get \emph{empirical type I error}.
 
 \hypertarget{bootstrap}{%
 \section{Bootstrap}\label{bootstrap}}
+
+\hypertarget{resampling}{%
+\subsection{Resampling}\label{resampling}}
+
+Bootstrap is a class of nonparametric Monte Carlo methods that estimate the distribution of a population by \emph{resampling}. Different with previous MC method, we do not know population distribution. Instead, resampling methods treat an observed sample as a finte population. This is called \emph{pseudo-population} in that this is regarded as having the same characteristics as the true population.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{images/resample} 
+
+}
+
+\caption{Resampling}\label{fig:resample}
+\end{figure}
+
+See Figure \ref{fig:resample}. From the observed sample, which is pseudo-population, resampling generates multiple bootstrap samples by \emph{sampling with replacement}. Surprisingly, this simple sampling procedure approximate the true population distribution quite successful.
+
+\hypertarget{approximations-in-bootstrap}{%
+\subsection{Approximations in bootstrap}\label{approximations-in-bootstrap}}
+
+How does bootstrap work? Consider traditional bootstrap example \citep{Efron:1983bw}. The dataset is GPA scores of various entering classes at American law schools in 1973.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{law }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ LSAT, }\DataTypeTok{y =}\NormalTok{ GPA)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/lawschool-1} 
+
+}
+
+\caption{The law school data (\cite{Efron:1983bw})}\label{fig:lawschool}
+\end{figure}
+
+Each point represents one law school.
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{LSAT}: average LSAT (national test) score of entering students
+\item
+  \texttt{GPA}: average GPA score of entering students
+\end{itemize}
+
+\BeginKnitrBlock{example}[Estimation of correlation coefficient]
+\protect\hypertarget{exm:bootcor}{}{\label{exm:bootcor} \iffalse (Estimation of correlation coefficient) \fi{} }In this \((Y_i, Z_i) = (\text{LSAT}, \text{GPA})\) data set, we are interested in the correlation \(\rho\) of the two variables. Especially, we want to explore the distribution of \(\hat\rho\).
+\EndKnitrBlock{example}
+
+Let \(\mathbf{X}_i^T = (Y_i, Z_i)\) be each observation. Then
+
+\[\mathbf{X}_1, \ldots, \mathbf{X}_n \stackrel{iid}{\sim}F\]
+
+where \(F\) is true unknown distribution. Having observed \(\mathbf{X}_1 = \mathbf{x}_1, \ldots, \mathbf{X}_n = \mathbf{x}_n\), we get \emph{empirical distribution function} by computing the sample average.
+
+\begin{equation}
+  \hat{F}(\mathbf{x}) = \frac{1}{n} \sum_{i = 1}^n I(\mathbf{X}_i \le \mathbf{x}_i)
+  \label{eq:edistn}
+\end{equation}
+
+This works for estimator of \(F\). \(\hat{F}\) endows mass \(\frac{1}{n}\) on each observed point \(\mathbf{x}_i, \: i = 1, \ldots, n\). In other words, pseudo-distribution becomes \emph{discrete uniform}.
+
+\begin{equation}
+  \hat{F} \stackrel{d}{=} unif(\mathbf{x}_1, \ldots, \mathbf{x}_n)
+  \label{eq:discunif}
+\end{equation}
+
+We have set the population distribution which is bogus. Now we can apply previous MC sampling with \(\frac{1}{n}\). Write \(\{ \mathbf{X}_1^{\ast}, \ldots, \mathbf{X}_n^{\ast} \}\) as \emph{bootstrap sample} by resampling. Then
+
+\[P(\mathbf{X}^{\ast} = \mathbf{x}_i) = \frac{1}{n}\]
+
+i.e.
+
+\begin{equation}
+  \mathbf{X}^{\ast} \stackrel{iid}{\sim}unif(\mathbf{x}_1, \ldots, \mathbf{x}_n)
+  \label{eq:bootdistn}
+\end{equation}
+
+This gives \emph{bootstrap cdf}, cdf of bootstrap samples, by
+
+\begin{equation}
+  F^{\ast}(\mathbf{x}) = \text{cdf of}\: unif(\mathbf{x}_1, \ldots, \mathbf{x}_n) = \hat{F}
+  \label{eq:bootcdf}
+\end{equation}
+
+One proceeds in a similar way for estimating cdf that
+
+\begin{equation}
+  \hat{F}^{\ast} = \frac{1}{n} \sum_{i = 1}^n I(\mathbf{X}^{\ast} \le \mathbf{x}_i)
+  \label{eq:bootecdf}
+\end{equation}
+
+This is called \emph{ecdf of bootstrap replicates}.
+
+\BeginKnitrBlock{remark}
+\iffalse{} {Remark. } \fi{}For any data points \(X_1, \ldots, X_n\),
+
+\begin{enumerate}
+  \item \textbf{\textit{Empirical Distribution Function}} $\hat{F}(x) = \frac{1}{n} \sum_{i = 1}^n I(X_i \le x_i)$
+  \item \textbf{\textit{Bootstrap cdf}} $F^{\ast}(x) = \hat{F}$
+  \item \textbf{\textit{ECDF of bootstrap replicates}} $\hat{F}^{\ast} = \frac{1}{n} \sum_{i = 1}^n I(X^{\ast} \le x_i)$
+\end{enumerate}
+\EndKnitrBlock{remark}
+
+This remark can explain Figure \ref{fig:resample} in a distribution way.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{images/bootapprox} 
+
+}
+
+\caption{Empirical distribution of bootstrap}\label{fig:bootapprox}
+\end{figure}
+
+Figure \ref{fig:bootapprox} shows how each sample is distributed, approximately. We get the data set from true \(F\). From this finite population, we first estimate \(F\) by \(\hat{F}\). Resampling multiple bootstrap samples, each sample estimates \(\hat{F}\) by \(\hat{F}^{\ast}\).
+
+\BeginKnitrBlock{theorem}[Two approximations in bootstrap]
+\protect\hypertarget{thm:twoapprox}{}{\label{thm:twoapprox} \iffalse (Two approximations in bootstrap) \fi{} }There are two approximations in bootstrap. For large \(B\), bootstrap samples approximate bootstrap replicates. For large \(n\), bootstrap replicates approximate true population.
+
+\[\mathbf{X}^{(b)} \vertarrowbox[3ex]{\rightarrow}{\text{large}\: B} \hat{f} \vertarrowbox{\rightarrow}{\text{large}\: n} f\]
+\EndKnitrBlock{theorem}
+
+\BeginKnitrBlock{proof}
+\iffalse{} {Proof. } \fi{}Since
+
+\[E\hat{F} = \frac{1}{n} \sum_{i = 1}^n P(X_i \le x_i)\]
+
+\[\hat{F} \stackrel{a.s.}{\rightarrow} F\]
+
+as \(n \rightarrow \infty\) by the strong law of large numbers. Let
+
+\[\overline{\hat{F}^{\ast}} := \frac{1}{B} \sum_b \hat{F}_b^{\ast}\]
+
+where \(\hat{F}_b^{\ast}\) is ecdf of \(b\)-th bootstrap replicate. Since
+
+\[E\hat{F}_b^{\ast} = \frac{1}{n} \sum_{i = 1}^n P(X^{(b)} \le x_i)\]
+
+\[\overline{\hat{F}^{\ast}} \stackrel{a.s.}{\rightarrow} F^{\ast} = \hat{F}\]
+
+as \(B \rightarrow \infty\) by S.L.L.N.
+\EndKnitrBlock{proof}
+
+Denote that Theorem \ref{thm:twoapprox} can be also expressed as
+
+\begin{equation}
+  \overline{\hat{F}^{\ast}} \vertarrowbox[3ex]{\rightarrow}{\text{large}\: B} \hat{F} \vertarrowbox{\rightarrow}{\text{large}\: n} F
+  \label{eq:twoapprox2}
+\end{equation}
+
+This approximation not only justifies the bootstrap procedure but also shows the problem of it. We can always increase \(B\) if we want. Then we earn \(\overline{\hat{F}^{\ast}} \approx \hat{F}\), i.e.~bootstrap samples approximate pseudo-population. However, \(n\) is fixed. For \(\hat{F}\) to approximate \(F\), large \(n\) is required. It is not under control. If small \(n\) is given, \(\hat{F}\) will not be close to \(F\). Then the bootstrap samples will not be close to \(F\) finally.
+
+\BeginKnitrBlock{corollary}
+\protect\hypertarget{cor:bootprob}{}{\label{cor:bootprob} }Resampling the large number of replicates, i.e.~large \(B\) produces a good estimates of \(\hat{F}\) but it does not guarantee a good estimate of \(F\).
+\EndKnitrBlock{corollary}
+
+\BeginKnitrBlock{example}[Poisson population]
+\protect\hypertarget{exm:bootpois}{}{\label{exm:bootpois} \iffalse (Poisson population) \fi{} }Suppose that \(\{ 2, 2, 1, 1, 5, 4, 4, 3, 2, 1 \} \sim Poisson(\lambda = 2)\). Resampling from this pseudo-population, can we appropriately explain the population?
+\EndKnitrBlock{example}
+
+\begin{longtable}{r|r|r|r|r}
+\caption{\label{tab:bootpoisemp}Empirical distribution}\\
+\hline
+1 & 2 & 3 & 4 & 5\\
+\hline
+0.3 & 0.3 & 0.1 & 0.2 & 0.1\\
+\hline
+\end{longtable}
+
+Table \(\ref{tab:bootpoisemp}\) is just a result of averaging, emprical distribution \(\hat{F}\). General bootstrap will resample by distribution. We can see the problem at once.
+
+\[P(X = 0) = e^{-2} = 0.135\]
+
+However, we did not observe \(0\), so the bootstrap sample will never include zero, i.e.~not a full domain. In sum,
+
+\[\overline{\hat{F}^{\ast}} \rightarrow \hat{F} {\color{red}{\not}}{\rightarrow} F\]
+
+\hypertarget{bootstrap-standard-error}{%
+\subsection{Bootstrap standard error}\label{bootstrap-standard-error}}
+
+Look at the Figure \ref{fig:bootapprox} again. For each sample, we calculate esimator of our interest. For instance, sample average \(\overline{x}\). After that, we get empirical distribution of \(\overline{x}\).
 
 \bibliography{book.bib,packages.bib}
 

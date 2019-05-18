@@ -832,6 +832,196 @@ mc_data(rnorm, N = 20, M = 1000)[,
 
 ## Bootstrap
 
+### Resampling
+
+Bootstrap is a class of nonparametric Monte Carlo methods that estimate the distribution of a population by *resampling*. Different with previous MC method, we do not know population distribution. Instead, resampling methods treat an observed sample as a finte population. This is called *pseudo-population* in that this is regarded as having the same characteristics as the true population.
+
+```{r resample, echo=FALSE, fig.cap="Resampling"}
+knitr::include_graphics("images/resample.png")
+```
+
+See Figure \@ref(fig:resample). From the observed sample, which is pseudo-population, resampling generates multiple bootstrap samples by *sampling with replacement*. Surprisingly, this simple sampling procedure approximate the true population distribution quite successful.
+
+### Approximations in bootstrap
+
+How does bootstrap work? Consider traditional bootstrap example [@Efron:1983bw]. The dataset is GPA scores of various entering classes at American law schools in 1973.
+
+```{r, include=FALSE}
+law <- bootstrap::law %>% as_tibble()
+```
+
+```{r lawschool, fig.cap="The law school data (\\cite{Efron:1983bw})"}
+law %>% 
+  ggplot(aes(x = LSAT, y = GPA)) +
+  geom_point()
+```
+
+Each point represents one law school.
+
+- `LSAT`: average LSAT (national test) score of entering students
+- `GPA`: average GPA score of entering students
+
+```{example, bootcor, name = "Estimation of correlation coefficient"}
+In this $(Y_i, Z_i) = (\text{LSAT}, \text{GPA})$ data set, we are interested in the correlation $\rho$ of the two variables. Especially, we want to explore the distribution of $\hat\rho$.
+```
+
+Let $\mathbf{X}_i^T = (Y_i, Z_i)$ be each observation. Then
+
+$$\mathbf{X}_1, \ldots, \mathbf{X}_n \iid F$$
+
+where $F$ is true unknown distribution. Having observed $\mathbf{X}_1 = \mathbf{x}_1, \ldots, \mathbf{X}_n = \mathbf{x}_n$, we get *empirical distribution function* by computing the sample average.
+
+\begin{equation}
+  \hat{F}(\mathbf{x}) = \frac{1}{n} \sum_{i = 1}^n I(\mathbf{X}_i \le \mathbf{x}_i)
+  (\#eq:edistn)
+\end{equation}
+
+This works for estimator of $F$. $\hat{F}$ endows mass $\frac{1}{n}$ on each observed point $\mathbf{x}_i, \: i = 1, \ldots, n$. In other words, pseudo-distribution becomes *discrete uniform*.
+
+\begin{equation}
+  \hat{F} \stackrel{d}{=} unif(\mathbf{x}_1, \ldots, \mathbf{x}_n)
+  (\#eq:discunif)
+\end{equation}
+
+We have set the population distribution which is bogus. Now we can apply previous MC sampling with $\frac{1}{n}$. Write $\{ \mathbf{X}_1^{\ast}, \ldots, \mathbf{X}_n^{\ast} \}$ as *bootstrap sample* by resampling. Then
+
+$$P(\mathbf{X}^{\ast} = \mathbf{x}_i) = \frac{1}{n}$$
+
+i.e.
+
+\begin{equation}
+  \mathbf{X}^{\ast} \iid unif(\mathbf{x}_1, \ldots, \mathbf{x}_n)
+  (\#eq:bootdistn)
+\end{equation}
+
+This gives *bootstrap cdf*, cdf of bootstrap samples, by
+
+\begin{equation}
+  F^{\ast}(\mathbf{x}) = \text{cdf of}\: unif(\mathbf{x}_1, \ldots, \mathbf{x}_n) = \hat{F}
+  (\#eq:bootcdf)
+\end{equation}
+
+One proceeds in a similar way for estimating cdf that
+
+\begin{equation}
+  \hat{F}^{\ast} = \frac{1}{n} \sum_{i = 1}^n I(\mathbf{X}^{\ast} \le \mathbf{x}_i)
+  (\#eq:bootecdf)
+\end{equation}
+
+This is called *ecdf of bootstrap replicates*.
+
+```{remark}
+For any data points $X_1, \ldots, X_n$,
+
+\begin{enumerate}
+  \item \textbf{\textit{Empirical Distribution Function}} $\hat{F}(x) = \frac{1}{n} \sum_{i = 1}^n I(X_i \le x_i)$
+  \item \textbf{\textit{Bootstrap cdf}} $F^{\ast}(x) = \hat{F}$
+  \item \textbf{\textit{ECDF of bootstrap replicates}} $\hat{F}^{\ast} = \frac{1}{n} \sum_{i = 1}^n I(X^{\ast} \le x_i)$
+\end{enumerate}
+```
+
+This remark can explain Figure \@ref(fig:resample) in a distribution way.
+
+```{r bootapprox, echo=FALSE, fig.cap="Empirical distribution of bootstrap"}
+knitr::include_graphics("images/bootapprox.png")
+```
+
+Figure \@ref(fig:bootapprox) shows how each sample is distributed, approximately. We get the data set from true $F$. From this finite population, we first estimate $F$ by $\hat{F}$. Resampling multiple bootstrap samples, each sample estimates $\hat{F}$ by $\hat{F}^{\ast}$.
+
+```{theorem, twoapprox, name = "Two approximations in bootstrap"}
+There are two approximations in bootstrap. For large $B$, bootstrap samples approximate bootstrap replicates. For large $n$, bootstrap replicates approximate true population.
+
+$$\mathbf{X}^{(b)} \vertarrowbox[3ex]{\rightarrow}{\text{large}\: B} \hat{f} \vertarrowbox{\rightarrow}{\text{large}\: n} f$$
+```
+
+```{proof}
+Since
+
+$$E\hat{F} = \frac{1}{n} \sum_{i = 1}^n P(X_i \le x_i)$$
+
+$$\hat{F} \stackrel{a.s.}{\rightarrow} F$$
+
+as $n \rightarrow \infty$ by the strong law of large numbers. Let
+
+$$\overline{\hat{F}^{\ast}} := \frac{1}{B} \sum_b \hat{F}_b^{\ast}$$
+
+where $\hat{F}_b^{\ast}$ is ecdf of $b$-th bootstrap replicate. Since
+
+$$E\hat{F}_b^{\ast} = \frac{1}{n} \sum_{i = 1}^n P(X^{(b)} \le x_i)$$
+
+$$\overline{\hat{F}^{\ast}} \stackrel{a.s.}{\rightarrow} F^{\ast} = \hat{F}$$
+
+as $B \rightarrow \infty$ by S.L.L.N.
+```
+
+Denote that Theorem \@ref(thm:twoapprox) can be also expressed as
+
+\begin{equation}
+  \overline{\hat{F}^{\ast}} \vertarrowbox[3ex]{\rightarrow}{\text{large}\: B} \hat{F} \vertarrowbox{\rightarrow}{\text{large}\: n} F
+  (\#eq:twoapprox2)
+\end{equation}
+
+This approximation not only justifies the bootstrap procedure but also shows the problem of it. We can always increase $B$ if we want. Then we earn $\overline{\hat{F}^{\ast}} \approx \hat{F}$, i.e. bootstrap samples approximate pseudo-population. However, $n$ is fixed. For $\hat{F}$ to approximate $F$, large $n$ is required. It is not under control. If small $n$ is given, $\hat{F}$ will not be close to $F$. Then the bootstrap samples will not be close to $F$ finally.
+
+```{corollary, bootprob}
+Resampling the large number of replicates, i.e. large $B$ produces a good estimates of $\hat{F}$ but it does not guarantee a good estimate of $F$.
+```
+
+```{r, include=FALSE}
+bootpoisx <- c(2, 2, 1, 1, 5, 4, 4, 3, 2, 1)
+```
+
+```{example, bootpois, name = "Poisson population"}
+Suppose that $\{ 2, 2, 1, 1, 5, 4, 4, 3, 2, 1 \} \sim Poisson(\lambda = 2)$. Resampling from this pseudo-population, can we appropriately explain the population?
+```
+
+
+```{r bootpoisemp, echo=FALSE, results='asis'}
+tibble(x = bootpoisx) %>% 
+  count(x) %>% 
+  mutate(n = n / sum(n)) %>% 
+  spread(x, n) %>% 
+  knitr::kable(caption = "Empirical distribution", longtable = TRUE)
+```
+
+Table $\ref{tab:bootpoisemp}$ is just a result of averaging, emprical distribution $\hat{F}$. General bootstrap will resample by distribution. We can see the problem at once.
+
+$$P(X = 0) = e^{-2} = `r dpois(0, lambda = 2)`$$
+
+However, we did not observe $0$, so the bootstrap sample will never include zero, i.e. not a full domain. In sum,
+
+$$\overline{\hat{F}^{\ast}} \rightarrow \hat{F} {\color{red}{\not}}{\rightarrow} F$$
+
+### Bootstrap standard error
+
+Look at the Figure \@ref(fig:bootapprox) again. For each sample, we calculate esimator of our interest. For instance, sample average $\overline{x}$. After that, we get empirical distribution of $\overline{x}$.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

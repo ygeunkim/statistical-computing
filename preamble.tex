@@ -1,6 +1,7 @@
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{float}
+\usepackage{xcolor}
 \usepackage{pdfpages}
 \usepackage{hyperref}
 \usepackage[boxruled, linesnumbered]{algorithm2e}
@@ -11,6 +12,12 @@
 \newcommand{\hsim}{\stackrel{H_0}{\sim}}
 \newcommand{\ind}{\perp\!\!\!\perp}
 \newcommand{\R}{\mathbb{R}}
+\newcommand\vertarrowbox[3][6ex]{%
+  \begin{array}[t]{@{}c@{}} #2 \\
+  \left\uparrow\vcenter{\hrule height #1}\right.\kern-\nulldelimiterspace\\
+  \makebox[0pt]{\scriptsize#3}
+  \end{array}%
+}
 \DeclareMathOperator*{\argmin}{argmin}
 
 \let\oldmaketitle\maketitle
