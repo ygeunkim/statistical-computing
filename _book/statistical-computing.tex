@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{18 May, 2019}
+    \date{19 May, 2019}
 
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -3991,79 +3991,56 @@ See Figure \ref{fig:resample}. From the observed sample, which is pseudo-populat
 \hypertarget{approximations-in-bootstrap}{%
 \subsection{Approximations in bootstrap}\label{approximations-in-bootstrap}}
 
-How does bootstrap work? Consider traditional bootstrap example \citep{Efron:1983bw}. The dataset is GPA scores of various entering classes at American law schools in 1973.
+How does bootstrap work? \citet{Efron:1983bw} provides simple example \(T = \overline{x}\), i.e.~sample average.
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{law }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ LSAT, }\DataTypeTok{y =}\NormalTok{ GPA)) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{geom_point}\NormalTok{()}
-\end{Highlighting}
-\end{Shaded}
+\BeginKnitrBlock{example}[Estimation of sample mean]
+\protect\hypertarget{exm:bootave}{}{\label{exm:bootave} \iffalse (Estimation of sample mean) \fi{} }Having observed \(X_1 = x_1, \ldots, X_n = x_n\), compute
 
-\begin{figure}[H]
+\[\overline{x} = \frac{1}{n} \sum_{i = 1}^n x_i\]
 
-{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/lawschool-1} 
-
-}
-
-\caption{The law school data (\cite{Efron:1983bw})}\label{fig:lawschool}
-\end{figure}
-
-Each point represents one law school.
-
-\begin{itemize}
-\tightlist
-\item
-  \texttt{LSAT}: average LSAT (national test) score of entering students
-\item
-  \texttt{GPA}: average GPA score of entering students
-\end{itemize}
-
-\BeginKnitrBlock{example}[Estimation of correlation coefficient]
-\protect\hypertarget{exm:bootcor}{}{\label{exm:bootcor} \iffalse (Estimation of correlation coefficient) \fi{} }In this \((Y_i, Z_i) = (\text{LSAT}, \text{GPA})\) data set, we are interested in the correlation \(\rho\) of the two variables. Especially, we want to explore the distribution of \(\hat\rho\).
+Using bootstrap, we try to see the empirical distribution of this.
 \EndKnitrBlock{example}
 
-Let \(\mathbf{X}_i^T = (Y_i, Z_i)\) be each observation. Then
+Note that
 
-\[\mathbf{X}_1, \ldots, \mathbf{X}_n \stackrel{iid}{\sim}F\]
+\[X_1, \ldots, X_n \stackrel{iid}{\sim}F\]
 
-where \(F\) is true unknown distribution. Having observed \(\mathbf{X}_1 = \mathbf{x}_1, \ldots, \mathbf{X}_n = \mathbf{x}_n\), we get \emph{empirical distribution function} by computing the sample average.
+where \(F\) is true unknown distribution. Having observed \(X_1 = x_1, \ldots, X_n = x_n\), we get \emph{empirical distribution function} by computing the sample average.
 
 \begin{equation}
-  \hat{F}(\mathbf{x}) = \frac{1}{n} \sum_{i = 1}^n I(\mathbf{X}_i \le \mathbf{x}_i)
+  \hat{F}(x) = \frac{1}{n} \sum_{i = 1}^n I(X_i \le x_i)
   \label{eq:edistn}
 \end{equation}
 
-This works for estimator of \(F\). \(\hat{F}\) endows mass \(\frac{1}{n}\) on each observed point \(\mathbf{x}_i, \: i = 1, \ldots, n\). In other words, pseudo-distribution becomes \emph{discrete uniform}.
+This works for estimator of \(F\). \(\hat{F}\) endows mass \(\frac{1}{n}\) on each observed point \(x_i, \: i = 1, \ldots, n\). In other words, pseudo-distribution becomes \emph{discrete uniform}.
 
 \begin{equation}
-  \hat{F} \stackrel{d}{=} unif(\mathbf{x}_1, \ldots, \mathbf{x}_n)
+  \hat{F} \stackrel{d}{=} unif(x_1, \ldots, x_n)
   \label{eq:discunif}
 \end{equation}
 
-We have set the population distribution which is bogus. Now we can apply previous MC sampling with \(\frac{1}{n}\). Write \(\{ \mathbf{X}_1^{\ast}, \ldots, \mathbf{X}_n^{\ast} \}\) as \emph{bootstrap sample} by resampling. Then
+We have set the population distribution which is bogus. Now we can apply previous MC sampling with \(\frac{1}{n}\). Write \(\{ X_1^{\ast}, \ldots, X_n^{\ast} \}\) as \emph{bootstrap sample} by resampling. Then
 
-\[P(\mathbf{X}^{\ast} = \mathbf{x}_i) = \frac{1}{n}\]
+\[P(X^{\ast} = x_i) = \frac{1}{n}\]
 
 i.e.
 
 \begin{equation}
-  \mathbf{X}^{\ast} \stackrel{iid}{\sim}unif(\mathbf{x}_1, \ldots, \mathbf{x}_n)
+  X^{\ast} \stackrel{iid}{\sim}unif(x_1, \ldots, x_n)
   \label{eq:bootdistn}
 \end{equation}
 
 This gives \emph{bootstrap cdf}, cdf of bootstrap samples, by
 
 \begin{equation}
-  F^{\ast}(\mathbf{x}) = \text{cdf of}\: unif(\mathbf{x}_1, \ldots, \mathbf{x}_n) = \hat{F}
+  F^{\ast}(x) = \text{cdf of}\: unif(x_1, \ldots, x_n) = \hat{F}
   \label{eq:bootcdf}
 \end{equation}
 
 One proceeds in a similar way for estimating cdf that
 
 \begin{equation}
-  \hat{F}^{\ast} = \frac{1}{n} \sum_{i = 1}^n I(\mathbf{X}^{\ast} \le \mathbf{x}_i)
+  \hat{F}^{\ast} = \frac{1}{n} \sum_{i = 1}^n I(X^{\ast} \le x_i)
   \label{eq:bootecdf}
 \end{equation}
 
@@ -4155,7 +4132,118 @@ However, we did not observe \(0\), so the bootstrap sample will never include ze
 \hypertarget{bootstrap-standard-error}{%
 \subsection{Bootstrap standard error}\label{bootstrap-standard-error}}
 
-Look at the Figure \ref{fig:bootapprox} again. For each sample, we calculate esimator of our interest. For instance, sample average \(\overline{x}\). After that, we get empirical distribution of \(\overline{x}\).
+Look at the Figure \ref{fig:bootapprox} again. For each sample, we calculate esimator of our interest. For instance, Example \ref{exm:bootave} - sample average \(\overline{x}\). After that, we get empirical distribution of \(\overline{x}\) such as \emph{standard error}.
+
+Before looking at the empirical distribution, let's review sample estimation.
+
+\BeginKnitrBlock{theorem}[Standard error of sample mean]
+\protect\hypertarget{thm:samplemean}{}{\label{thm:samplemean} \iffalse (Standard error of sample mean) \fi{} }Standard error of \(\overline{X} = \overline{x} = \frac{1}{n} \displaystyle\sum_{i = 1}^n x_i\), i.e.~the \textit{root mean squred error} is estimated by
+
+\[\hat\sigma = \bigg[ \frac{1}{n (n - 1)} \sum_{i = 1}^n (x_i - \overline{x})^2 \bigg]^{\frac{1}{2}}\]
+\EndKnitrBlock{theorem}
+
+Here, \(n - 1\) was divided for \emph{unbiasedness}. Recall that
+
+\[Var(\overline{X}) = \frac{\sigma^2}{n}\]
+
+It follows that
+
+\[\hat\sigma^2 = \frac{s^2}{n}\]
+
+and we know that \(s^2\) should be divided by \(n - 1\) to be unbiased. Bootstrap generalizes point estimation process \ref{thm:samplemean} a bit differently \citep{Efron:1983bw}. From Equation \eqref{eq:edistn} to \eqref{eq:bootcdf}, we resample bootstrap sample with empricial probability distribution \(\hat{F}\) so that
+
+\begin{equation}
+  X_1^{\ast}, \ldots, X_n^{\ast} \stackrel{iid}{\sim}\hat{F}
+  \label{eq:samplescheme}
+\end{equation}
+
+where \(\hat{F}\) is discrete uniform in each observed data point. In this sample, compute the estimate of interest, e.g.~average
+
+\[\overline{X}^{\ast} = \frac{1}{n} \sum_{i = 1}^n X_i^{\ast}\]
+
+From Theorem \ref{thm:samplemean}, this \(\overline{X}^{\ast}\) has \emph{estimated variance} of
+
+\begin{equation}
+  Var\overline{X}^{\ast} = \frac{1}{n(n - 1)} \sum_{i = 1}^n (X_i - \overline{X})^2
+  \label{eq:varundersam}
+\end{equation}
+
+In fact, this is a variance \emph{under sampling scheme} \eqref{eq:samplescheme}, i.e.~indicates one-time-sampling from \(\hat{F}\). Using this, we can construct \textbf{bootstrap estimate of standard error for sample mean}, which come by sampling \(B\) times.
+
+\begin{equation}
+  \hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\overline{X}_b^{\ast} - \overline{X}_{.}^{\ast}) \bigg]^{\frac{1}{2}}
+  \label{eq:sebootave}
+\end{equation}
+
+where \(\overline{X}_b^{\ast}\) is a sample mean of \(b\)-th bootstrap replicate and \(\overline{X}_{.}^{\ast}\) is average of every \(\overline{X}_b^{\ast}\).
+
+\BeginKnitrBlock{theorem}[Bootstrap standard error]
+\protect\hypertarget{thm:bootse}{}{\label{thm:bootse} \iffalse (Bootstrap standard error) \fi{} }Bootstrap estimate of standard error for any estimator \(\hat\theta(X_1, \ldots, X_n)\) is
+
+\[\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}}) \bigg]^{\frac{1}{2}}\]
+
+where \(\hat\theta_b^{\ast}\) is independent bootstrap replications and
+
+\[\overline{\hat\theta^{\ast}} = \frac{1}{B} \sum_{b = 1}^B \hat\theta_b^{\ast}\]
+\EndKnitrBlock{theorem}
+
+Now we format Figure \ref{fig:bootapprox} to practical algorithm.
+
+\begin{algorithm}[H] \label{alg:algboot}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$n$ observations $x_1, \ldots, x_n$}
+  \For{$b \leftarrow 1$ \KwTo $B$}{
+    Sampling with replacement $X_{1}^{(b)}, \ldots, X_n^{(b)}$ from the observed sample\;
+    Compute estimate $$\hat\theta(X_{1}^{(b)}, \ldots, X_n^{(b)}) \equiv \hat\theta_b^{\ast}$$\;
+  }
+  $\overline{\hat\theta^{\ast}} = \frac{1}{B} \sum_{b = 1}^B \hat\theta_b^{\ast}$\;
+  Bootsrap standard error $$\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}}) \bigg]^{\frac{1}{2}}$$\;
+  \Output{$\hat\sigma_B$}
+  \caption{Bootstrap algorithm}
+\end{algorithm}
+
+\hypertarget{estimation-of-correlation-coefficient}{%
+\subsection{Estimation of correlation coefficient}\label{estimation-of-correlation-coefficient}}
+
+Consider traditional bootstrap example \citep{Efron:1983bw}. The dataset is GPA scores of various entering classes at American law schools in 1973.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{law }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ LSAT, }\DataTypeTok{y =}\NormalTok{ GPA)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/lawschool-1} 
+
+}
+
+\caption{The law school data (\cite{Efron:1983bw})}\label{fig:lawschool}
+\end{figure}
+
+Each point represents one law school.
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{LSAT}: average LSAT (national test) score of entering students
+\item
+  \texttt{GPA}: average GPA score of entering students
+\end{itemize}
+
+\BeginKnitrBlock{example}[Estimation of correlation coefficient]
+\protect\hypertarget{exm:bootcor}{}{\label{exm:bootcor} \iffalse (Estimation of correlation coefficient) \fi{} }In this \((Y_i, Z_i) = (\text{LSAT}, \text{GPA})\) data set, we are interested in the correlation \(\rho\) of the two variables. Especially, we want to explore the distribution of \(\hat\rho\).
+\EndKnitrBlock{example}
+
+Let \(\mathbf{X}_i^T = (Y_i, Z_i)\) be each observation.
+
+\hypertarget{boostrap-bias}{%
+\subsection{Boostrap bias}\label{boostrap-bias}}
 
 \bibliography{book.bib,packages.bib}
 
