@@ -4198,11 +4198,330 @@ Now we format Figure \ref{fig:bootapprox} to practical algorithm.
     Sampling with replacement $X_{1}^{(b)}, \ldots, X_n^{(b)}$ from the observed sample\;
     Compute estimate $$\hat\theta(X_{1}^{(b)}, \ldots, X_n^{(b)}) \equiv \hat\theta_b^{\ast}$$\;
   }
-  $\overline{\hat\theta^{\ast}} = \frac{1}{B} \sum_{b = 1}^B \hat\theta_b^{\ast}$\;
+  $\overline{\hat\theta^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\theta_b^{\ast}$\;
   Bootsrap standard error $$\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}}) \bigg]^{\frac{1}{2}}$$\;
   \Output{$\hat\sigma_B$}
   \caption{Bootstrap algorithm}
 \end{algorithm}
+
+\citet{Efron:1994aa} suggests that \(B = 40\) is usually enough to estimate standard error well. It rarely require \(B > 200\). On the other hand, much larger \(B\) is needed in interval estimation.
+
+First we try perform bootstrap without package doing bootstrap such as \texttt{boot} or \texttt{bootstrap}. The following is observed sample \(n = 50\), i.e.~finite population in bootstrap literature.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{X}
+\CommentTok{#> # A tibble: 50 x 1}
+\CommentTok{#>        x}
+\CommentTok{#>    <dbl>}
+\CommentTok{#>  1 35.2 }
+\CommentTok{#>  2  3.24}
+\CommentTok{#>  3 11.5 }
+\CommentTok{#>  4  6.00}
+\CommentTok{#>  5 48.9 }
+\CommentTok{#>  6  2.71}
+\CommentTok{#>  7 38.7 }
+\CommentTok{#>  8 34.0 }
+\CommentTok{#>  9 19.8 }
+\CommentTok{#> 10 40.8 }
+\CommentTok{#> # ... with 40 more rows}
+\end{Highlighting}
+\end{Shaded}
+
+Sample mean of this sample is
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{X }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{mean}\NormalTok{(x))}
+\CommentTok{#> # A tibble: 1 x 1}
+\CommentTok{#>       x}
+\CommentTok{#>   <dbl>}
+\CommentTok{#> 1  22.2}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{MC_CORES <-}\StringTok{ }\NormalTok{parallel}\OperatorTok{::}\KeywordTok{detectCores}\NormalTok{() }\OperatorTok{-}\StringTok{ }\DecValTok{1} \CommentTok{# parallelization}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{resample <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(data, }\DataTypeTok{statistic =}\NormalTok{ mean) \{}
+  \CommentTok{# sampling with replacement}
+\NormalTok{  xb <-}
+\StringTok{    }\NormalTok{data }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{data.table}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\NormalTok{.[}\KeywordTok{sample}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\NormalTok{.N, }\DataTypeTok{size =}\NormalTok{ .N, }\DataTypeTok{replace =} \OtherTok{TRUE}\NormalTok{)]}
+  \CommentTok{# estimator}
+\NormalTok{  xb[,}
+     \KeywordTok{lapply}\NormalTok{(.SD, statistic)] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{as.numeric}\NormalTok{()}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+To fasten the process, we implement parallization \texttt{parallel::mclapply}. This function is based on fork mechanism of Unix OS. So this is not available in Windows OS.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{B <-}\StringTok{ }\DecValTok{40}
+\CommentTok{#------------------}
+\NormalTok{Xse <-}\StringTok{ }
+\StringTok{  }\NormalTok{parallel}\OperatorTok{::}\KeywordTok{mclapply}\NormalTok{(}
+    \DecValTok{1}\OperatorTok{:}\NormalTok{B,}
+    \ControlFlowTok{function}\NormalTok{(x) \{}\KeywordTok{resample}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ X, }\DataTypeTok{statistic =}\NormalTok{ mean)\},}
+    \DataTypeTok{mc.cores =}\NormalTok{ MC_CORES}
+\NormalTok{  ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{unlist}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{se =}\NormalTok{ Xse) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ se)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(}\KeywordTok{hat}\NormalTok{(sigma)[B]))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/xbarsemc-1} 
+
+}
+
+\caption{Bootstrap replicates of sample mean done by mclapply}\label{fig:xbarsemc}
+\end{figure}
+
+Bootstrap standard error is given by
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{sd}\NormalTok{(Xse)}
+\CommentTok{#> [1] 1.91}
+\end{Highlighting}
+\end{Shaded}
+
+Another way and possible also in Windows OS is \texttt{foreach::foreach}. Using \texttt{\%dopar\%} with pre-specifed workers instead of \texttt{\%do\%}, we can parallize the jobs. \texttt{.inorder} argument enable the task done in order different with the other functions. Default is \texttt{FALSE} and it is more stable.
+
+When we do \texttt{foreach} parallization, we should distribute the jobs to workers manually.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cl <-}\StringTok{ }\NormalTok{parallel}\OperatorTok{::}\KeywordTok{makeCluster}\NormalTok{(MC_CORES)}
+\NormalTok{doParallel}\OperatorTok{::}\KeywordTok{registerDoParallel}\NormalTok{(cl, }\DataTypeTok{cores =}\NormalTok{ MC_CORES)}
+\NormalTok{parallel}\OperatorTok{::}\KeywordTok{clusterExport}\NormalTok{(cl, }\KeywordTok{c}\NormalTok{(}\StringTok{"X"}\NormalTok{, }\StringTok{"resample"}\NormalTok{))}
+\NormalTok{parallel}\OperatorTok{::}\KeywordTok{clusterEvalQ}\NormalTok{(cl, }\KeywordTok{c}\NormalTok{(}\KeywordTok{library}\NormalTok{(dplyr), }\KeywordTok{library}\NormalTok{(data.table)))}
+\CommentTok{#> [[1]]}
+\CommentTok{#>  [1] "dplyr"      "stats"      "graphics"   "grDevices"  "utils"     }
+\CommentTok{#>  [6] "datasets"   "methods"    "base"       "data.table" "dplyr"     }
+\CommentTok{#> [11] "stats"      "graphics"   "grDevices"  "utils"      "datasets"  }
+\CommentTok{#> [16] "methods"    "base"      }
+\CommentTok{#> }
+\CommentTok{#> [[2]]}
+\CommentTok{#>  [1] "dplyr"      "stats"      "graphics"   "grDevices"  "utils"     }
+\CommentTok{#>  [6] "datasets"   "methods"    "base"       "data.table" "dplyr"     }
+\CommentTok{#> [11] "stats"      "graphics"   "grDevices"  "utils"      "datasets"  }
+\CommentTok{#> [16] "methods"    "base"      }
+\CommentTok{#> }
+\CommentTok{#> [[3]]}
+\CommentTok{#>  [1] "dplyr"      "stats"      "graphics"   "grDevices"  "utils"     }
+\CommentTok{#>  [6] "datasets"   "methods"    "base"       "data.table" "dplyr"     }
+\CommentTok{#> [11] "stats"      "graphics"   "grDevices"  "utils"      "datasets"  }
+\CommentTok{#> [16] "methods"    "base"}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Xse_foreach <-}\StringTok{ }
+\StringTok{  }\KeywordTok{foreach}\NormalTok{(}\DataTypeTok{b =} \DecValTok{1}\OperatorTok{:}\NormalTok{B, }\DataTypeTok{.combine =}\NormalTok{ c, }\DataTypeTok{.inorder =} \OtherTok{FALSE}\NormalTok{) }\OperatorTok{%dopar%}\StringTok{ }\NormalTok{\{}
+    \KeywordTok{resample}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ X, }\DataTypeTok{statistic =}\NormalTok{ mean)}
+\NormalTok{  \}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{parallel}\OperatorTok{::}\KeywordTok{stopCluster}\NormalTok{(cl)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{se =}\NormalTok{ Xse_foreach) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ se)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(}\KeywordTok{hat}\NormalTok{(sigma)[B]))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/xbarsefor-1} 
+
+}
+
+\caption{Bootstrap replicates for sample mean done by foreach}\label{fig:xbarsefor}
+\end{figure}
+
+It gives boostrap standard error as
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{sd}\NormalTok{(Xse_foreach)}
+\CommentTok{#> [1] 2.2}
+\end{Highlighting}
+\end{Shaded}
+
+Are these kinds of parallization useful?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{microbenchmark}\OperatorTok{::}\KeywordTok{microbenchmark}\NormalTok{(}
+  \StringTok{"MCLAPPLY2"}\NormalTok{ =}\StringTok{ }\NormalTok{\{}
+\NormalTok{    parallel}\OperatorTok{::}\KeywordTok{mclapply}\NormalTok{(}
+      \DecValTok{1}\OperatorTok{:}\NormalTok{B,}
+      \ControlFlowTok{function}\NormalTok{(x) \{}\KeywordTok{resample}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ X, }\DataTypeTok{statistic =}\NormalTok{ mean)\},}
+      \DataTypeTok{mc.cores =} \DecValTok{2}
+\NormalTok{    ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{unlist}\NormalTok{()}
+\NormalTok{  \},}
+  \StringTok{"MCLAPPLY3"}\NormalTok{ =}\StringTok{ }\NormalTok{\{}
+\NormalTok{    parallel}\OperatorTok{::}\KeywordTok{mclapply}\NormalTok{(}
+      \DecValTok{1}\OperatorTok{:}\NormalTok{B,}
+      \ControlFlowTok{function}\NormalTok{(x) \{}\KeywordTok{resample}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ X, }\DataTypeTok{statistic =}\NormalTok{ mean)\},}
+      \DataTypeTok{mc.cores =} \DecValTok{3}
+\NormalTok{    ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{unlist}\NormalTok{()}
+\NormalTok{  \},}
+  \StringTok{"MCLAPPLY4"}\NormalTok{ =}\StringTok{ }\NormalTok{\{}
+\NormalTok{    parallel}\OperatorTok{::}\KeywordTok{mclapply}\NormalTok{(}
+      \DecValTok{1}\OperatorTok{:}\NormalTok{B,}
+      \ControlFlowTok{function}\NormalTok{(x) \{}\KeywordTok{resample}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ X, }\DataTypeTok{statistic =}\NormalTok{ mean)\},}
+      \DataTypeTok{mc.cores =} \DecValTok{4}
+\NormalTok{    ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{unlist}\NormalTok{()}
+\NormalTok{  \},}
+  \StringTok{"FORLOOP"}\NormalTok{ =}\StringTok{ }\NormalTok{\{}
+    \ControlFlowTok{for}\NormalTok{ (b }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{B) \{}
+      \KeywordTok{resample}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ X, }\DataTypeTok{statistic =}\NormalTok{ mean)}
+\NormalTok{    \}}
+\NormalTok{  \},}
+  \DataTypeTok{times =} \DecValTok{5}\NormalTok{,}
+  \DataTypeTok{unit =} \StringTok{"s"}
+\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{autoplot}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/benchboot-1} 
+
+}
+
+\caption{Benchmark between mclapply and for loop}\label{fig:benchboot}
+\end{figure}
+
+Figure \ref{fig:benchboot} is comparing \texttt{for} loop with each \texttt{mc.cores}. It is clear that parallization is faster than ordinary loop. In fact, all these procedures can be done by \texttt{boot} package.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(boot)}
+\end{Highlighting}
+\end{Shaded}
+
+Before performing bootstrap, we should define a \texttt{statistic} function.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mean_boot <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, i) \{}
+  \KeywordTok{mean}\NormalTok{(x[i])}
+\NormalTok{\}}
+\CommentTok{#-----------------------------}
+\KeywordTok{boot}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ X }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(), }\DataTypeTok{statistic =}\NormalTok{ mean_boot, }\DataTypeTok{R =}\NormalTok{ B)}
+\CommentTok{#> }
+\CommentTok{#> ORDINARY NONPARAMETRIC BOOTSTRAP}
+\CommentTok{#> }
+\CommentTok{#> }
+\CommentTok{#> Call:}
+\CommentTok{#> boot(data = X %>% pull(), statistic = mean_boot, R = B)}
+\CommentTok{#> }
+\CommentTok{#> }
+\CommentTok{#> Bootstrap Statistics :}
+\CommentTok{#>     original  bias    std. error}
+\CommentTok{#> t1*     22.2   0.112        2.07}
+\end{Highlighting}
+\end{Shaded}
+
+It gives sample mean \texttt{original}, bootstrap bias \texttt{bias}, and bootstrap se \texttt{std.\ error}. We will cover bias later. Due to the programming fact, this is much more faster than the previous one. Also, we can parallize with this function. \texttt{parallel\ =\ c("no",\ "multicore",\ "snow")}. If we choose \texttt{"multicore"} option, we should specify \texttt{ncpus} as in \texttt{mclapply}. If \texttt{"snow"}, cluster should be supplied in \texttt{cl} argument like in \texttt{foreach}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{boot}\NormalTok{(}
+  \DataTypeTok{data =}\NormalTok{ X }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(),}
+  \DataTypeTok{statistic =}\NormalTok{ mean_boot, }
+  \DataTypeTok{R =}\NormalTok{ B,}
+  \DataTypeTok{parallel =} \StringTok{"multicore"}\NormalTok{,}
+  \DataTypeTok{ncpus =}\NormalTok{ MC_CORES}
+\NormalTok{)}
+\CommentTok{#> }
+\CommentTok{#> ORDINARY NONPARAMETRIC BOOTSTRAP}
+\CommentTok{#> }
+\CommentTok{#> }
+\CommentTok{#> Call:}
+\CommentTok{#> boot(data = X %>% pull(), statistic = mean_boot, R = B, parallel = "multicore", }
+\CommentTok{#>     ncpus = MC_CORES)}
+\CommentTok{#> }
+\CommentTok{#> }
+\CommentTok{#> Bootstrap Statistics :}
+\CommentTok{#>     original  bias    std. error}
+\CommentTok{#> t1*     22.2  -0.102        3.04}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{microbenchmark}\OperatorTok{::}\KeywordTok{microbenchmark}\NormalTok{(}
+  \StringTok{"MCLAPPLY"}\NormalTok{ =}\StringTok{ }\NormalTok{\{}
+\NormalTok{    parallel}\OperatorTok{::}\KeywordTok{mclapply}\NormalTok{(}
+      \DecValTok{1}\OperatorTok{:}\NormalTok{B,}
+      \ControlFlowTok{function}\NormalTok{(x) \{}\KeywordTok{resample}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ X, }\DataTypeTok{statistic =}\NormalTok{ mean)\},}
+      \DataTypeTok{mc.cores =}\NormalTok{ MC_CORES}
+\NormalTok{    ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{unlist}\NormalTok{()}
+\NormalTok{  \},}
+  \StringTok{"BOOT"}\NormalTok{ =}\StringTok{ }\NormalTok{\{}
+    \KeywordTok{boot}\NormalTok{(}
+      \DataTypeTok{data =}\NormalTok{ X }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(),}
+      \DataTypeTok{statistic =}\NormalTok{ mean_boot, }
+      \DataTypeTok{R =}\NormalTok{ B,}
+      \DataTypeTok{parallel =} \StringTok{"multicore"}\NormalTok{,}
+      \DataTypeTok{ncpus =}\NormalTok{ MC_CORES}
+\NormalTok{    )}
+\NormalTok{  \},}
+  \DataTypeTok{times =} \DecValTok{5}\NormalTok{,}
+  \DataTypeTok{unit =} \StringTok{"s"}
+\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{autoplot}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/benchboot2-1} 
+
+}
+
+\caption{Benchmark between mclapply and boot}\label{fig:benchboot2}
+\end{figure}
+
+In Figure \ref{fig:benchboot2}, we can see the difference of the speed.
 
 \hypertarget{estimation-of-correlation-coefficient}{%
 \subsection{Estimation of correlation coefficient}\label{estimation-of-correlation-coefficient}}
@@ -4240,7 +4559,88 @@ Each point represents one law school.
 \protect\hypertarget{exm:bootcor}{}{\label{exm:bootcor} \iffalse (Estimation of correlation coefficient) \fi{} }In this \((Y_i, Z_i) = (\text{LSAT}, \text{GPA})\) data set, we are interested in the correlation \(\rho\) of the two variables. Especially, we want to explore the distribution of \(\hat\rho\).
 \EndKnitrBlock{example}
 
-Let \(\mathbf{X}_i^T = (Y_i, Z_i)\) be each observation.
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{law }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{rho =} \KeywordTok{cor}\NormalTok{(LSAT, GPA))}
+\CommentTok{#> # A tibble: 1 x 1}
+\CommentTok{#>     rho}
+\CommentTok{#>   <dbl>}
+\CommentTok{#> 1 0.776}
+\end{Highlighting}
+\end{Shaded}
+
+Let \(\mathbf{X}_i^T = (Y_i, Z_i)\) be each observation. Dependency should be kept, so we should sample \((Y_i, Z_i)\) pairs, not individuals.
+
+\begin{algorithm}[H] \label{alg:algbootcor}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$n$ observations $\mathbf{X}_i^T = (Y_i, Z_i), \: i = 1, \ldots, n$}
+  \For{$b \leftarrow 1$ \KwTo $B$}{
+    Sampling with replacement $\mathbf{X}_{1}^{(b)}, \ldots, \mathbf{X}_n^{(b)}$ from the observed sample\;
+    Sample correlation coefficient $$\hat\rho_b^{\ast} = \frac{\sum (Y_i^{(b)} - \overline{Y}^{(b)})(Z_i^{(b)} - \overline{Z}^{(b)})}{\sqrt{\sum (Y_i^{(b)} - \overline{Y}^{(b)})^2}\sqrt{\sum (Z_i^{(b)} - \overline{Z}^{(b)})^2}}$$\;
+  }
+  $\overline{\hat\rho^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\rho_b^{\ast}$\;
+  Bootsrap standard error $$\hat\sigma_B (\hat\rho) = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\rho_b^{\ast} - \overline{\hat\rho^{\ast}}) \bigg]^{\frac{1}{2}}$$\;
+  \Output{$\hat\sigma_B (\hat\rho)$}
+  \caption{Estimation of correlation coefficient}
+\end{algorithm}
+
+Following \citet{Efron:1983bw}, try \(B = 1000\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{boot_cor <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, i) \{}
+  \KeywordTok{cor}\NormalTok{(x[i, }\DecValTok{1}\NormalTok{], x[i, }\DecValTok{2}\NormalTok{])}
+\NormalTok{\}}
+\CommentTok{#---------------------------}
+\NormalTok{B <-}\StringTok{ }\DecValTok{1000}
+\NormalTok{(rho <-}\StringTok{ }\KeywordTok{boot}\NormalTok{(law, }\DataTypeTok{statistic =}\NormalTok{ boot_cor, }\DataTypeTok{R =}\NormalTok{ B, }
+            \DataTypeTok{parallel =} \StringTok{"multicore"}\NormalTok{, }\DataTypeTok{ncpus =}\NormalTok{ MC_CORES))}
+\CommentTok{#> }
+\CommentTok{#> ORDINARY NONPARAMETRIC BOOTSTRAP}
+\CommentTok{#> }
+\CommentTok{#> }
+\CommentTok{#> Call:}
+\CommentTok{#> boot(data = law, statistic = boot_cor, R = B, parallel = "multicore", }
+\CommentTok{#>     ncpus = MC_CORES)}
+\CommentTok{#> }
+\CommentTok{#> }
+\CommentTok{#> Bootstrap Statistics :}
+\CommentTok{#>     original  bias    std. error}
+\CommentTok{#> t1*    0.776 -0.0131       0.135}
+\end{Highlighting}
+\end{Shaded}
+
+\BeginKnitrBlock{lemma}[Gaussian standard error of $\hat\rho$]
+\protect\hypertarget{lem:cornorm}{}{\label{lem:cornorm} \iffalse (Gaussian standard error of \(\hat\rho\)) \fi{} }When the data follow Normal distribution, the standard error of \(\hat\rho\) can be estimated by
+
+\[\hat\sigma_{NORM} = \frac{1 - \hat\rho^2}{\sqrt{n - 3}}\]
+\EndKnitrBlock{lemma}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{t0} is statistic computed from the sample, i.e.~correlation coefficient of the data
+\item
+  \texttt{t} is each bootstrap replicate, \texttt{matrix} object
+\end{itemize}
+
+Using \texttt{t}, we might draw empirical distribution and get standard error. In the real world, many data for scores follow normal. To check bootstrap works well, we compare the empirical distribution of \texttt{rho\$t} and one with Lemma \ref{lem:cornorm}.
+
+\[\hat\sigma_{NORM} = \frac{1 - \hat\rho^2}{\sqrt{n - 3}} = 0.115\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rho_boot <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{rho =}\NormalTok{ rho}\OperatorTok{$}\NormalTok{t[,}\DecValTok{1}\NormalTok{])}
+\CommentTok{#----------------------------------}
+\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ rho_boot, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ rho)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-120-1} \end{center}
 
 \hypertarget{boostrap-bias}{%
 \subsection{Boostrap bias}\label{boostrap-bias}}

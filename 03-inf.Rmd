@@ -1049,22 +1049,204 @@ Now we format Figure \@ref(fig:bootapprox) to practical algorithm.
     Sampling with replacement $X_{1}^{(b)}, \ldots, X_n^{(b)}$ from the observed sample\;
     Compute estimate $$\hat\theta(X_{1}^{(b)}, \ldots, X_n^{(b)}) \equiv \hat\theta_b^{\ast}$$\;
   }
-  $\overline{\hat\theta^{\ast}} = \frac{1}{B} \sum_{b = 1}^B \hat\theta_b^{\ast}$\;
+  $\overline{\hat\theta^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\theta_b^{\ast}$\;
   Bootsrap standard error $$\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}}) \bigg]^{\frac{1}{2}}$$\;
   \Output{$\hat\sigma_B$}
   \caption{Bootstrap algorithm}
 \end{algorithm}
 
+@Efron:1994aa suggests that $B = 40$ is usually enough to estimate standard error well. It rarely require $B > 200$. On the other hand, much larger $B$ is needed in interval estimation.
 
+```{r, include=FALSE}
+X <- tibble(x = runif(50, max = 50))
+```
 
+First we try perform bootstrap without package doing bootstrap such as `boot` or `bootstrap`. The following is observed sample $n = 50$, i.e. finite population in bootstrap literature.
 
+```{r}
+X
+```
 
+Sample mean of this sample is
 
+```{r}
+X %>% 
+  summarise(x = mean(x))
+```
 
+```{r}
+MC_CORES <- parallel::detectCores() - 1 # parallelization
+```
 
+```{r}
+resample <- function(data, statistic = mean) {
+  # sampling with replacement
+  xb <-
+    data %>% 
+    data.table() %>% 
+    .[sample(1:.N, size = .N, replace = TRUE)]
+  # estimator
+  xb[,
+     lapply(.SD, statistic)] %>% 
+    as.numeric()
+}
+```
 
+To fasten the process, we implement parallization `parallel::mclapply`. This function is based on fork mechanism of Unix OS. So this is not available in Windows OS.
 
+```{r}
+B <- 40
+#------------------
+Xse <- 
+  parallel::mclapply(
+    1:B,
+    function(x) {resample(data = X, statistic = mean)},
+    mc.cores = MC_CORES
+  ) %>% 
+    unlist()
+```
 
+```{r xbarsemc, fig.cap="Bootstrap replicates of sample mean done by mclapply"}
+tibble(se = Xse) %>% 
+  ggplot(aes(x = se)) +
+  geom_histogram(bins = 30) +
+  xlab(expression(hat(sigma)[B]))
+```
+
+Bootstrap standard error is given by
+
+```{r}
+sd(Xse)
+```
+
+Another way and possible also in Windows OS is `foreach::foreach`. Using `%dopar%` with pre-specifed workers instead of `%do%`, we can parallize the jobs. `.inorder` argument enable the task done in order different with the other functions. Default is `FALSE` and it is more stable.
+
+When we do `foreach` parallization, we should distribute the jobs to workers manually.
+
+```{r}
+cl <- parallel::makeCluster(MC_CORES)
+doParallel::registerDoParallel(cl, cores = MC_CORES)
+parallel::clusterExport(cl, c("X", "resample"))
+parallel::clusterEvalQ(cl, c(library(dplyr), library(data.table)))
+```
+
+```{r}
+Xse_foreach <- 
+  foreach(b = 1:B, .combine = c, .inorder = FALSE) %dopar% {
+    resample(data = X, statistic = mean)
+  }
+```
+
+```{r}
+parallel::stopCluster(cl)
+```
+
+```{r xbarsefor, fig.cap="Bootstrap replicates for sample mean done by foreach"}
+tibble(se = Xse_foreach) %>% 
+  ggplot(aes(x = se)) +
+  geom_histogram(bins = 30) +
+  xlab(expression(hat(sigma)[B]))
+```
+
+It gives boostrap standard error as
+
+```{r}
+sd(Xse_foreach)
+```
+
+Are these kinds of parallization useful?
+
+```{r benchboot, message=FALSE, fig.cap="Benchmark between mclapply and for loop"}
+microbenchmark::microbenchmark(
+  "MCLAPPLY2" = {
+    parallel::mclapply(
+      1:B,
+      function(x) {resample(data = X, statistic = mean)},
+      mc.cores = 2
+    ) %>% 
+      unlist()
+  },
+  "MCLAPPLY3" = {
+    parallel::mclapply(
+      1:B,
+      function(x) {resample(data = X, statistic = mean)},
+      mc.cores = 3
+    ) %>% 
+      unlist()
+  },
+  "MCLAPPLY4" = {
+    parallel::mclapply(
+      1:B,
+      function(x) {resample(data = X, statistic = mean)},
+      mc.cores = 4
+    ) %>% 
+      unlist()
+  },
+  "FORLOOP" = {
+    for (b in 1:B) {
+      resample(data = X, statistic = mean)
+    }
+  },
+  times = 5,
+  unit = "s"
+) %>% 
+  autoplot()
+```
+
+Figure \@ref(fig:benchboot) is comparing `for` loop with each `mc.cores`. It is clear that parallization is faster than ordinary loop. In fact, all these procedures can be done by `boot` package.
+
+```{r}
+library(boot)
+```
+
+Before performing bootstrap, we should define a `statistic` function.
+
+```{r}
+mean_boot <- function(x, i) {
+  mean(x[i])
+}
+#-----------------------------
+boot(data = X %>% pull(), statistic = mean_boot, R = B)
+```
+
+It gives sample mean `original`, bootstrap bias `bias`, and bootstrap se `std. error`. We will cover bias later. Due to the programming fact, this is much more faster than the previous one. Also, we can parallize with this function. `parallel = c("no", "multicore", "snow")`. If we choose `"multicore"` option, we should specify `ncpus` as in `mclapply`. If `"snow"`, cluster should be supplied in `cl` argument like in `foreach`.
+
+```{r}
+boot(
+  data = X %>% pull(),
+  statistic = mean_boot, 
+  R = B,
+  parallel = "multicore",
+  ncpus = MC_CORES
+)
+```
+
+```{r benchboot2, message=FALSE, fig.cap="Benchmark between mclapply and boot"}
+microbenchmark::microbenchmark(
+  "MCLAPPLY" = {
+    parallel::mclapply(
+      1:B,
+      function(x) {resample(data = X, statistic = mean)},
+      mc.cores = MC_CORES
+    ) %>% 
+      unlist()
+  },
+  "BOOT" = {
+    boot(
+      data = X %>% pull(),
+      statistic = mean_boot, 
+      R = B,
+      parallel = "multicore",
+      ncpus = MC_CORES
+    )
+  },
+  times = 5,
+  unit = "s"
+) %>% 
+  autoplot()
+```
+
+In Figure \@ref(fig:benchboot2), we can see the difference of the speed.
 
 ### Estimation of correlation coefficient
 
@@ -1089,8 +1271,73 @@ Each point represents one law school.
 In this $(Y_i, Z_i) = (\text{LSAT}, \text{GPA})$ data set, we are interested in the correlation $\rho$ of the two variables. Especially, we want to explore the distribution of $\hat\rho$.
 ```
 
-Let $\mathbf{X}_i^T = (Y_i, Z_i)$ be each observation.
+```{r}
+law %>% 
+  summarise(rho = cor(LSAT, GPA))
+```
 
+Let $\mathbf{X}_i^T = (Y_i, Z_i)$ be each observation. Dependency should be kept, so we should sample $(Y_i, Z_i)$ pairs, not individuals.
+
+\begin{algorithm}[H] \label{alg:algbootcor}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$n$ observations $\mathbf{X}_i^T = (Y_i, Z_i), \: i = 1, \ldots, n$}
+  \For{$b \leftarrow 1$ \KwTo $B$}{
+    Sampling with replacement $\mathbf{X}_{1}^{(b)}, \ldots, \mathbf{X}_n^{(b)}$ from the observed sample\;
+    Sample correlation coefficient $$\hat\rho_b^{\ast} = \frac{\sum (Y_i^{(b)} - \overline{Y}^{(b)})(Z_i^{(b)} - \overline{Z}^{(b)})}{\sqrt{\sum (Y_i^{(b)} - \overline{Y}^{(b)})^2}\sqrt{\sum (Z_i^{(b)} - \overline{Z}^{(b)})^2}}$$\;
+  }
+  $\overline{\hat\rho^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\rho_b^{\ast}$\;
+  Bootsrap standard error $$\hat\sigma_B (\hat\rho) = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\rho_b^{\ast} - \overline{\hat\rho^{\ast}}) \bigg]^{\frac{1}{2}}$$\;
+  \Output{$\hat\sigma_B (\hat\rho)$}
+  \caption{Estimation of correlation coefficient}
+\end{algorithm}
+
+Following @Efron:1983bw, try $B = 1000$.
+
+```{r}
+boot_cor <- function(x, i) {
+  cor(x[i, 1], x[i, 2])
+}
+#---------------------------
+B <- 1000
+(rho <- boot(law, statistic = boot_cor, R = B, 
+            parallel = "multicore", ncpus = MC_CORES))
+```
+
+
+```{lemma, cornorm, name = "Gaussian standard error of $\\hat\\rho$"}
+When the data follow Normal distribution, the standard error of $\hat\rho$ can be estimated by
+
+$$\hat\sigma_{NORM} = \frac{1 - \hat\rho^2}{\sqrt{n - 3}}$$
+```
+
+- `t0` is statistic computed from the sample, i.e. correlation coefficient of the data
+- `t` is each bootstrap replicate, `matrix` object
+
+Using `t`, we might draw empirical distribution and get standard error. In the real world, many data for scores follow normal. To check bootstrap works well, we compare the empirical distribution of `rho$t` and one with Lemma \@ref(lem:cornorm).
+
+```{r, include=FALSE}
+rhon <- 
+  law %>% 
+  summarise(
+    rho = 
+      (1 - cor(LSAT, GPA)^2) / sqrt(n() - 3)
+  ) %>% 
+  pull()
+```
+
+
+$$\hat\sigma_{NORM} = \frac{1 - \hat\rho^2}{\sqrt{n - 3}} = `r rhon`$$
+
+
+
+```{r}
+rho_boot <- tibble(rho = rho$t[,1])
+#----------------------------------
+ggplot(data = rho_boot, aes(x = rho)) +
+  geom_histogram(bins = 30)
+```
 
 
 
