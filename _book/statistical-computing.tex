@@ -4302,7 +4302,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 1.91}
+\CommentTok{#> [1] 2.63}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4631,19 +4631,100 @@ Using \texttt{t}, we might draw empirical distribution and get standard error. I
 
 \[\hat\sigma_{NORM} = \frac{1 - \hat\rho^2}{\sqrt{n - 3}} = 0.115\]
 
+Construct \(\hat{F}\) by
+
+\[\hat{F}_{NORM} \sim MVN\Big(\overline{\mathbf{x}}, \frac{n-1}{n}S \Big)\]
+
+To see how normal population work, we \emph{draw bootstrap sample from the parametric maximum likeihood distribution}.
+
+\[X_1^{\ast}, \ldots, X_n^{\ast} \sim \hat{F}_{NORM}\]
+
+\texttt{boot} has arguments \texttt{sim}, \texttt{ran.gen} and \texttt{mle}.
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{sim}: type of simulation method. By default, \texttt{"ordinary"}. In this case, change this to \texttt{"parametric"}.
+\item
+  \texttt{ran.gen}: if \texttt{sim\ =\ "parametric"}, we should specify \texttt{ran.gen} generating random values. Function should have two arguments of \texttt{data} and \texttt{mle}.
+\item
+  \texttt{mle}: Second argument of \texttt{ran.gen}. MLE of parameters.
+\end{itemize}
+
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{rho_boot <-}\StringTok{ }\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{rho =}\NormalTok{ rho}\OperatorTok{$}\NormalTok{t[,}\DecValTok{1}\NormalTok{])}
-\CommentTok{#----------------------------------}
-\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ rho_boot, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ rho)) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{)}
+\CommentTok{# mle --------------------------}
+\NormalTok{lawmu <-}\StringTok{ }
+\StringTok{  }\NormalTok{law }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{summarise_all}\NormalTok{(mean) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{as.numeric}\NormalTok{()}
+\NormalTok{lawcov <-}\StringTok{ }\KeywordTok{cov}\NormalTok{(law) }\OperatorTok{*}\StringTok{ }\KeywordTok{nrow}\NormalTok{(law) }\OperatorTok{/}\StringTok{ }\NormalTok{(}\KeywordTok{nrow}\NormalTok{(law) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\CommentTok{# ran.gen ----------------------}
+\NormalTok{gen_mvn <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(data, mle) \{}
+\NormalTok{  mvtnorm}\OperatorTok{::}\KeywordTok{rmvnorm}\NormalTok{(}\KeywordTok{nrow}\NormalTok{(data), }\DataTypeTok{mean =}\NormalTok{ mle[[}\DecValTok{1}\NormalTok{]], }\DataTypeTok{sigma =}\NormalTok{ mle[[}\DecValTok{2}\NormalTok{]])}
+\NormalTok{\}}
+\CommentTok{# boot -------------------------}
+\NormalTok{(rho_norm <-}\StringTok{ }
+\StringTok{  }\KeywordTok{boot}\NormalTok{(}
+\NormalTok{    law, }
+    \DataTypeTok{statistic =}\NormalTok{ boot_cor, }
+    \DataTypeTok{R =}\NormalTok{ B, }
+    \DataTypeTok{sim =} \StringTok{"parametric"}\NormalTok{,}
+    \DataTypeTok{ran.gen =}\NormalTok{ gen_mvn,}
+    \DataTypeTok{mle =} \KeywordTok{list}\NormalTok{(lawmu, lawcov),}
+    \DataTypeTok{parallel =} \StringTok{"multicore"}\NormalTok{, }
+    \DataTypeTok{ncpus =}\NormalTok{ MC_CORES}
+\NormalTok{  ))}
+\CommentTok{#> }
+\CommentTok{#> PARAMETRIC BOOTSTRAP}
+\CommentTok{#> }
+\CommentTok{#> }
+\CommentTok{#> Call:}
+\CommentTok{#> boot(data = law, statistic = boot_cor, R = B, sim = "parametric", }
+\CommentTok{#>     ran.gen = gen_mvn, mle = list(lawmu, lawcov), parallel = "multicore", }
+\CommentTok{#>     ncpus = MC_CORES)}
+\CommentTok{#> }
+\CommentTok{#> }
+\CommentTok{#> Bootstrap Statistics :}
+\CommentTok{#>     original  bias    std. error}
+\CommentTok{#> t1*    0.776 -0.0134        0.13}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{center}\includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/unnamed-chunk-120-1} \end{center}
+As \(B \rightarrow \infty\), \(\hat\sigma_B\) approximates \(\hat\sigma_{NORM} = 0.115\). See the similarity of the two values.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{tibble}\NormalTok{(}
+  \DataTypeTok{rho1 =}\NormalTok{ rho}\OperatorTok{$}\NormalTok{t[,}\DecValTok{1}\NormalTok{],}
+  \DataTypeTok{rho2 =}\NormalTok{ rho_norm}\OperatorTok{$}\NormalTok{t[,}\DecValTok{1}\NormalTok{]}
+\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{30}\NormalTok{, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ rho1, }\DataTypeTok{y =}\NormalTok{ ..density..)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{stat_density}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ rho2, }\DataTypeTok{y =}\NormalTok{ ..density..), }\DataTypeTok{geom =} \StringTok{"line"}\NormalTok{, }\DataTypeTok{col =} \KeywordTok{gg_hcl}\NormalTok{(}\DecValTok{1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\KeywordTok{expression}\NormalTok{(}\KeywordTok{hat}\NormalTok{(rho)}\OperatorTok{^}\StringTok{"*"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/bootrep-1} 
+
+}
+
+\caption{Bootstrap replicates for correlation in law school data - histogram of ordinary, line of parametric}\label{fig:bootrep}
+\end{figure}
+
+See Figure \ref{fig:bootrep}. Normal density has a similar shape to ordinary bootstrap, except that normal bootstrap falls off more quickly at the right tail.
 
 \hypertarget{boostrap-bias}{%
 \subsection{Boostrap bias}\label{boostrap-bias}}
+
+\BeginKnitrBlock{definition}[Bias]
+\protect\hypertarget{def:biasdef}{}{\label{def:biasdef} \iffalse (Bias) \fi{} }Bias of a estimator \(\theta\) is
+
+\[Bias(\hat\theta) := E(\hat\theta) - \theta\]
+\EndKnitrBlock{definition}
 
 \bibliography{book.bib,packages.bib}
 

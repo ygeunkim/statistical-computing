@@ -1327,24 +1327,69 @@ rhon <-
   pull()
 ```
 
-
 $$\hat\sigma_{NORM} = \frac{1 - \hat\rho^2}{\sqrt{n - 3}} = `r rhon`$$
 
+Construct $\hat{F}$ by
 
+$$\hat{F}_{NORM} \sim MVN\Big(\overline{\mathbf{x}}, \frac{n-1}{n}S \Big)$$
+
+To see how normal population work, we *draw bootstrap sample from the parametric maximum likeihood distribution*.
+
+$$X_1^{\ast}, \ldots, X_n^{\ast} \sim \hat{F}_{NORM}$$
+
+`boot` has arguments `sim`, `ran.gen` and `mle`.
+
+- `sim`: type of simulation method. By default, `"ordinary"`. In this case, change this to `"parametric"`.
+- `ran.gen`: if `sim = "parametric"`, we should specify `ran.gen` generating random values. Function should have two arguments of `data` and `mle`.
+- `mle`: Second argument of `ran.gen`. MLE of parameters.
 
 ```{r}
-rho_boot <- tibble(rho = rho$t[,1])
-#----------------------------------
-ggplot(data = rho_boot, aes(x = rho)) +
-  geom_histogram(bins = 30)
+# mle --------------------------
+lawmu <- 
+  law %>% 
+  summarise_all(mean) %>% 
+  as.numeric()
+lawcov <- cov(law) * nrow(law) / (nrow(law) - 1)
+# ran.gen ----------------------
+gen_mvn <- function(data, mle) {
+  mvtnorm::rmvnorm(nrow(data), mean = mle[[1]], sigma = mle[[2]])
+}
+# boot -------------------------
+(rho_norm <- 
+  boot(
+    law, 
+    statistic = boot_cor, 
+    R = B, 
+    sim = "parametric",
+    ran.gen = gen_mvn,
+    mle = list(lawmu, lawcov),
+    parallel = "multicore", 
+    ncpus = MC_CORES
+  ))
 ```
 
+As $B \rightarrow \infty$, $\hat\sigma_B$ approximates $\hat\sigma_{NORM} = `r rhon`$. See the similarity of the two values.
 
+```{r bootrep, fig.cap="Bootstrap replicates for correlation in law school data - histogram of ordinary, line of parametric"}
+tibble(
+  rho1 = rho$t[,1],
+  rho2 = rho_norm$t[,1]
+) %>% 
+  ggplot() +
+  geom_histogram(bins = 30, aes(x = rho1, y = ..density..)) +
+  stat_density(aes(x = rho2, y = ..density..), geom = "line", col = gg_hcl(1)) +
+  xlab(expression(hat(rho)^"*"))
+```
 
-
+See Figure \@ref(fig:bootrep). Normal density has a similar shape to ordinary bootstrap, except that normal bootstrap falls off more quickly at the right tail.
 
 ### Boostrap bias
 
+```{definition, biasdef, name = "Bias"}
+Bias of a estimator $\theta$ is
+
+$$Bias(\hat\theta) := E(\hat\theta) - \theta$$
+```
 
 
 
