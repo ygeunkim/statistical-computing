@@ -1137,6 +1137,8 @@ Xse_foreach <-
   }
 ```
 
+To end this process, make sure `stopCluster()`.
+
 ```{r}
 parallel::stopCluster(cl)
 ```
@@ -1199,7 +1201,7 @@ Figure \@ref(fig:benchboot) is comparing `for` loop with each `mc.cores`. It is 
 library(boot)
 ```
 
-Before performing bootstrap, we should define a `statistic` function.
+Before performing bootstrap, we should define a `statistic` function. This function must take at least 2 arguments, data and index.
 
 ```{r}
 mean_boot <- function(x, i) {
@@ -1288,9 +1290,9 @@ Let $\mathbf{X}_i^T = (Y_i, Z_i)$ be each observation. Dependency should be kept
     Sample correlation coefficient $$\hat\rho_b^{\ast} = \frac{\sum (Y_i^{(b)} - \overline{Y}^{(b)})(Z_i^{(b)} - \overline{Z}^{(b)})}{\sqrt{\sum (Y_i^{(b)} - \overline{Y}^{(b)})^2}\sqrt{\sum (Z_i^{(b)} - \overline{Z}^{(b)})^2}}$$\;
   }
   $\overline{\hat\rho^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\rho_b^{\ast}$\;
-  Bootsrap standard error $$\hat\sigma_B (\hat\rho) = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\rho_b^{\ast} - \overline{\hat\rho^{\ast}}) \bigg]^{\frac{1}{2}}$$\;
+  Bootsrap standard error $$\hat\sigma_B (\hat\rho) = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\rho_b^{\ast} - \overline{\hat\rho^{\ast}}) \bigg]^{\frac{1}{2}}$$\; \label{alg:seout}
   \Output{$\hat\sigma_B (\hat\rho)$}
-  \caption{Estimation of correlation coefficient}
+  \caption{Estimation of correlation coefficient - standard error}
 \end{algorithm}
 
 Following @Efron:1983bw, try $B = 1000$.
@@ -1388,8 +1390,133 @@ See Figure \@ref(fig:bootrep). Normal density has a similar shape to ordinary bo
 ```{definition, biasdef, name = "Bias"}
 Bias of a estimator $\theta$ is
 
-$$Bias(\hat\theta) := E(\hat\theta) - \theta$$
+$$\beta := E(\hat\theta) - \theta$$
 ```
+
+Note that $\beta$ is a kind of function of the unkown probability ditribution $F$.
+
+$$\beta = \beta(F)$$
+
+In this sense, bootstrap estimate of $\beta$ can be given as
+
+\begin{equation}
+  \hat\beta_B = \beta(\hat{F}) = E_{F^{\ast}} \Big[ \theta(\hat{F}^{\ast}) - \theta(\hat{F}) \Big]
+  (\#eq:bootbias)
+\end{equation}
+
+Here, expectation $E_{F^{\ast}}$ can be approximated by Monte Carlo methods. Sampling
+
+$$X_1^{\ast}, \ldots, X_n^{\ast} \iid F^{\ast}$$
+
+compute
+
+\begin{equation}
+  \hat\beta_B \approx \overline{\hat\theta^{\ast}} - \hat\theta = \frac{1}{B} \sum_{b = 1}^B ( \hat\theta_b^{\ast} - \hat\theta)
+  (\#eq:bootbiasest)
+\end{equation}
+
+In Algorithm $\ref{alg:algbootcor}$, we only need to replace Step $\ref{alg:seout}$ with above Equation \@ref(eq:bootbiasest).
+
+```{theorem, bootbet, name = "Bootstrap Bias"}
+Bootstrap estimate of bias for any estimator $\hat\theta(X_1, \ldots, X_n)$ of $\theta$ is
+
+$$\hat\beta_B = \overline{\hat\theta^{\ast}} - \hat\theta$$
+
+where $\overline{\hat\theta^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\theta_b^{\ast}$ and $\hat\theta = \hat\theta(X_1, \ldots, X_n)$, i.e. one estimated by observed sample
+```
+
+Is it reasonable to compare $\overline{\hat\theta^{\ast}}$ with $\hat\theta$ even though we do not know the true one? This is natural from bootstrap construction. Bootstrap takes its population as observed sample of which distribution is $\hat{F}$. So $\hat\theta$ of pseudo-population, $\theta(\hat{F})$ of Equation \@ref(eq:bootbias), is able to represent the true value.
+
+\begin{algorithm}[H] \label{alg:algbootcor2}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{$n$ observations $\mathbf{X}_i^T = (Y_i, Z_i), \: i = 1, \ldots, n$}
+  \For{$b \leftarrow 1$ \KwTo $B$}{
+    Sampling with replacement $\mathbf{X}_{1}^{(b)}, \ldots, \mathbf{X}_n^{(b)}$ from the observed sample\;
+    Sample correlation coefficient $$\hat\rho_b^{\ast} = \frac{\sum (Y_i^{(b)} - \overline{Y}^{(b)})(Z_i^{(b)} - \overline{Z}^{(b)})}{\sqrt{\sum (Y_i^{(b)} - \overline{Y}^{(b)})^2}\sqrt{\sum (Z_i^{(b)} - \overline{Z}^{(b)})^2}}$$\;
+  }
+  $\overline{\hat\rho^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\rho_b^{\ast}$\;
+  Bootsrap bias $$\hat\beta_B = \overline{\hat\rho^{\ast}} - \hat\rho$$\; \label{alg:biasout}
+  \Output{$\hat\beta_B$}
+  \caption{Estimation of correlation coefficient - bias}
+\end{algorithm}
+
+If
+
+$$\frac{\hat\beta_B}{\hat\sigma_B} < \frac{1}{4}$$
+
+then it might be okay to ignore the bias, i.e. not necessary to adjust for it[@Efron:1994aa].
+
+Refer to Example \@ref(exm:bootcor). `boot::boot()` have given following output.
+
+```{r}
+rho
+```
+
+$\hat\beta_B$ is `bias`.
+
+```{r, include=FALSE}
+patch <- bootstrap::patch %>% as_tibble()
+```
+
+```{example, ratbias, name = "Bootstrap estimate of a ratio estimate"}
+Consider medical patche data from @Efron:1994aa. It contains measurement for hormone into the blood stream of 8 subjects after wearing a medical patch. There are three different patches.
+
+\begin{itemize}
+  \item placebo patch
+  \item old patch, manufactured at an older plant
+  \item new patch, manufactured at a new plant
+\end{itemize}
+
+Define a parameter \text{bioequivalence} by
+
+$$\theta = \frac{E(new) - E(old)}{E(old) - E(placebo)} \le 0.2$$
+
+This is the parameter of our interest.
+```
+
+```{r}
+patch
+```
+
+In `patch`,
+
+- `z`: `oldpatch` - `placebo`
+- `y`: `newpatch` - `oldpatch`
+
+We only need these two columns. `z` goes to denominator, `y` to numerator.
+
+```{r, eval=FALSE}
+bioequiv <- function(x, i) {
+  # select(z, y)
+  mean(x[i, 2]) / mean(x[i, 1])
+}
+#---------------------------
+B <- 2000
+ratio <- 
+  patch %>% 
+  select(z, y) %>% 
+  boot(
+    data = .,
+    statistic = bioequiv,
+    R = B,
+    parallel = "multicore",
+    ncpus = MC_CORES
+  )
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
