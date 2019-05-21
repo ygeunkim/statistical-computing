@@ -6,7 +6,11 @@ rmd_files: [
   "01-rand.rmd",
   
   "02-mc.rmd",
-  "03-inf.rmd"
+  "03-inf.rmd",
+  
+  "04-numanal.rmd",
+  
+  "05-mcmc.rmd"
 ]
 before_chapter_script: "_common.R"
 language:

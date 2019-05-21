@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{20 May, 2019}
+    \date{21 May, 2019}
 
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -3988,8 +3988,8 @@ Bootstrap is a class of nonparametric Monte Carlo methods that estimate the dist
 
 See Figure \ref{fig:resample}. From the observed sample, which is pseudo-population, resampling generates multiple bootstrap samples by \emph{sampling with replacement}. Surprisingly, this simple sampling procedure approximate the true population distribution quite successful.
 
-\hypertarget{approximations-in-bootstrap}{%
-\subsection{Approximations in bootstrap}\label{approximations-in-bootstrap}}
+\hypertarget{bootapprox}{%
+\subsection{Approximations in bootstrap}\label{bootapprox}}
 
 How does bootstrap work? \citet{Efron:1983bw} provides simple example \(T = \overline{x}\), i.e.~sample average.
 
@@ -4302,7 +4302,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 1.73}
+\CommentTok{#> [1] 2.4}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4376,7 +4376,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 2.39}
+\CommentTok{#> [1] 1.98}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4438,7 +4438,7 @@ Figure \ref{fig:benchboot} is comparing \texttt{for} loop with each \texttt{mc.c
 \end{Highlighting}
 \end{Shaded}
 
-Before performing bootstrap, we should define a \texttt{statistic} function. This function must take at least 2 arguments, data and index.
+Before performing bootstrap, we should define a \texttt{statistic} function. This function must take at least 2 arguments, data and index (\texttt{i}). About the second argument, \texttt{stype\ =\ c("i",\ "f",\ "w")} in \texttt{boot} is specifying in detail. Each \texttt{f} and \texttt{w} represents frequency and weight.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -4689,7 +4689,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0142       0.118}
+\CommentTok{#> t1*    0.776 -0.0168       0.126}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4806,7 +4806,7 @@ Refer to Example \ref{exm:bootcor}. \texttt{boot::boot()} have given following o
 \(\hat\beta_B\) is \texttt{bias}.
 
 \BeginKnitrBlock{example}[Bootstrap estimate of a ratio estimate]
-\protect\hypertarget{exm:ratbias}{}{\label{exm:ratbias} \iffalse (Bootstrap estimate of a ratio estimate) \fi{} }Consider medical patche data from \citet{Efron:1994aa}. It contains measurement for hormone into the blood stream of 8 subjects after wearing a medical patch. There are three different patches.
+\protect\hypertarget{exm:ratbias}{}{\label{exm:ratbias} \iffalse (Bootstrap estimate of a ratio estimate) \fi{} }Consider medical patch data from \citet{Efron:1994aa}. It contains measurement for hormone into the blood stream of 8 subjects after wearing a medical patch. There are three different patches.
 
 \begin{itemize}
   \item placebo patch
@@ -4823,7 +4823,7 @@ This is the parameter of our interest.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{patch}
+\KeywordTok{as_tibble}\NormalTok{(bootstrap}\OperatorTok{::}\NormalTok{patch)}
 \CommentTok{#> # A tibble: 8 x 6}
 \CommentTok{#>   subject placebo oldpatch newpatch     z     y}
 \CommentTok{#>     <int>   <dbl>    <dbl>    <dbl> <dbl> <dbl>}
@@ -4858,18 +4858,128 @@ We only need these two columns. \texttt{z} goes to denominator, \texttt{y} to nu
 \NormalTok{\}}
 \CommentTok{#---------------------------}
 \NormalTok{B <-}\StringTok{ }\DecValTok{2000}
-\NormalTok{ratio <-}\StringTok{ }
-\StringTok{  }\NormalTok{patch }\OperatorTok{%>%}\StringTok{ }
+\NormalTok{(ratio <-}\StringTok{ }
+\StringTok{  }\NormalTok{bootstrap}\OperatorTok{::}\NormalTok{patch }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{select}\NormalTok{(z, y) }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{boot}\NormalTok{(}
-    \DataTypeTok{data =}\NormalTok{ .,}
     \DataTypeTok{statistic =}\NormalTok{ bioequiv,}
     \DataTypeTok{R =}\NormalTok{ B,}
     \DataTypeTok{parallel =} \StringTok{"multicore"}\NormalTok{,}
     \DataTypeTok{ncpus =}\NormalTok{ MC_CORES}
-\NormalTok{  )}
+\NormalTok{  ))}
+\CommentTok{#> }
+\CommentTok{#> ORDINARY NONPARAMETRIC BOOTSTRAP}
+\CommentTok{#> }
+\CommentTok{#> }
+\CommentTok{#> Call:}
+\CommentTok{#> boot(data = ., statistic = bioequiv, R = B, parallel = "multicore", }
+\CommentTok{#>     ncpus = MC_CORES)}
+\CommentTok{#> }
+\CommentTok{#> }
+\CommentTok{#> Bootstrap Statistics :}
+\CommentTok{#>     original  bias    std. error}
+\CommentTok{#> t1*  -0.0713 0.00941       0.101}
 \end{Highlighting}
 \end{Shaded}
+
+\texttt{broom::tidy()} gives tidies a \texttt{boot} object so that we can deal with above three statistic more easily.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(ratio_tidy <-}\StringTok{ }
+\StringTok{  }\NormalTok{broom}\OperatorTok{::}\KeywordTok{tidy}\NormalTok{(ratio) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{mutate}\NormalTok{(}
+      \DataTypeTok{bias_se =}\NormalTok{ bias }\OperatorTok{/}\StringTok{ }\NormalTok{std.error,}
+      \DataTypeTok{ignore_bias =} \KeywordTok{ifelse}\NormalTok{(bias_se }\OperatorTok{<}\StringTok{ }\FloatTok{.25}\NormalTok{, }\StringTok{"ignore bias"}\NormalTok{, }\StringTok{"adjust for bias"}\NormalTok{)}
+\NormalTok{    ))}
+\CommentTok{#> # A tibble: 1 x 5}
+\CommentTok{#>   statistic    bias std.error bias_se ignore_bias}
+\CommentTok{#>       <dbl>   <dbl>     <dbl>   <dbl> <chr>      }
+\CommentTok{#> 1   -0.0713 0.00941     0.101  0.0929 ignore bias}
+\end{Highlighting}
+\end{Shaded}
+
+Since \(\frac{\hat\beta_B}{\hat\sigma_B} = 0.093\), we \(\text{ignore bias}\).
+
+\hypertarget{jackknife}{%
+\section{Jackknife}\label{jackknife}}
+
+Jackknife is another resampling method, which was developed earlier than bootstrap. As in Section \ref{bootapprox}, we start with simple example, estimating sample mean. Refer to Example \ref{exm:bootave}. We have seen estimated standard error \(\hat\sigma\) and boostrap estimate of standard error \(\hat\sigma_B\) in Theorems \ref{thm:samplemean} and \ref{thm:bootse}.
+
+\BeginKnitrBlock{theorem}[Jackknife standard error for sample mean]
+\protect\hypertarget{thm:jacksebar}{}{\label{thm:jacksebar} \iffalse (Jackknife standard error for sample mean) \fi{} }Let
+
+\[\overline{X}_{(i)} := \frac{n \overline{X} - X_i}{n - 1} = \frac{1}{n - 1}\sum_{j \neq i} X_j\]
+
+be the sample average of the set deleting \(i\)-th point. Write average of the deleted averages by \(\overline{X}_{(.)} = \frac{1}{n} \sum\limits_{i = 1}^n \overline{X}_{(i)}\). By construction,
+
+\[\overline{X}_{(.)} = \overline{X}\]
+
+Jackknife estimate of standard error for sample mean \(\overline{X}\) is
+
+\[\hat\sigma_J = \bigg[ \frac{n - 1}{n} \sum_{i = 1}^n \Big(\overline{X}_{(i)} - \overline{X}_{(.)} \Big)^2 \bigg]^{\frac{1}{2}}\]
+\EndKnitrBlock{theorem}
+
+\BeginKnitrBlock{remark}
+\iffalse{} {Remark. } \fi{}\[\hat\sigma = \hat\sigma_J\]
+\EndKnitrBlock{remark}
+
+\BeginKnitrBlock{proof}
+\iffalse{} {Proof. } \fi{}Note that
+
+\[\overline{X}_{(i)} = \frac{n \overline{X} - X_i}{n - 1}\]
+
+By construction,
+
+\begin{equation*}
+  \begin{split}
+    \overline{X}_{(.)} & = \frac{1}{n} \sum_{i = 1}^n \bigg[ \frac{n \overline{X} - X_i}{n - 1} \bigg] \\
+    & = \frac{n \overline{X}}{n - 1} - \frac{\overline{X}}{n - 1} \\
+    & = \overline{X}
+  \end{split}
+\end{equation*}
+
+It follows that
+
+\begin{equation*}
+  \begin{split}
+    \hat\sigma_J^2 = \frac{n - 1}{n} \sum_{i = 1}^n \Big(\overline{X}_{(i)} - \overline{X}_{(.)} \Big)^2 & = \frac{n - 1}{n} \sum_{i = 1}^n \bigg( \frac{n \overline{X} - X_i}{n - 1} - \overline{X} \bigg)^2 \\
+    & = \frac{n - 1}{n} \sum_{i = 1}^n \bigg( \frac{\overline{X} - X_i}{n - 1} \bigg)^2 \\
+    & = \frac{1}{n (n - 1)} \sum_{i = 1}^n \Big( X_i - \overline{X} \Big)^2 \\
+    & = \hat\sigma^2
+  \end{split}
+\end{equation*}
+\EndKnitrBlock{proof}
+
+\hypertarget{bootstrap-confidence-intervals}{%
+\section{Bootstrap Confidence Intervals}\label{bootstrap-confidence-intervals}}
+
+\hypertarget{numerical-methods}{%
+\chapter{Numerical Methods}\label{numerical-methods}}
+
+\hypertarget{introduction-1}{%
+\section{Introduction}\label{introduction-1}}
+
+\hypertarget{root-finding-in-one-dimension}{%
+\section{Root-finding in One Dimension}\label{root-finding-in-one-dimension}}
+
+\hypertarget{numerical-integration}{%
+\section{Numerical Integration}\label{numerical-integration}}
+
+\hypertarget{maximum-likelihood-problems}{%
+\section{Maximum Likelihood Problems}\label{maximum-likelihood-problems}}
+
+\hypertarget{one-dimensional-optimization}{%
+\section{One-Dimensional Optimization}\label{one-dimensional-optimization}}
+
+\hypertarget{two-dimensional-optimization}{%
+\section{Two-Dimensional Optimization}\label{two-dimensional-optimization}}
+
+\hypertarget{em-algorithm}{%
+\section{EM Algorithm}\label{em-algorithm}}
+
+\hypertarget{markov-chain-monte-carlo-methods}{%
+\chapter{Markov Chain Monte Carlo Methods}\label{markov-chain-monte-carlo-methods}}
 
 \bibliography{book.bib,packages.bib}
 

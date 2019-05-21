@@ -1,0 +1,23 @@
+# Numerical Methods
+
+## Introduction
+
+
+## Root-finding in One Dimension
+
+
+## Numerical Integration
+
+
+## Maximum Likelihood Problems
+
+
+## One-Dimensional Optimization
+
+
+## Two-Dimensional Optimization
+
+
+## EM Algorithm
+
+

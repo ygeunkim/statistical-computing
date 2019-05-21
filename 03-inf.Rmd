@@ -842,7 +842,7 @@ knitr::include_graphics("images/resample.png")
 
 See Figure \@ref(fig:resample). From the observed sample, which is pseudo-population, resampling generates multiple bootstrap samples by *sampling with replacement*. Surprisingly, this simple sampling procedure approximate the true population distribution quite successful.
 
-### Approximations in bootstrap
+### Approximations in bootstrap {#bootapprox}
 
 How does bootstrap work? @Efron:1983bw provides simple example $T = \overline{x}$, i.e. sample average.
 
@@ -1201,7 +1201,7 @@ Figure \@ref(fig:benchboot) is comparing `for` loop with each `mc.cores`. It is 
 library(boot)
 ```
 
-Before performing bootstrap, we should define a `statistic` function. This function must take at least 2 arguments, data and index.
+Before performing bootstrap, we should define a `statistic` function. This function must take at least 2 arguments, data and index (`i`). About the second argument, `stype = c("i", "f", "w")` in `boot` is specifying in detail. Each `f` and `w` represents frequency and weight.
 
 ```{r}
 mean_boot <- function(x, i) {
@@ -1456,12 +1456,12 @@ rho
 
 $\hat\beta_B$ is `bias`.
 
-```{r, include=FALSE}
-patch <- bootstrap::patch %>% as_tibble()
-```
+<!-- ```{r, include=FALSE} -->
+<!-- patch <- bootstrap::patch %>% as_tibble() -->
+<!-- ``` -->
 
 ```{example, ratbias, name = "Bootstrap estimate of a ratio estimate"}
-Consider medical patche data from @Efron:1994aa. It contains measurement for hormone into the blood stream of 8 subjects after wearing a medical patch. There are three different patches.
+Consider medical patch data from @Efron:1994aa. It contains measurement for hormone into the blood stream of 8 subjects after wearing a medical patch. There are three different patches.
 
 \begin{itemize}
   \item placebo patch
@@ -1477,7 +1477,7 @@ This is the parameter of our interest.
 ```
 
 ```{r}
-patch
+as_tibble(bootstrap::patch)
 ```
 
 In `patch`,
@@ -1487,23 +1487,85 @@ In `patch`,
 
 We only need these two columns. `z` goes to denominator, `y` to numerator.
 
-```{r, eval=FALSE}
+```{r}
 bioequiv <- function(x, i) {
   # select(z, y)
   mean(x[i, 2]) / mean(x[i, 1])
 }
 #---------------------------
 B <- 2000
-ratio <- 
-  patch %>% 
+(ratio <- 
+  bootstrap::patch %>% 
   select(z, y) %>% 
   boot(
-    data = .,
     statistic = bioequiv,
     R = B,
     parallel = "multicore",
     ncpus = MC_CORES
-  )
+  ))
+```
+
+`broom::tidy()` gives tidies a `boot` object so that we can deal with above three statistic more easily.
+
+```{r}
+(ratio_tidy <- 
+  broom::tidy(ratio) %>% 
+    mutate(
+      bias_se = bias / std.error,
+      ignore_bias = ifelse(bias_se < .25, "ignore bias", "adjust for bias")
+    ))
+```
+
+Since $\frac{\hat\beta_B}{\hat\sigma_B} = `r ratio_tidy$bias_se`$, we $\text{`r ratio_tidy$ignore_bias`}$.
+
+
+## Jackknife
+
+Jackknife is another resampling method, which was developed earlier than bootstrap. As in Section \@ref(bootapprox), we start with simple example, estimating sample mean. Refer to Example \@ref(exm:bootave). We have seen estimated standard error $\hat\sigma$ and boostrap estimate of standard error $\hat\sigma_B$ in Theorems \@ref(thm:samplemean) and \@ref(thm:bootse).
+
+```{theorem, jacksebar, name = "Jackknife standard error for sample mean"}
+Let
+
+$$\overline{X}_{(i)} := \frac{n \overline{X} - X_i}{n - 1} = \frac{1}{n - 1}\sum_{j \neq i} X_j$$
+
+be the sample average of the set deleting $i$-th point. Write average of the deleted averages by $\overline{X}_{(.)} = \frac{1}{n} \sum\limits_{i = 1}^n \overline{X}_{(i)}$. By construction,
+
+$$\overline{X}_{(.)} = \overline{X}$$
+
+Jackknife estimate of standard error for sample mean $\overline{X}$ is
+
+$$\hat\sigma_J = \bigg[ \frac{n - 1}{n} \sum_{i = 1}^n \Big(\overline{X}_{(i)} - \overline{X}_{(.)} \Big)^2 \bigg]^{\frac{1}{2}}$$
+```
+
+```{remark}
+$$\hat\sigma = \hat\sigma_J$$
+```
+
+```{proof}
+Note that
+
+$$\overline{X}_{(i)} = \frac{n \overline{X} - X_i}{n - 1}$$
+
+By construction,
+
+\begin{equation*}
+  \begin{split}
+    \overline{X}_{(.)} & = \frac{1}{n} \sum_{i = 1}^n \bigg[ \frac{n \overline{X} - X_i}{n - 1} \bigg] \\
+    & = \frac{n \overline{X}}{n - 1} - \frac{\overline{X}}{n - 1} \\
+    & = \overline{X}
+  \end{split}
+\end{equation*}
+
+It follows that
+
+\begin{equation*}
+  \begin{split}
+    \hat\sigma_J^2 = \frac{n - 1}{n} \sum_{i = 1}^n \Big(\overline{X}_{(i)} - \overline{X}_{(.)} \Big)^2 & = \frac{n - 1}{n} \sum_{i = 1}^n \bigg( \frac{n \overline{X} - X_i}{n - 1} - \overline{X} \bigg)^2 \\
+    & = \frac{n - 1}{n} \sum_{i = 1}^n \bigg( \frac{\overline{X} - X_i}{n - 1} \bigg)^2 \\
+    & = \frac{1}{n (n - 1)} \sum_{i = 1}^n \Big( X_i - \overline{X} \Big)^2 \\
+    & = \hat\sigma^2
+  \end{split}
+\end{equation*}
 ```
 
 
@@ -1513,14 +1575,7 @@ ratio <-
 
 
 
-
-
-
-
-
-
-
-
+## Bootstrap Confidence Intervals
 
 
 
