@@ -2,6 +2,31 @@
 
 ## Introduction
 
+### Computer representation of real numbers
+
+Any positive decimal number $x$ is represented by the ordered coefficents $\{ d_j : j = n, n - 1, \ldots \} \subseteq \{ 0, 1, \ldots, 9 \}$
+
+\begin{equation}
+  x = d_n 10^n + d_{n - 1} 10 ^{n - 1} + \cdots + d_1 10 + d_0 + d_{-1} 10^{-1} + \cdots
+  (\#eq:decimal)
+\end{equation}
+
+For same number $x$, other base $2$ can also be used with binary digits $\{ a_j \} \subseteq \{ 0, 1 \}$
+
+\begin{equation}
+  x = a_k 2^k + a_{k - 1} 2 ^{k - 1} + \cdots + a_1 2 + a_0 + a_{-1} 2^{-1} + \cdots
+  (\#eq:base2)
+\end{equation}
+
+Point between $a_0$ and $a_{-1}$ is called the radix point here.
+
+```{r}
+sfsmisc::digitsBase(320, base = 10)
+sfsmisc::digitsBase(320, base = 2)
+```
+
+See Equations \@ref(eq:decimal) and \@ref(eq:base2). Numbers are expressed with series.
+
 
 ## Root-finding in One Dimension
 
@@ -18,6 +43,55 @@
 ## Two-Dimensional Optimization
 
 
+```{r}
+mix_ll <- function(param, y) {
+  # mixing probability
+  prob <- param[1:2]
+  prob <- c(prob, 1 - sum(prob))
+  # rate of dgamma
+  rate <- param[3:4]
+  rate <- c(rate, 1 - sum(rate)) # constraint
+  dens <-
+    sapply(rate, function(b) {
+      dgamma(x = y, shape = 1 / 2, rate = 1 / (2 * b))
+    }) %*%
+    diag(prob) %>% 
+    rowSums()
+  -sum(log(dens))
+}
+```
+
+```{r}
+init_lam <- 
+  sample(
+    c(.6, .25, .15),
+    size = 2000,
+    replace = TRUE
+  )
+y <- rgamma(2000, shape = 1 / 2, rate =  1 / (2 * init_lam))
+```
+
+```{r}
+opt <- optim(c(.3, .3, .5, .3), mix_ll, y = y)
+```
+
+```{r}
+opt_df <- 
+  broom::tidy(opt) %>% 
+  spread(parameter, value)
+#---------------------
+colnames(opt_df) <- c("prob1", "prob2", "lambda1", "lambda2")
+opt_df %>% 
+  mutate(
+    prob3 = 1 - prob1 - prob2,
+    lambda3 = 1 - lambda1 - lambda2
+  ) %>% 
+  select(order(colnames(.)))
+```
+
+
 ## EM Algorithm
+
+
 
 
