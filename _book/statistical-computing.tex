@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{21 May, 2019}
+    \date{22 May, 2019}
 
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -4171,7 +4171,7 @@ From Theorem \ref{thm:samplemean}, this \(\overline{X}^{\ast}\) has \emph{estima
 In fact, this is a variance \emph{under sampling scheme} \eqref{eq:samplescheme}, i.e.~indicates one-time-sampling from \(\hat{F}\). Using this, we can construct \textbf{bootstrap estimate of standard error for sample mean}, which come by sampling \(B\) times.
 
 \begin{equation}
-  \hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\overline{X}_b^{\ast} - \overline{X}_{.}^{\ast}) \bigg]^{\frac{1}{2}}
+  \hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\overline{X}_b^{\ast} - \overline{X}_{.}^{\ast})^2 \bigg]^{\frac{1}{2}}
   \label{eq:sebootave}
 \end{equation}
 
@@ -4180,7 +4180,7 @@ where \(\overline{X}_b^{\ast}\) is a sample mean of \(b\)-th bootstrap replicate
 \BeginKnitrBlock{theorem}[Bootstrap standard error]
 \protect\hypertarget{thm:bootse}{}{\label{thm:bootse} \iffalse (Bootstrap standard error) \fi{} }Bootstrap estimate of standard error for any estimator \(\hat\theta(X_1, \ldots, X_n)\) is
 
-\[\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}}) \bigg]^{\frac{1}{2}}\]
+\[\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}})^2 \bigg]^{\frac{1}{2}}\]
 
 where \(\hat\theta_b^{\ast}\) is independent bootstrap replications and
 
@@ -4193,13 +4193,14 @@ Now we format Figure \ref{fig:bootapprox} to practical algorithm.
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
-  \Input{$n$ observations $x_1, \ldots, x_n$}
+  \KwData{$n$ observations $x_1, \ldots, x_n$}
+  \Input{statistic of interest $\hat\theta$, the number of bootstrap replicates $B$}
   \For{$b \leftarrow 1$ \KwTo $B$}{
     Sampling with replacement $X_{1}^{(b)}, \ldots, X_n^{(b)}$ from the observed sample\;
     Compute estimate $$\hat\theta(X_{1}^{(b)}, \ldots, X_n^{(b)}) \equiv \hat\theta_b^{\ast}$$\;
   }
   $\overline{\hat\theta^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\theta_b^{\ast}$\;
-  Bootsrap standard error $$\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}}) \bigg]^{\frac{1}{2}}$$\;
+  Bootsrap standard error $$\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}})^2 \bigg]^{\frac{1}{2}}$$\;
   \Output{$\hat\sigma_B$}
   \caption{Bootstrap algorithm}
 \end{algorithm}
@@ -4302,7 +4303,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.4}
+\CommentTok{#> [1] 1.94}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4376,7 +4377,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 1.98}
+\CommentTok{#> [1] 2.32}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4584,7 +4585,7 @@ Let \(\mathbf{X}_i^T = (Y_i, Z_i)\) be each observation. Dependency should be ke
     Sample correlation coefficient $$\hat\rho_b^{\ast} = \frac{\sum (Y_i^{(b)} - \overline{Y}^{(b)})(Z_i^{(b)} - \overline{Z}^{(b)})}{\sqrt{\sum (Y_i^{(b)} - \overline{Y}^{(b)})^2}\sqrt{\sum (Z_i^{(b)} - \overline{Z}^{(b)})^2}}$$\;
   }
   $\overline{\hat\rho^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\rho_b^{\ast}$\;
-  Bootsrap standard error $$\hat\sigma_B (\hat\rho) = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\rho_b^{\ast} - \overline{\hat\rho^{\ast}}) \bigg]^{\frac{1}{2}}$$\; \label{alg:seout}
+  Bootsrap standard error $$\hat\sigma_B (\hat\rho) = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\rho_b^{\ast} - \overline{\hat\rho^{\ast}})^2 \bigg]^{\frac{1}{2}}$$\; \label{alg:seout}
   \Output{$\hat\sigma_B (\hat\rho)$}
   \caption{Estimation of correlation coefficient - standard error}
 \end{algorithm}
@@ -4689,7 +4690,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0168       0.126}
+\CommentTok{#> t1*    0.776 -0.0148       0.122}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4951,6 +4952,38 @@ It follows that
 \end{equation*}
 \EndKnitrBlock{proof}
 
+Instead of bootstrap sample \(\mathbf{X}^{(b)}\), \emph{jackknife sample} \(\mathbf{X}_{(i)}\) will be used. It leaves out the \(i\)-th observation.
+
+\begin{equation}
+  \mathbf{X}_{(i)} = (X_1, \ldots, X_{i - 1}, X_{i + 1}, \ldots, X_n)^T
+  \label{eq:jacksam}
+\end{equation}
+
+For each \(\mathbf{X}_{(i)}\), \emph{jackknife replicate} which is a form of our interest is computed.
+
+\begin{equation}
+  \hat\theta_{(i)} = \hat\theta(\mathbf{X}_{(i)})
+  \label{eq:jackrep}
+\end{equation}
+
+Using a set of jackknife replicates, get empirical distribution of this estimator such as standard error and bias.
+
+\begin{algorithm}[H] \label{alg:algjack}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{$n$ observations $x_1, \ldots, x_n$}
+  \Input{statistic of interest $\hat\theta$}
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    Subset of $\mathbf{X}$ that leaves out the $i$-th observation $X_1, \ldots, X_{i - 1}, X_{i + 1}, \ldots, X_n$\;
+    Compute estimate $$\hat\theta(X_1, \ldots, X_{i - 1}, X_{i + 1}, \ldots, X_n) \equiv \hat\theta_{(i)}$$\;
+  }
+  $\hat\theta_{(.)} = \frac{1}{n} \sum\limits_{i = 1}^n \hat\theta_{(i)}$\;
+  Jackknife standard error $$\hat\sigma_J = \bigg[ \frac{n - 1}{n} \sum_{i = 1}^n (\hat\theta_{(i)} - \hat\theta_{(.)})^2 \bigg]^{\frac{1}{2}}$$\;
+  \Output{$\hat\sigma_J$}
+  \caption{Jackknife algorithm}
+\end{algorithm}
+
 \hypertarget{bootstrap-confidence-intervals}{%
 \section{Bootstrap Confidence Intervals}\label{bootstrap-confidence-intervals}}
 
@@ -4959,6 +4992,50 @@ It follows that
 
 \hypertarget{introduction-1}{%
 \section{Introduction}\label{introduction-1}}
+
+\hypertarget{computer-representation-of-real-numbers}{%
+\subsection{Computer representation of real numbers}\label{computer-representation-of-real-numbers}}
+
+Any positive decimal number \(x\) is represented by the ordered coefficents \(\{ d_j : j = n, n - 1, \ldots \} \subseteq \{ 0, 1, \ldots, 9 \}\)
+
+\begin{equation}
+  x = d_n 10^n + d_{n - 1} 10 ^{n - 1} + \cdots + d_1 10 + d_0 + d_{-1} 10^{-1} + \cdots
+  \label{eq:decimal}
+\end{equation}
+
+For same number \(x\), other base \(2\) can also be used with binary digits \(\{ a_j \} \subseteq \{ 0, 1 \}\)
+
+\begin{equation}
+  x = a_k 2^k + a_{k - 1} 2 ^{k - 1} + \cdots + a_1 2 + a_0 + a_{-1} 2^{-1} + \cdots
+  \label{eq:base2}
+\end{equation}
+
+Point between \(a_0\) and \(a_{-1}\) is called the radix point here.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sfsmisc}\OperatorTok{::}\KeywordTok{digitsBase}\NormalTok{(}\DecValTok{320}\NormalTok{, }\DataTypeTok{base =} \DecValTok{10}\NormalTok{)}
+\CommentTok{#> Class 'basedInt'(base = 10) [1:1]}
+\CommentTok{#>      [,1]}
+\CommentTok{#> [1,]    3}
+\CommentTok{#> [2,]    2}
+\CommentTok{#> [3,]    0}
+\NormalTok{sfsmisc}\OperatorTok{::}\KeywordTok{digitsBase}\NormalTok{(}\DecValTok{320}\NormalTok{, }\DataTypeTok{base =} \DecValTok{2}\NormalTok{)}
+\CommentTok{#> Class 'basedInt'(base = 2) [1:1]}
+\CommentTok{#>       [,1]}
+\CommentTok{#>  [1,]    1}
+\CommentTok{#>  [2,]    0}
+\CommentTok{#>  [3,]    1}
+\CommentTok{#>  [4,]    0}
+\CommentTok{#>  [5,]    0}
+\CommentTok{#>  [6,]    0}
+\CommentTok{#>  [7,]    0}
+\CommentTok{#>  [8,]    0}
+\CommentTok{#>  [9,]    0}
+\end{Highlighting}
+\end{Shaded}
+
+See Equations \eqref{eq:decimal} and \eqref{eq:base2}. Numbers are expressed with series.
 
 \hypertarget{root-finding-in-one-dimension}{%
 \section{Root-finding in One Dimension}\label{root-finding-in-one-dimension}}
@@ -4974,6 +5051,64 @@ It follows that
 
 \hypertarget{two-dimensional-optimization}{%
 \section{Two-Dimensional Optimization}\label{two-dimensional-optimization}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mix_ll <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(param, y) \{}
+  \CommentTok{# mixing probability}
+\NormalTok{  prob <-}\StringTok{ }\NormalTok{param[}\DecValTok{1}\OperatorTok{:}\DecValTok{2}\NormalTok{]}
+\NormalTok{  prob <-}\StringTok{ }\KeywordTok{c}\NormalTok{(prob, }\DecValTok{1} \OperatorTok{-}\StringTok{ }\KeywordTok{sum}\NormalTok{(prob))}
+  \CommentTok{# rate of dgamma}
+\NormalTok{  rate <-}\StringTok{ }\NormalTok{param[}\DecValTok{3}\OperatorTok{:}\DecValTok{4}\NormalTok{]}
+\NormalTok{  rate <-}\StringTok{ }\KeywordTok{c}\NormalTok{(rate, }\DecValTok{1} \OperatorTok{-}\StringTok{ }\KeywordTok{sum}\NormalTok{(rate)) }\CommentTok{# constraint}
+\NormalTok{  dens <-}
+\StringTok{    }\KeywordTok{sapply}\NormalTok{(rate, }\ControlFlowTok{function}\NormalTok{(b) \{}
+      \KeywordTok{dgamma}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ y, }\DataTypeTok{shape =} \DecValTok{1} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{, }\DataTypeTok{rate =} \DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{b))}
+\NormalTok{    \}) }\OperatorTok{%*%}
+\StringTok{    }\KeywordTok{diag}\NormalTok{(prob) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{rowSums}\NormalTok{()}
+  \OperatorTok{-}\KeywordTok{sum}\NormalTok{(}\KeywordTok{log}\NormalTok{(dens))}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{init_lam <-}\StringTok{ }
+\StringTok{  }\KeywordTok{sample}\NormalTok{(}
+    \KeywordTok{c}\NormalTok{(.}\DecValTok{6}\NormalTok{, }\FloatTok{.25}\NormalTok{, }\FloatTok{.15}\NormalTok{),}
+    \DataTypeTok{size =} \DecValTok{2000}\NormalTok{,}
+    \DataTypeTok{replace =} \OtherTok{TRUE}
+\NormalTok{  )}
+\NormalTok{y <-}\StringTok{ }\KeywordTok{rgamma}\NormalTok{(}\DecValTok{2000}\NormalTok{, }\DataTypeTok{shape =} \DecValTok{1} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{, }\DataTypeTok{rate =}  \DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{init_lam))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{opt <-}\StringTok{ }\KeywordTok{optim}\NormalTok{(}\KeywordTok{c}\NormalTok{(.}\DecValTok{3}\NormalTok{, }\FloatTok{.3}\NormalTok{, }\FloatTok{.5}\NormalTok{, }\FloatTok{.3}\NormalTok{), mix_ll, }\DataTypeTok{y =}\NormalTok{ y)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{opt_df <-}\StringTok{ }
+\StringTok{  }\NormalTok{broom}\OperatorTok{::}\KeywordTok{tidy}\NormalTok{(opt) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{spread}\NormalTok{(parameter, value)}
+\CommentTok{#---------------------}
+\KeywordTok{colnames}\NormalTok{(opt_df) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"prob1"}\NormalTok{, }\StringTok{"prob2"}\NormalTok{, }\StringTok{"lambda1"}\NormalTok{, }\StringTok{"lambda2"}\NormalTok{)}
+\NormalTok{opt_df }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}
+    \DataTypeTok{prob3 =} \DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{prob1 }\OperatorTok{-}\StringTok{ }\NormalTok{prob2,}
+    \DataTypeTok{lambda3 =} \DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{lambda1 }\OperatorTok{-}\StringTok{ }\NormalTok{lambda2}
+\NormalTok{  ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{select}\NormalTok{(}\KeywordTok{order}\NormalTok{(}\KeywordTok{colnames}\NormalTok{(.)))}
+\CommentTok{#> # A tibble: 1 x 6}
+\CommentTok{#>   lambda1 lambda2 lambda3 prob1 prob2 prob3}
+\CommentTok{#>     <dbl>   <dbl>   <dbl> <dbl> <dbl> <dbl>}
+\CommentTok{#> 1   0.608   0.199   0.193 0.283 0.385 0.332}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{em-algorithm}{%
 \section{EM Algorithm}\label{em-algorithm}}

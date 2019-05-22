@@ -1022,7 +1022,7 @@ From Theorem \@ref(thm:samplemean), this $\overline{X}^{\ast}$ has *estimated va
 In fact, this is a variance *under sampling scheme* \@ref(eq:samplescheme), i.e. indicates one-time-sampling from $\hat{F}$. Using this, we can construct **bootstrap estimate of standard error for sample mean**, which come by sampling $B$ times.
 
 \begin{equation}
-  \hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\overline{X}_b^{\ast} - \overline{X}_{.}^{\ast}) \bigg]^{\frac{1}{2}}
+  \hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\overline{X}_b^{\ast} - \overline{X}_{.}^{\ast})^2 \bigg]^{\frac{1}{2}}
   (\#eq:sebootave)
 \end{equation}
 
@@ -1031,7 +1031,7 @@ where $\overline{X}_b^{\ast}$ is a sample mean of $b$-th bootstrap replicate and
 ```{theorem, bootse, name = "Bootstrap standard error"}
 Bootstrap estimate of standard error for any estimator $\hat\theta(X_1, \ldots, X_n)$ is
 
-$$\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}}) \bigg]^{\frac{1}{2}}$$
+$$\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}})^2 \bigg]^{\frac{1}{2}}$$
 
 where $\hat\theta_b^{\ast}$ is independent bootstrap replications and
 
@@ -1044,13 +1044,14 @@ Now we format Figure \@ref(fig:bootapprox) to practical algorithm.
   \SetAlgoLined
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
-  \Input{$n$ observations $x_1, \ldots, x_n$}
+  \KwData{$n$ observations $x_1, \ldots, x_n$}
+  \Input{statistic of interest $\hat\theta$, the number of bootstrap replicates $B$}
   \For{$b \leftarrow 1$ \KwTo $B$}{
     Sampling with replacement $X_{1}^{(b)}, \ldots, X_n^{(b)}$ from the observed sample\;
     Compute estimate $$\hat\theta(X_{1}^{(b)}, \ldots, X_n^{(b)}) \equiv \hat\theta_b^{\ast}$$\;
   }
   $\overline{\hat\theta^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\theta_b^{\ast}$\;
-  Bootsrap standard error $$\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}}) \bigg]^{\frac{1}{2}}$$\;
+  Bootsrap standard error $$\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}})^2 \bigg]^{\frac{1}{2}}$$\;
   \Output{$\hat\sigma_B$}
   \caption{Bootstrap algorithm}
 \end{algorithm}
@@ -1290,7 +1291,7 @@ Let $\mathbf{X}_i^T = (Y_i, Z_i)$ be each observation. Dependency should be kept
     Sample correlation coefficient $$\hat\rho_b^{\ast} = \frac{\sum (Y_i^{(b)} - \overline{Y}^{(b)})(Z_i^{(b)} - \overline{Z}^{(b)})}{\sqrt{\sum (Y_i^{(b)} - \overline{Y}^{(b)})^2}\sqrt{\sum (Z_i^{(b)} - \overline{Z}^{(b)})^2}}$$\;
   }
   $\overline{\hat\rho^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\rho_b^{\ast}$\;
-  Bootsrap standard error $$\hat\sigma_B (\hat\rho) = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\rho_b^{\ast} - \overline{\hat\rho^{\ast}}) \bigg]^{\frac{1}{2}}$$\; \label{alg:seout}
+  Bootsrap standard error $$\hat\sigma_B (\hat\rho) = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\rho_b^{\ast} - \overline{\hat\rho^{\ast}})^2 \bigg]^{\frac{1}{2}}$$\; \label{alg:seout}
   \Output{$\hat\sigma_B (\hat\rho)$}
   \caption{Estimation of correlation coefficient - standard error}
 \end{algorithm}
@@ -1567,6 +1568,39 @@ It follows that
   \end{split}
 \end{equation*}
 ```
+
+Instead of bootstrap sample $\mathbf{X}^{(b)}$, *jackknife sample* $\mathbf{X}_{(i)}$ will be used. It leaves out the $i$-th observation.
+
+\begin{equation}
+  \mathbf{X}_{(i)} = (X_1, \ldots, X_{i - 1}, X_{i + 1}, \ldots, X_n)^T
+  (\#eq:jacksam)
+\end{equation}
+
+For each $\mathbf{X}_{(i)}$, *jackknife replicate* which is a form of our interest is computed.
+
+\begin{equation}
+  \hat\theta_{(i)} = \hat\theta(\mathbf{X}_{(i)})
+  (\#eq:jackrep)
+\end{equation}
+
+Using a set of jackknife replicates, get empirical distribution of this estimator such as standard error and bias.
+
+\begin{algorithm}[H] \label{alg:algjack}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{$n$ observations $x_1, \ldots, x_n$}
+  \Input{statistic of interest $\hat\theta$}
+  \For{$i \leftarrow 1$ \KwTo $n$}{
+    Subset of $\mathbf{X}$ that leaves out the $i$-th observation $X_1, \ldots, X_{i - 1}, X_{i + 1}, \ldots, X_n$\;
+    Compute estimate $$\hat\theta(X_1, \ldots, X_{i - 1}, X_{i + 1}, \ldots, X_n) \equiv \hat\theta_{(i)}$$\;
+  }
+  $\hat\theta_{(.)} = \frac{1}{n} \sum\limits_{i = 1}^n \hat\theta_{(i)}$\;
+  Jackknife standard error $$\hat\sigma_J = \bigg[ \frac{n - 1}{n} \sum_{i = 1}^n (\hat\theta_{(i)} - \hat\theta_{(.)})^2 \bigg]^{\frac{1}{2}}$$\;
+  \Output{$\hat\sigma_J$}
+  \caption{Jackknife algorithm}
+\end{algorithm}
+
 
 
 
