@@ -10,6 +10,10 @@ knitr::opts_chunk$set(
   fig.pos = "H"
  )
 
+knitr::knit_hooks$set(document = function(x) {
+  sub("\\usepackage[]{color}", "\\usepackage{xcolor}", x, fixed = TRUE)
+})
+
 # tidyverse -----------------------------------
 library(tidyverse)
 # data.table ----------------------------------

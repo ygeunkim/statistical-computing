@@ -27,8 +27,139 @@ sfsmisc::digitsBase(320, base = 2)
 
 See Equations \@ref(eq:decimal) and \@ref(eq:base2). Numbers are expressed with series.
 
+```{example, machineeps, name = "Identical and nearly equal"}
+$0.3 - 0.1$ is equal to $0.2$. Can we check this?
+```
+
+```{r}
+(.3 - .1) == .2
+```
+
+It is obviously same, but `R` says it is different. Why?
+
+```{r}
+.Machine$double.eps
+```
+
+The above number is the smallest positive floating number that the machine can recognize. `all.equal()` function can solve this kind of near-equality problem.
+
+```{r}
+all.equal(.2, .3 - .1)
+```
+
 
 ## Root-finding in One Dimension
+
+In statistics, it is one of issues to find solutions of
+
+$$f(x) = 0$$
+
+There are various algorithms.
+
+### Bisection method
+
+```{r bisecfig, echo=FALSE, fig.cap="Illustration of bisection method"}
+tibble(x = c(0, 2)) %>% 
+  ggplot(aes(x = x)) +
+  modelr::geom_ref_line(h = 0) +
+  stat_function(fun = function(x) {
+    (x - 3)^2 - 2
+  }) +
+  geom_vline(xintercept = c(.5, 1.7), alpha = .5, col = I("grey10")) +
+  annotate(
+    geom = "point",
+    x = -sqrt(2) + 3,
+    y = 0,
+    col = "red",
+    shape = 1
+  )
+```
+
+Figure \@ref(fig:bisecfig) presents the motivation of bisection method. On both sides of the root, one side of function value is positive and the other side is negative. Thus, if we find any set like this, then we only narrow the two points until finding the solution.
+
+\begin{algorithm}[H] \label{alg:bisection}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{Equation system $f(x) = 0$, error bound $\epsilon$}
+  Initialize two points $x_0$ and $x_1$ such that $$f(x_0) f(x_1) \le 0$$\;
+  \If{$f(x_0) f(x_1) < 0$}{
+    Change initial values\;
+  }
+  Set error $e = \lvert x_1 - x_0 \rvert$\;
+  \While{$e > \epsilon$}{ \label{alg:bisecwhile}
+    Half $$x_2 = \frac{x_0 + x_1}{2}$$\;
+    Length of the interval becomes half $e = \frac{e}{2}$\;
+    \eIf{$f(x_0) f(x_2) < 0$}{
+      Update $x_1 = x_2$\;
+    }{
+      Update $x_0 = x_2$\;
+    }
+  }
+  \Output{$x = x_2$}
+  \caption{Bisection algorithm}
+\end{algorithm}
+
+In Line $\ref{alg:bisecwhile}$, we can use condition
+
+$$\lvert f(x_2) \rvert > \epsilon$$
+
+instead, which means that we did not find the root yet.
+
+```{example, bisecexm}
+Solve $$a^2 + y^2 + \frac{2ay}{n - 1} = n - 2$$
+
+where $a$ is a specified constant and $n > 2$ is an integer.
+```
+
+```{solution}
+It can be shown that the analytical solution is
+
+$$y = - \frac{a}{n - 1} \pm \sqrt{n - 2 + a^2 + \Big( \frac{a}{n - 1} \Big)^2}$$
+```
+
+```{r}
+f_bisec <- function(x, a = .5, n = 20) {
+  a^2 + x^2 + 2 * a * x / (n - 1) - (n - 2)
+}
+#-----------------------------
+bisection <- function(x0, x1, fun, eps = .Machine$double.eps^.25, rep_max = 1000, ...) {
+  iter <- 0 # stop too many iteration
+  if (fun(x0, ...) * fun(x1, ...) > 0) {
+    stop(gettextf("both %s and %s should be satisfy the condition", expression(x0), expression(x1)))
+  }
+  init <- seq(x0, x1, length.out = 3) # x0 x2 x1
+  y <- f_bisec(init)
+  while (iter < 1000 && abs(y[2]) > eps) {
+    iter <- iter + 1
+    if (y[1] * y[2] < 0) {
+      init[3] <- init[2]
+      y[3] <- y[2]
+    } else {
+      init[1] <- init[2]
+      y[1] <- y[2]
+    }
+    init[2] <- (init[1] + init[3]) / 2
+    y[2] <- fun(init[2], ...)
+  }
+  c(init[2], y[2])
+}
+```
+
+Using initioal values $x_0 = 0$ and $X_1 = 100$,
+
+```{r}
+(bi_exm <- bisection(0, 100, fun = f_bisec, a = .5, n = 20))
+```
+
+$x = `r bi_exm[1]`$ has been computed. The following figure shows that this answer is reasonable.
+
+```{r bisecroot, echo=FALSE, fig.cap="Example curve"}
+tibble(x = c(0, 10)) %>% 
+  ggplot(aes(x = x)) +
+  stat_function(fun = f_bisec) +
+  annotate(geom = "point", x = bi_exm[1], y = f_bisec(bi_exm[1]), col = "red", shape = 4)
+```
 
 
 ## Numerical Integration

@@ -126,12 +126,11 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{22 May, 2019}
+    \date{08 Jun, 2019}
 
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{float}
-\usepackage{xcolor}
 \usepackage{pdfpages}
 \usepackage{hyperref}
 \usepackage[boxruled, linesnumbered]{algorithm2e}
@@ -187,7 +186,7 @@
 \chapter*{Welcome}\label{welcome}}
 \addcontentsline{toc}{chapter}{Welcome}
 
- Statistical computing mainly treats useful simulation methods.
+Statistical computing mainly treats useful simulation methods.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -212,7 +211,7 @@ Generating random numbers is like sampling. From finite population, we can sampl
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sample}\NormalTok{(}\DecValTok{0}\OperatorTok{:}\DecValTok{1}\NormalTok{, }\DataTypeTok{size =} \DecValTok{10}\NormalTok{, }\DataTypeTok{replace =} \OtherTok{TRUE}\NormalTok{)}
-\CommentTok{#>  [1] 1 0 0 1 0 1 1 0 1 1}
+\CommentTok{#>  [1] 0 1 0 1 0 0 0 0 1 0}
 \end{Highlighting}
 \end{Shaded}
 
@@ -221,7 +220,7 @@ Sampling without replacement: Choose some lottery numbers which consist of 1 to 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sample}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\DecValTok{100}\NormalTok{, }\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{replace =} \OtherTok{FALSE}\NormalTok{)}
-\CommentTok{#> [1] 61 83 50 74 34 35}
+\CommentTok{#> [1] 26 31 69 12 48 21}
 \end{Highlighting}
 \end{Shaded}
 
@@ -699,7 +698,7 @@ Hence,
 
 \[E(N) = \frac{1}{p} = c\]
 
-We can say that the method is efficient when the acceptance rate \(p\) is large, i.e. \(c\) small.
+We can say that the method is efficient when the acceptance rate \(p\) is large, i.e.~\(c\) small.
 \EndKnitrBlock{proof}
 
 \BeginKnitrBlock{corollary}[Efficiency of A-R Method]
@@ -726,7 +725,7 @@ have small \(c\).
 \EndKnitrBlock{example}
 
 \BeginKnitrBlock{solution}[Generating Beta(a,b) with A-R method]
-\iffalse{} {Solution (Generating Beta(a,b) with A-R method). } \fi{}Consider proposal density \(g(x) = I_{(0, 1)}(x)\), i.e. \(unif(0, 1)\).
+\iffalse{} {Solution (Generating Beta(a,b) with A-R method). } \fi{}Consider proposal density \(g(x) = I_{(0, 1)}(x)\), i.e.~\(unif(0, 1)\).
 
 To determine the optimal \(c\) s.t.
 
@@ -1351,6 +1350,9 @@ Generate
 \StringTok{  }\NormalTok{GGally}\OperatorTok{::}\KeywordTok{ggpairs}\NormalTok{(}
     \DataTypeTok{lower =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{continuous =}\NormalTok{ GGally}\OperatorTok{::}\KeywordTok{wrap}\NormalTok{(gg_scatter, }\DataTypeTok{size =} \DecValTok{1}\NormalTok{))}
 \NormalTok{  )}
+\CommentTok{#> Registered S3 method overwritten by 'GGally':}
+\CommentTok{#>   method from   }
+\CommentTok{#>   +.gg   ggplot2}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1581,7 +1583,7 @@ In Figure \ref{fig:gambfig}, we can see the result of process with \(p = \frac{1
 We can generate Poisson process using this relationship. However, it is slow. Thus, we find another way.
 
 \BeginKnitrBlock{theorem}[Campbell's Theorem]
-\protect\hypertarget{thm:campbell}{}{\label{thm:campbell} \iffalse (Campbell's Theorem) \fi{} }Let \(\{ N(t), t \ge 0 \} \sim PP(\lambda)\), let \(X_t\) be the interarrival time, and let \(S_{t}\) be the waiting time until \(t\)-th event, i.e. \(S_t := \sum_{i = 1}^t X_i\). Then
+\protect\hypertarget{thm:campbell}{}{\label{thm:campbell} \iffalse (Campbell's Theorem) \fi{} }Let \(\{ N(t), t \ge 0 \} \sim PP(\lambda)\), let \(X_t\) be the interarrival time, and let \(S_{t}\) be the waiting time until \(t\)-th event, i.e.~\(S_t := \sum_{i = 1}^t X_i\). Then
 
 \[S_1, S_2, \ldots, S_n \mid N(t) = n \stackrel{d}{=} (U_{(1)}, U_{(2)}, \ldots, U_{(n)})\]
 
@@ -1791,7 +1793,7 @@ Let \(g\) be a measurable function. Then
 \[\hat\theta_M = \frac{1}{N} \sum_{i = 1}^N g(X_i)\]
 \EndKnitrBlock{theorem}
 
-Suppose that we have a distribution \(f(x) = I_{spt g}(x)\), i.e. \emph{uniform distribution}. Let \(spt g = (a, b)\).
+Suppose that we have a distribution \(f(x) = I_{spt g}(x)\), i.e.~\emph{uniform distribution}. Let \(spt g = (a, b)\).
 
 \begin{equation}
   \begin{split}
@@ -2829,7 +2831,7 @@ Consider candiate envelopes
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{seq}\NormalTok{(.}\DecValTok{01}\NormalTok{, }\FloatTok{.99}\NormalTok{, }\DataTypeTok{by =} \FloatTok{.01}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{mutate_all}\NormalTok{(}\DataTypeTok{.funs =} \KeywordTok{list}\NormalTok{(}\OperatorTok{~}\NormalTok{g_target, }\OperatorTok{~}\NormalTok{f0, }\OperatorTok{~}\NormalTok{f1, }\OperatorTok{~}\NormalTok{f2, }\OperatorTok{~}\NormalTok{f3, }\OperatorTok{~}\NormalTok{f4)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate_all}\NormalTok{(}\DataTypeTok{.funs =} \KeywordTok{list}\NormalTok{(}\OperatorTok{~}\KeywordTok{g_target}\NormalTok{(.), }\OperatorTok{~}\KeywordTok{f0}\NormalTok{(.), }\OperatorTok{~}\KeywordTok{f1}\NormalTok{(.), }\OperatorTok{~}\KeywordTok{f2}\NormalTok{(.), }\OperatorTok{~}\KeywordTok{f3}\NormalTok{(.), }\OperatorTok{~}\KeywordTok{f4}\NormalTok{(.))) }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{gather}\NormalTok{(}\OperatorTok{-}\NormalTok{x, }\DataTypeTok{key =} \StringTok{"funs"}\NormalTok{, }\DataTypeTok{value =} \StringTok{"value"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ value, }\DataTypeTok{colour =}\NormalTok{ funs)) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{geom_path}\NormalTok{()}
@@ -2877,7 +2879,7 @@ But we do not know the value of denominator. It might be hart to get the exact f
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{seq}\NormalTok{(.}\DecValTok{01}\NormalTok{, }\FloatTok{.99}\NormalTok{, }\DataTypeTok{by =} \FloatTok{.01}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{mutate_all}\NormalTok{(}\DataTypeTok{.funs =} \KeywordTok{list}\NormalTok{(}\OperatorTok{~}\NormalTok{g_target, }\OperatorTok{~}\NormalTok{f0, }\OperatorTok{~}\NormalTok{f1, }\OperatorTok{~}\NormalTok{f2, }\OperatorTok{~}\NormalTok{f3, }\OperatorTok{~}\NormalTok{f4)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate_all}\NormalTok{(}\DataTypeTok{.funs =} \KeywordTok{list}\NormalTok{(}\OperatorTok{~}\KeywordTok{g_target}\NormalTok{(.), }\OperatorTok{~}\KeywordTok{f0}\NormalTok{(.), }\OperatorTok{~}\KeywordTok{f1}\NormalTok{(.), }\OperatorTok{~}\KeywordTok{f2}\NormalTok{(.), }\OperatorTok{~}\KeywordTok{f3}\NormalTok{(.), }\OperatorTok{~}\KeywordTok{f4}\NormalTok{(.))) }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{gather}\NormalTok{(}\OperatorTok{-}\NormalTok{x, }\OperatorTok{-}\NormalTok{g_target, }\DataTypeTok{key =} \StringTok{"funs"}\NormalTok{, }\DataTypeTok{value =} \StringTok{"value"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{value =}\NormalTok{ g_target }\OperatorTok{/}\StringTok{ }\NormalTok{value) }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ value, }\DataTypeTok{colour =}\NormalTok{ funs)) }\OperatorTok{+}
@@ -3389,7 +3391,7 @@ Let \(\mu = 0\), \(\sigma = 2\), \(N = 20\), and let \(M = 1000\).
 \caption{Proportion of $\sigma^2$ in confidence intervals}\label{fig:ciin}
 \end{figure}
 
-This leads to empirical confidence level, i.e. \emph{sample proportion}. Just follow the last step \(\ref{alg:cilevlast}\) of Algorithm \(\ref{alg:algcilev}\).
+This leads to empirical confidence level, i.e.~\emph{sample proportion}. Just follow the last step \(\ref{alg:cilevlast}\) of Algorithm \(\ref{alg:algcilev}\).
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -3743,7 +3745,7 @@ For each MC sample, compute this statistic \(I_m = I(\mathbf{X}^{m})\). Then emp
 \[\frac{1}{M}\sum_{m = 1}^M I_m\]
 \EndKnitrBlock{lemma}
 
-Process will be same but we test under \(H_1\). However, this makes a lot difference due to structure of each hypothesis. In many cases, \(H_0\) is simple, i.e. \(\mu = 500\). In \(\ref{alg:gentype1}\) of Algorithm \(\ref{alg:algtype1}\), we can consider only \(N(\mu = 500, 100)\). Since \(\Theta_0\) and \(\Theta_1\) form partition, alternative hypothesis usually is not simple. In this example, \(\mu > 500\). We cannot specify one distribution for alternatrive. How to deal with this?
+Process will be same but we test under \(H_1\). However, this makes a lot difference due to structure of each hypothesis. In many cases, \(H_0\) is simple, i.e.~\(\mu = 500\). In \(\ref{alg:gentype1}\) of Algorithm \(\ref{alg:algtype1}\), we can consider only \(N(\mu = 500, 100)\). Since \(\Theta_0\) and \(\Theta_1\) form partition, alternative hypothesis usually is not simple. In this example, \(\mu > 500\). We cannot specify one distribution for alternatrive. How to deal with this?
 
 Trying many points for \(\mu_1 \in \Theta_1 = \{ \mu : \mu > 500 \}\) might be possible. Our goal is finding larger power. So \emph{find test with larger power for all points in} \(\Theta_1\).
 
@@ -4303,7 +4305,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 1.94}
+\CommentTok{#> [1] 2.08}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4377,7 +4379,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 2.32}
+\CommentTok{#> [1] 2.37}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4458,7 +4460,7 @@ Before performing bootstrap, we should define a \texttt{statistic} function. Thi
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*     22.2   0.112        2.07}
+\CommentTok{#> t1*     22.2  -0.117        2.14}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4484,7 +4486,7 @@ It gives sample mean \texttt{original}, bootstrap bias \texttt{bias}, and bootst
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*     22.2  -0.102        3.04}
+\CommentTok{#> t1*     22.2   0.304        2.31}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4611,8 +4613,8 @@ Following \citet{Efron:1983bw}, try \(B = 1000\).
 \CommentTok{#> }
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
-\CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0131       0.135}
+\CommentTok{#>     original   bias    std. error}
+\CommentTok{#> t1*    0.776 -0.00531       0.137}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4690,7 +4692,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0148       0.122}
+\CommentTok{#> t1*    0.776 -0.0136       0.124}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4799,8 +4801,8 @@ Refer to Example \ref{exm:bootcor}. \texttt{boot::boot()} have given following o
 \CommentTok{#> }
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
-\CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0131       0.135}
+\CommentTok{#>     original   bias    std. error}
+\CommentTok{#> t1*    0.776 -0.00531       0.137}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4879,7 +4881,7 @@ We only need these two columns. \texttt{z} goes to denominator, \texttt{y} to nu
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*  -0.0713 0.00941       0.101}
+\CommentTok{#> t1*  -0.0713 0.00708      0.0994}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4896,16 +4898,44 @@ We only need these two columns. \texttt{z} goes to denominator, \texttt{y} to nu
 \CommentTok{#> # A tibble: 1 x 5}
 \CommentTok{#>   statistic    bias std.error bias_se ignore_bias}
 \CommentTok{#>       <dbl>   <dbl>     <dbl>   <dbl> <chr>      }
-\CommentTok{#> 1   -0.0713 0.00941     0.101  0.0929 ignore bias}
+\CommentTok{#> 1   -0.0713 0.00708    0.0994  0.0712 ignore bias}
 \end{Highlighting}
 \end{Shaded}
 
-Since \(\frac{\hat\beta_B}{\hat\sigma_B} = 0.093\), we \(\text{ignore bias}\).
+Since \(\frac{\hat\beta_B}{\hat\sigma_B} = 0.071\), we \(\text{ignore bias}\).
 
 \hypertarget{jackknife}{%
 \section{Jackknife}\label{jackknife}}
 
-Jackknife is another resampling method, which was developed earlier than bootstrap. As in Section \ref{bootapprox}, we start with simple example, estimating sample mean. Refer to Example \ref{exm:bootave}. We have seen estimated standard error \(\hat\sigma\) and boostrap estimate of standard error \(\hat\sigma_B\) in Theorems \ref{thm:samplemean} and \ref{thm:bootse}.
+Jackknife is another resampling method, which was developed earlier than bootstrap. Instead of bootstrap sample \(\mathbf{X}^{(b)}\), \emph{jackknife sample} \(\mathbf{X}_{(i)}\) will be used. It leaves out the \(i\)-th observation.
+
+\begin{equation}
+  \mathbf{X}^{(i)} = (X_1^{(i)}, \ldots, X_{i - 1}^{(i)}, X_{i + 1}^{(i)}, \ldots, X_n^{(i)})^T
+  \label{eq:jacksam}
+\end{equation}
+
+For each \(\mathbf{X}^{(i)}\), \emph{jackknife replicate} which is a form of our interest is computed.
+
+\begin{equation}
+  \hat\theta^{(i)} = \hat\theta(\mathbf{X}^{(i)})
+  \label{eq:jackrep}
+\end{equation}
+
+so that we can get its empirical distribution.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{images/jack} 
+
+}
+
+\caption{Leave-one-out sampling}\label{fig:jackfig}
+\end{figure}
+
+\hypertarget{jackknife-standard-error}{%
+\subsection{Jackknife standard error}\label{jackknife-standard-error}}
+
+As in Section \ref{bootapprox}, we start with simple example, estimating sample mean. Refer to Example \ref{exm:bootave}. We have seen estimated standard error \(\hat\sigma\) and boostrap estimate of standard error \(\hat\sigma_B\) in Theorems \ref{thm:samplemean} and \ref{thm:bootse}.
 
 \BeginKnitrBlock{theorem}[Jackknife standard error for sample mean]
 \protect\hypertarget{thm:jacksebar}{}{\label{thm:jacksebar} \iffalse (Jackknife standard error for sample mean) \fi{} }Let
@@ -4952,20 +4982,6 @@ It follows that
 \end{equation*}
 \EndKnitrBlock{proof}
 
-Instead of bootstrap sample \(\mathbf{X}^{(b)}\), \emph{jackknife sample} \(\mathbf{X}_{(i)}\) will be used. It leaves out the \(i\)-th observation.
-
-\begin{equation}
-  \mathbf{X}_{(i)} = (X_1, \ldots, X_{i - 1}, X_{i + 1}, \ldots, X_n)^T
-  \label{eq:jacksam}
-\end{equation}
-
-For each \(\mathbf{X}_{(i)}\), \emph{jackknife replicate} which is a form of our interest is computed.
-
-\begin{equation}
-  \hat\theta_{(i)} = \hat\theta(\mathbf{X}_{(i)})
-  \label{eq:jackrep}
-\end{equation}
-
 Using a set of jackknife replicates, get empirical distribution of this estimator such as standard error and bias.
 
 \begin{algorithm}[H] \label{alg:algjack}
@@ -4984,8 +5000,163 @@ Using a set of jackknife replicates, get empirical distribution of this estimato
   \caption{Jackknife algorithm}
 \end{algorithm}
 
+Now extend to any statistic such as correlation \ref{exm:bootcor}. Let \(\hat\theta \equiv \hat\theta(X_1, \ldots, X_n)\) be the statistic of interest. Suppose that
+
+\[X_1, \ldots, X_n \stackrel{iid}{\sim}F\]
+
+Let \(\mathbf{P}\) be a probability mass vector for each \(X_i\) and let \(\mathbf{P}^{\ast}\) be a vector for bootstrap sample. Recall that each point has a mass of
+
+\[\frac{1}{n}\]
+
+Then we have
+
+\[\mathbf{P}^{\ast} \sim Multi(n, \mathbf{P}_0)\]
+
+with \(\mathbf{P}_0 = \frac{1}{n}\mathbf{1} \in \mathbb{R}^n\). We already have seend that the bootstrap standard error is
+
+\[\hat\sigma_B = \Big[ Var \hat\theta(\mathbf{P}^{\ast}) \Big]^{\frac{1}{2}}\]
+
+In comparison, the jackknife resamples leaving out one observation so that
+
+\[\mathbf{P}_{(i)} = \frac{1}{n - 1} (1, \ldots, 1, \overset{i\text{-th}}{0}, 1, \ldots, 1)^T, \quad i = 1, \ldots, n\]
+
+\citet{Efron:1983bw} draws a picture that indicates this difference between resampling procedure of bootstrap and jackknife. Among \(\{ X_1, X_2, X_3 \}\), bootstrap sample with replacement with probability \(\frac{1}{3}\). Jackknife leaves out one in each sample.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{images/efron} 
+
+}
+
+\caption{Bootstrap and Jackknife sampling points - $\cdot$ is bootstrap and $\circ$ is jackknife}\label{fig:efronfig}
+\end{figure}
+
+\BeginKnitrBlock{lemma}
+\protect\hypertarget{lem:jackboot}{}{\label{lem:jackboot} }Jackknife estimation approximates \(\hat\theta(\mathbf{P})\) by a linear function of \(\mathbf{P}\), say \(\hat\theta_L(\mathbf{P})\).
+
+\[\hat\theta_L(\mathbf{P}) = \hat\theta_{(.)} + (\mathbf{P} - \mathbf{P}^0)^T U\]
+
+where \(\hat\theta_{(.)} = \frac{1}{n} \sum_i \hat\theta_{(i)} = \frac{1}{n} \sum_i \hat\theta(\mathbf{P}_{(i)})\), \(U_i = (n - 1)(\hat\theta_{(.)} - \hat\theta_{(.)})\), and \(U = \begin{bmatrix} U_1 & \cdots & U_n \end{bmatrix}\).
+\EndKnitrBlock{lemma}
+
+\BeginKnitrBlock{theorem}[Jackknife standard error]
+\protect\hypertarget{thm:jackse}{}{\label{thm:jackse} \iffalse (Jackknife standard error) \fi{} }Let \(\hat\theta_L\) of Lemma \ref{lem:jackboot} be the statistic of interest. Then the Jackknife estimate of standard error for \(\hat\theta_L\) is
+
+\[\hat\sigma_J = \bigg[ \frac{n}{n - 1} Var \hat\theta_L(\mathbf{P}^{\ast}) \bigg]^{\frac{1}{2}}\]
+
+where \(\hat\theta_L(\mathbf{P}^{\ast})\) is the bootstrap estimate.
+\EndKnitrBlock{theorem}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cor_jack <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+  \KeywordTok{cor}\NormalTok{(x[,}\DecValTok{1}\NormalTok{], x[,}\DecValTok{2}\NormalTok{])}
+\NormalTok{\}}
+\CommentTok{#----------------------}
+\NormalTok{jack_cor <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, data) \{}
+  \CommentTok{# sampling with replacement}
+\NormalTok{  xb <-}
+\StringTok{    }\NormalTok{data }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{data.table}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\NormalTok{.[}\OperatorTok{-}\NormalTok{x]}
+  \CommentTok{# estimator}
+  \KeywordTok{cor}\NormalTok{(xb[,}\DecValTok{1}\NormalTok{], xb[,}\DecValTok{2}\NormalTok{]) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{as.numeric}\NormalTok{()}
+\NormalTok{\}}
+\CommentTok{#---------------------}
+\NormalTok{law_jack <-}\StringTok{ }
+\StringTok{  }\NormalTok{parallel}\OperatorTok{::}\KeywordTok{mclapply}\NormalTok{(}
+    \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(law), }
+\NormalTok{    jack_cor, }
+    \DataTypeTok{data =}\NormalTok{ law,}
+    \DataTypeTok{mc.cores =}\NormalTok{ MC_CORES}
+\NormalTok{  ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{unlist}\NormalTok{()}
+\CommentTok{#--------------------}
+\KeywordTok{sqrt}\NormalTok{((}\KeywordTok{nrow}\NormalTok{(law) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\KeywordTok{mean}\NormalTok{((law_jack }\OperatorTok{-}\StringTok{ }\KeywordTok{mean}\NormalTok{(law_jack))}\OperatorTok{^}\DecValTok{2}\NormalTok{))}
+\CommentTok{#> [1] 0.143}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/jackcor-1} 
+
+}
+
+\caption{Jackknife estimate of correlation}\label{fig:jackcor}
+\end{figure}
+
+Visually, the distribution is quite similar to of bootstrap \ref{fig:bootrep}. Also, standard error is not that different.
+
+\texttt{bootstrap} library provides \texttt{jackknife()} function. Since this kind of \emph{leave-one-out} procedure does not have randomness, the result is exactly same.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cor_law <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, xdata) \{}
+  \KeywordTok{cor}\NormalTok{(xdata[x, }\DecValTok{1}\NormalTok{], xdata[x, }\DecValTok{2}\NormalTok{])}
+\NormalTok{\}}
+\CommentTok{#------------------------------}
+\NormalTok{bootstrap}\OperatorTok{::}\KeywordTok{jackknife}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(law), cor_law, }\DataTypeTok{xdata =}\NormalTok{ law)}
+\CommentTok{#> $jack.se}
+\CommentTok{#> [1] 0.143}
+\CommentTok{#> }
+\CommentTok{#> $jack.bias}
+\CommentTok{#>           GPA}
+\CommentTok{#> LSAT -0.00647}
+\CommentTok{#> }
+\CommentTok{#> $jack.values}
+\CommentTok{#>  [1] 0.893 0.764 0.755 0.776 0.731 0.780 0.785 0.736 0.752 0.776 0.818}
+\CommentTok{#> [12] 0.786 0.740 0.767 0.780}
+\CommentTok{#> }
+\CommentTok{#> $call}
+\CommentTok{#> bootstrap::jackknife(x = 1:nrow(law), theta = cor_law, xdata = law)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{jackknife-bias}{%
+\subsection{Jackknife bias}\label{jackknife-bias}}
+
+Consider bias \(\beta\) of \(\hat\theta = \hat\theta(\hat{F})\) \ref{def:biasdef}.
+
+\BeginKnitrBlock{lemma}[Quenouille's estimate for bias]
+\protect\hypertarget{lem:biasest}{}{\label{lem:biasest} \iffalse (Quenouille's estimate for bias) \fi{} }In the notation of Lemma \ref{lem:jackboot}, Quenouille's estimate for bias is
+
+\[\hat\beta_J = (n - 1) (\hat\theta_{(.)} - \hat\theta)\]
+\EndKnitrBlock{lemma}
+
+As in the previous section, there is a relationship between a bias estimate \ref{lem:biasest} and Bootstrap bias \ref{thm:bootbet}.
+
+\BeginKnitrBlock{lemma}
+\protect\hypertarget{lem:bootquad}{}{\label{lem:bootquad} }Jackknife estimation approximates \(\hat\theta(\mathbf{P})\) by a quadratic function of \(\mathbf{P}\), say \(\hat\theta_Q(\mathbf{P})\).
+
+\[\hat\theta_Q (\mathbf{P}_0) = a + (\mathbf{P} - \mathbf{P}_0)^T \mathbf{b} + \frac{1}{2} (\mathbf{P} - \mathbf{P}_0)^T \mathbf{c} (\mathbf{P} - \mathbf{P}_0)\]
+\EndKnitrBlock{lemma}
+
+From this Lemma, Jackknife bias \(\hat\beta_J\) can be derived as follows.
+
+\BeginKnitrBlock{theorem}[Jackknife bias]
+\protect\hypertarget{thm:jackbet}{}{\label{thm:jackbet} \iffalse (Jackknife bias) \fi{} }Let \(\hat\theta_Q (\mathbf{P})\) be any quadratic satisfying
+
+\[\hat\theta_Q (\mathbf{P}_0) = \hat\theta (\mathbf{P}_0) = \hat\theta \quad \text{and} \quad \hat\theta_Q (\mathbf{P}_{(i)}) = \hat\theta (\mathbf{P}_{(i)})\]
+
+Then the jackknife estimate of bias is
+
+\[\beta_J = \frac{n}{n - 1} \Big[ E(\hat\theta_Q (\mathbf{P}^{\ast}) - \hat\theta) \Big]\]
+
+i.e.~\(\frac{n}{n - 1}\) times the bootstrap bias for \(\hat\theta_Q\).
+\EndKnitrBlock{theorem}
+
 \hypertarget{bootstrap-confidence-intervals}{%
 \section{Bootstrap Confidence Intervals}\label{bootstrap-confidence-intervals}}
+
+\hypertarget{standard-normal-bootstrap-confidence-interval}{%
+\subsection{Standard normal bootstrap confidence interval}\label{standard-normal-bootstrap-confidence-interval}}
+
+\hypertarget{basic-bootstrap-confidence-interval}{%
+\subsection{Basic bootstrap confidence interval}\label{basic-bootstrap-confidence-interval}}
+
+\hypertarget{percentile-bootstrap-confidence-interval}{%
+\subsection{Percentile bootstrap confidence interval}\label{percentile-bootstrap-confidence-interval}}
 
 \hypertarget{numerical-methods}{%
 \chapter{Numerical Methods}\label{numerical-methods}}
@@ -5037,8 +5208,148 @@ Point between \(a_0\) and \(a_{-1}\) is called the radix point here.
 
 See Equations \eqref{eq:decimal} and \eqref{eq:base2}. Numbers are expressed with series.
 
+\BeginKnitrBlock{example}[Identical and nearly equal]
+\protect\hypertarget{exm:machineeps}{}{\label{exm:machineeps} \iffalse (Identical and nearly equal) \fi{} }\(0.3 - 0.1\) is equal to \(0.2\). Can we check this?
+\EndKnitrBlock{example}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(.}\DecValTok{3} \OperatorTok{-}\StringTok{ }\FloatTok{.1}\NormalTok{) }\OperatorTok{==}\StringTok{ }\FloatTok{.2}
+\CommentTok{#> [1] FALSE}
+\end{Highlighting}
+\end{Shaded}
+
+It is obviously same, but \texttt{R} says it is different. Why?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{.Machine}\OperatorTok{$}\NormalTok{double.eps}
+\CommentTok{#> [1] 2.22e-16}
+\end{Highlighting}
+\end{Shaded}
+
+The above number is the smallest positive floating number that the machine can recognize. \texttt{all.equal()} function can solve this kind of near-equality problem.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{all.equal}\NormalTok{(.}\DecValTok{2}\NormalTok{, }\FloatTok{.3} \OperatorTok{-}\StringTok{ }\FloatTok{.1}\NormalTok{)}
+\CommentTok{#> [1] TRUE}
+\end{Highlighting}
+\end{Shaded}
+
 \hypertarget{root-finding-in-one-dimension}{%
 \section{Root-finding in One Dimension}\label{root-finding-in-one-dimension}}
+
+In statistics, it is one of issues to find solutions of
+
+\[f(x) = 0\]
+
+There are various algorithms.
+
+\hypertarget{bisection-method}{%
+\subsection{Bisection method}\label{bisection-method}}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/bisecfig-1} 
+
+}
+
+\caption{Illustration of bisection method}\label{fig:bisecfig}
+\end{figure}
+
+Figure \ref{fig:bisecfig} presents the motivation of bisection method. On both sides of the root, one side of function value is positive and the other side is negative. Thus, if we find any set like this, then we only narrow the two points until finding the solution.
+
+\begin{algorithm}[H] \label{alg:bisection}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{Equation system $f(x) = 0$, error bound $\epsilon$}
+  Initialize two points $x_0$ and $x_1$ such that $$f(x_0) f(x_1) \le 0$$\;
+  \If{$f(x_0) f(x_1) < 0$}{
+    Change initial values\;
+  }
+  Set error $e = \lvert x_1 - x_0 \rvert$\;
+  \While{$e > \epsilon$}{ \label{alg:bisecwhile}
+    Half $$x_2 = \frac{x_0 + x_1}{2}$$\;
+    Length of the interval becomes half $e = \frac{e}{2}$\;
+    \eIf{$f(x_0) f(x_2) < 0$}{
+      Update $x_1 = x_2$\;
+    }{
+      Update $x_0 = x_2$\;
+    }
+  }
+  \Output{$x = x_2$}
+  \caption{Bisection algorithm}
+\end{algorithm}
+
+In Line \(\ref{alg:bisecwhile}\), we can use condition
+
+\[\lvert f(x_2) \rvert > \epsilon\]
+
+instead, which means that we did not find the root yet.
+
+\BeginKnitrBlock{example}
+\protect\hypertarget{exm:bisecexm}{}{\label{exm:bisecexm} }Solve \[a^2 + y^2 + \frac{2ay}{n - 1} = n - 2\]
+
+where \(a\) is a specified constant and \(n > 2\) is an integer.
+\EndKnitrBlock{example}
+
+\BeginKnitrBlock{solution}
+\iffalse{} {Solution. } \fi{}It can be shown that the analytical solution is
+
+\[y = - \frac{a}{n - 1} \pm \sqrt{n - 2 + a^2 + \Big( \frac{a}{n - 1} \Big)^2}\]
+\EndKnitrBlock{solution}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{f_bisec <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, }\DataTypeTok{a =} \FloatTok{.5}\NormalTok{, }\DataTypeTok{n =} \DecValTok{20}\NormalTok{) \{}
+\NormalTok{  a}\OperatorTok{^}\DecValTok{2} \OperatorTok{+}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2} \OperatorTok{+}\StringTok{ }\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{a }\OperatorTok{*}\StringTok{ }\NormalTok{x }\OperatorTok{/}\StringTok{ }\NormalTok{(n }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{-}\StringTok{ }\NormalTok{(n }\OperatorTok{-}\StringTok{ }\DecValTok{2}\NormalTok{)}
+\NormalTok{\}}
+\CommentTok{#-----------------------------}
+\NormalTok{bisection <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x0, x1, fun, }\DataTypeTok{eps =}\NormalTok{ .Machine}\OperatorTok{$}\NormalTok{double.eps}\OperatorTok{^}\NormalTok{.}\DecValTok{25}\NormalTok{, }\DataTypeTok{rep_max =} \DecValTok{1000}\NormalTok{, ...) \{}
+\NormalTok{  iter <-}\StringTok{ }\DecValTok{0} \CommentTok{# stop too many iteration}
+  \ControlFlowTok{if}\NormalTok{ (}\KeywordTok{fun}\NormalTok{(x0, ...) }\OperatorTok{*}\StringTok{ }\KeywordTok{fun}\NormalTok{(x1, ...) }\OperatorTok{>}\StringTok{ }\DecValTok{0}\NormalTok{) \{}
+    \KeywordTok{stop}\NormalTok{(}\KeywordTok{gettextf}\NormalTok{(}\StringTok{"both %s and %s should be satisfy the condition"}\NormalTok{, }\KeywordTok{expression}\NormalTok{(x0), }\KeywordTok{expression}\NormalTok{(x1)))}
+\NormalTok{  \}}
+\NormalTok{  init <-}\StringTok{ }\KeywordTok{seq}\NormalTok{(x0, x1, }\DataTypeTok{length.out =} \DecValTok{3}\NormalTok{) }\CommentTok{# x0 x2 x1}
+\NormalTok{  y <-}\StringTok{ }\KeywordTok{f_bisec}\NormalTok{(init)}
+  \ControlFlowTok{while}\NormalTok{ (iter }\OperatorTok{<}\StringTok{ }\DecValTok{1000} \OperatorTok{&&}\StringTok{ }\KeywordTok{abs}\NormalTok{(y[}\DecValTok{2}\NormalTok{]) }\OperatorTok{>}\StringTok{ }\NormalTok{eps) \{}
+\NormalTok{    iter <-}\StringTok{ }\NormalTok{iter }\OperatorTok{+}\StringTok{ }\DecValTok{1}
+    \ControlFlowTok{if}\NormalTok{ (y[}\DecValTok{1}\NormalTok{] }\OperatorTok{*}\StringTok{ }\NormalTok{y[}\DecValTok{2}\NormalTok{] }\OperatorTok{<}\StringTok{ }\DecValTok{0}\NormalTok{) \{}
+\NormalTok{      init[}\DecValTok{3}\NormalTok{] <-}\StringTok{ }\NormalTok{init[}\DecValTok{2}\NormalTok{]}
+\NormalTok{      y[}\DecValTok{3}\NormalTok{] <-}\StringTok{ }\NormalTok{y[}\DecValTok{2}\NormalTok{]}
+\NormalTok{    \} }\ControlFlowTok{else}\NormalTok{ \{}
+\NormalTok{      init[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\NormalTok{init[}\DecValTok{2}\NormalTok{]}
+\NormalTok{      y[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\NormalTok{y[}\DecValTok{2}\NormalTok{]}
+\NormalTok{    \}}
+\NormalTok{    init[}\DecValTok{2}\NormalTok{] <-}\StringTok{ }\NormalTok{(init[}\DecValTok{1}\NormalTok{] }\OperatorTok{+}\StringTok{ }\NormalTok{init[}\DecValTok{3}\NormalTok{]) }\OperatorTok{/}\StringTok{ }\DecValTok{2}
+\NormalTok{    y[}\DecValTok{2}\NormalTok{] <-}\StringTok{ }\KeywordTok{fun}\NormalTok{(init[}\DecValTok{2}\NormalTok{], ...)}
+\NormalTok{  \}}
+  \KeywordTok{c}\NormalTok{(init[}\DecValTok{2}\NormalTok{], y[}\DecValTok{2}\NormalTok{])}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Using initioal values \(x_0 = 0\) and \(X_1 = 100\),
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(bi_exm <-}\StringTok{ }\KeywordTok{bisection}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{100}\NormalTok{, }\DataTypeTok{fun =}\NormalTok{ f_bisec, }\DataTypeTok{a =} \FloatTok{.5}\NormalTok{, }\DataTypeTok{n =} \DecValTok{20}\NormalTok{))}
+\CommentTok{#> [1] 4.19e+00 2.98e-05}
+\end{Highlighting}
+\end{Shaded}
+
+\(x = 4.187\) has been computed. The following figure shows that this answer is reasonable.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/bisecroot-1} 
+
+}
+
+\caption{Example curve}\label{fig:bisecroot}
+\end{figure}
 
 \hypertarget{numerical-integration}{%
 \section{Numerical Integration}\label{numerical-integration}}
@@ -5106,7 +5417,7 @@ See Equations \eqref{eq:decimal} and \eqref{eq:base2}. Numbers are expressed wit
 \CommentTok{#> # A tibble: 1 x 6}
 \CommentTok{#>   lambda1 lambda2 lambda3 prob1 prob2 prob3}
 \CommentTok{#>     <dbl>   <dbl>   <dbl> <dbl> <dbl> <dbl>}
-\CommentTok{#> 1   0.608   0.199   0.193 0.283 0.385 0.332}
+\CommentTok{#> 1   0.631   0.181   0.188 0.326 0.296 0.378}
 \end{Highlighting}
 \end{Shaded}
 
@@ -5115,6 +5426,78 @@ See Equations \eqref{eq:decimal} and \eqref{eq:base2}. Numbers are expressed wit
 
 \hypertarget{markov-chain-monte-carlo-methods}{%
 \chapter{Markov Chain Monte Carlo Methods}\label{markov-chain-monte-carlo-methods}}
+
+Previously, we keep trying to compute
+
+\[E h(X)\]
+
+by generating random numbers. It is based on the law of large numbers that says
+
+\[E h(X) \approx \sum_{i = 1}^N \frac{h(X_i)}{N}\]
+
+The question is, when this convergence happens. Some random numbers might require expremely large \(N\), while others needs affordable size. It is known that if this \(\{ X_1, \ldots, X_N \}\) is \emph{generated from Markov chain, the series converges quite fast}.
+
+\hypertarget{limiting-distribution-of-markov-chain}{%
+\section{Limiting Distribution of Markov Chain}\label{limiting-distribution-of-markov-chain}}
+
+Definition \ref{def:dmc} presents the definition of markov chain and \emph{markov property}.
+
+\[P(X_{n + 1} = j \mid X_n = i, X_{n - 1} = i_{n - 1}, \ldots, X_0 = i_0) = P(X_{n + 1} = j \mid X_n = i) = P_{ij}\]
+
+Consider discrete state space \(S\).
+
+\BeginKnitrBlock{definition}[Transition kernel]
+\protect\hypertarget{def:mctran}{}{\label{def:mctran} \iffalse (Transition kernel) \fi{} }One-step transition matrix for discrete time markov chain on \(S\) is
+
+\[P = \begin{bmatrix} P_{ij} \end{bmatrix}\]
+
+\(n\)-stem transition matrix is written as
+
+\[P^{(n)} = \begin{bmatrix} P_{ij}^{(n)} = P(X_{n + k} = j \mid X_k = j) \end{bmatrix}\]
+\EndKnitrBlock{definition}
+
+\BeginKnitrBlock{theorem}[Chapmen-Kolmogorov Equation]
+\protect\hypertarget{thm:cke}{}{\label{thm:cke} \iffalse (Chapmen-Kolmogorov Equation) \fi{} }For every \(n, m \in \mathbb{Z}\),
+
+\[P^{(n + m)} = P^{(n)} P^{(m)}\]
+\EndKnitrBlock{theorem}
+
+\BeginKnitrBlock{corollary}
+\protect\hypertarget{cor:cke2}{}{\label{cor:cke2} }By the Chapmen-Kolmogorov equation,
+
+\[\forall n \in \{ 0, 1, 2, \ldots \} : \: P^{(n)} = P^n\]
+\EndKnitrBlock{corollary}
+
+Does Markov chain converge to same state after time has passed much enough?
+
+\[P(\text{starts at}\: i \: \text{and ends at}\: j \: \text{state}) = \lim_{n \rightarrow \infty} P(X_n = j \mid X_0 = i) = \lim_{n \rightarrow \infty} P_{ij}^n\]
+
+This holds when the process satisfies some conditions.
+
+\hypertarget{ergodic-theorem}{%
+\subsection{Ergodic theorem}\label{ergodic-theorem}}
+
+Let \(S\) be the state of MC.
+
+\BeginKnitrBlock{definition}[Aperiodicity]
+\protect\hypertarget{def:mcperiod}{}{\label{def:mcperiod} \iffalse (Aperiodicity) \fi{} }Let \(i \in S\) be a state.
+
+\begin{itemize}
+  \item Period $d(i) := \gcd \{ n : P_{ii}^(n) > 0, n \in \mathbb{N} \}$
+  \item A state $i$ is said to be \textbf{\textit{periodic}} $$: \Leftrightarrow d(i) > 1$$
+  \item A state $i$ is said to be \textbf{\textit{aperiodic}} $$: \Leftrightarrow d(i) = 1$$
+\end{itemize}
+\EndKnitrBlock{definition}
+
+\BeginKnitrBlock{definition}[Irreducibility]
+\protect\hypertarget{def:mcreduc}{}{\label{def:mcreduc} \iffalse (Irreducibility) \fi{} }Markov chain is \textbf{\textit{irreducible}} iff it is possible to go from any state to any other state. Otherwise, it is called \textbf{\textit{reducible}}.
+\EndKnitrBlock{definition}
+
+\BeginKnitrBlock{definition}[Positive recurrence]
+\protect\hypertarget{def:mcrecc}{}{\label{def:mcrecc} \iffalse (Positive recurrence) \fi{} }Markov chain is \textbf{\textit{recurrent}} iff
+
+\[\forall i \in S : \: \text{chain starts at}\: i \: \text{and it will eventually return to}\: i \: \text{with probabbility}\: 1\]
+\EndKnitrBlock{definition}
 
 \bibliography{book.bib,packages.bib}
 

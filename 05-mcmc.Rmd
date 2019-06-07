@@ -1,1 +1,84 @@
 # Markov Chain Monte Carlo Methods
+
+Previously, we keep trying to compute
+
+$$E h(X)$$
+
+by generating random numbers. It is based on the law of large numbers that says
+
+$$E h(X) \approx \sum_{i = 1}^N \frac{h(X_i)}{N}$$
+
+The question is, when this convergence happens. Some random numbers might require expremely large $N$, while others needs affordable size. It is known that if this $\{ X_1, \ldots, X_N \}$ is *generated from Markov chain, the series converges quite fast*.
+
+## Limiting Distribution of Markov Chain
+
+Definition \@ref(def:dmc) presents the definition of markov chain and *markov property*.
+
+$$P(X_{n + 1} = j \mid X_n = i, X_{n - 1} = i_{n - 1}, \ldots, X_0 = i_0) = P(X_{n + 1} = j \mid X_n = i) = P_{ij}$$
+
+Consider discrete state space $S$.
+
+```{definition, mctran, name = "Transition kernel"}
+One-step transition matrix for discrete time markov chain on $S$ is
+
+$$P = \begin{bmatrix} P_{ij} \end{bmatrix}$$
+
+$n$-stem transition matrix is written as
+
+$$P^{(n)} = \begin{bmatrix} P_{ij}^{(n)} = P(X_{n + k} = j \mid X_k = j) \end{bmatrix}$$
+```
+
+```{theorem, cke, name = "Chapmen-Kolmogorov Equation"}
+For every $n, m \in \mathbb{Z}$,
+
+$$P^{(n + m)} = P^{(n)} P^{(m)}$$
+```
+
+```{corollary, cke2}
+By the Chapmen-Kolmogorov equation,
+
+$$\forall n \in \{ 0, 1, 2, \ldots \} : \: P^{(n)} = P^n$$
+```
+
+Does Markov chain converge to same state after time has passed much enough?
+
+$$P(\text{starts at}\: i \: \text{and ends at}\: j \: \text{state}) = \lim_{n \rightarrow \infty} P(X_n = j \mid X_0 = i) = \lim_{n \rightarrow \infty} P_{ij}^n$$
+
+This holds when the process satisfies some conditions.
+
+### Ergodic theorem
+
+Let $S$ be the state of MC.
+
+```{definition, mcperiod, name = "Aperiodicity"}
+Let $i \in S$ be a state.
+
+\begin{itemize}
+  \item Period $d(i) := \gcd \{ n : P_{ii}^(n) > 0, n \in \mathbb{N} \}$
+  \item A state $i$ is said to be \textbf{\textit{periodic}} $$: \Leftrightarrow d(i) > 1$$
+  \item A state $i$ is said to be \textbf{\textit{aperiodic}} $$: \Leftrightarrow d(i) = 1$$
+\end{itemize}
+```
+
+```{definition, mcreduc, name = "Irreducibility"}
+Markov chain is \textbf{\textit{irreducible}} iff it is possible to go from any state to any other state. Otherwise, it is called \textbf{\textit{reducible}}.
+```
+
+```{definition, mcrecc, name = "Positive recurrence"}
+Markov chain is \textbf{\textit{recurrent}} iff
+
+$$\forall i \in S : \: \text{chain starts at}\: i \: \text{and it will eventually return to}\: i \: \text{with probabbility}\: 1$$
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

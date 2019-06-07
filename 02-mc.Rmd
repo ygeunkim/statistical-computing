@@ -950,7 +950,7 @@ f4 <- function(x) {
 
 ```{r candimp, fig.cap="Importance funtions $\\phi_0, \\ldots, \\phi_4$"}
 tibble(x = seq(.01, .99, by = .01)) %>% 
-  mutate_all(.funs = list(~g_target, ~f0, ~f1, ~f2, ~f3, ~f4)) %>% 
+  mutate_all(.funs = list(~g_target(.), ~f0(.), ~f1(.), ~f2(.), ~f3(.), ~f4(.))) %>% 
   gather(-x, key = "funs", value = "value") %>% 
   ggplot(aes(x = x, y = value, colour = funs)) +
   geom_path()
@@ -986,7 +986,7 @@ But we do not know the value of denominator. It might be hart to get the exact f
 
 ```{r candimp2, fig.cap="Ratio $\\frac{g}{\\phi_i}$"}
 tibble(x = seq(.01, .99, by = .01)) %>% 
-  mutate_all(.funs = list(~g_target, ~f0, ~f1, ~f2, ~f3, ~f4)) %>% 
+  mutate_all(.funs = list(~g_target(.), ~f0(.), ~f1(.), ~f2(.), ~f3(.), ~f4(.))) %>% 
   gather(-x, -g_target, key = "funs", value = "value") %>% 
   mutate(value = g_target / value) %>% 
   ggplot(aes(x = x, y = value, colour = funs)) +
