@@ -20,6 +20,8 @@ library(tidyverse)
 library(data.table)
 # useful looping construct --------------------
 library(foreach)
+# R and C++ integration -----------------------
+library(Rcpp)
 # tools for r markdown ------------------------
 library(rmdtool)
 # assistant tools for ggplot ------------------

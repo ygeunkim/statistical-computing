@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{08 Jun, 2019}
+    \date{15 Jun, 2019}
 
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -4305,7 +4305,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.08}
+\CommentTok{#> [1] 2.26}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4379,7 +4379,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 2.37}
+\CommentTok{#> [1] 2.21}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4692,7 +4692,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0136       0.124}
+\CommentTok{#> t1*    0.776 -0.0084       0.116}
 \end{Highlighting}
 \end{Shaded}
 
@@ -5149,14 +5149,197 @@ i.e.~\(\frac{n}{n - 1}\) times the bootstrap bias for \(\hat\theta_Q\).
 \hypertarget{bootstrap-confidence-intervals}{%
 \section{Bootstrap Confidence Intervals}\label{bootstrap-confidence-intervals}}
 
+Bootstrap gives empirical distribution of a estimator. Naturally, we want to get confidence interval of this estimator by using standard error or by just arranging replicates. See Figure \ref{fig:xbarsemc} or \ref{fig:bootrep}. These are empirical distribution.
+
 \hypertarget{standard-normal-bootstrap-confidence-interval}{%
 \subsection{Standard normal bootstrap confidence interval}\label{standard-normal-bootstrap-confidence-interval}}
+
+Standard normal bootstrap confidence interval is the simplest approach, but not necessarily the best \citep{Rizzo:2007aa}. If the estimator of interest \(\hat\theta\) follows Normal distribution, the only thing we have to do is computing standard error. When is this case? If \(\hat\theta\) is a sample mean,
+
+\begin{equation}
+  Z = \frac{\hat\theta - E\hat\theta}{\hat\sigma_B} \stackrel{d}{\rightarrow} N(0, 1) \quad \text{as} \:\: n \rightarrow \infty
+  \label{eq:bootclt}
+\end{equation}
+
+by the \emph{Central limit theorem}. Thus, \(100 (1 - \alpha)\%\) confidence for \(\theta\) can be computed in this frame
+
+\begin{equation}
+  \hat\theta \pm z_{\frac{\alpha}{2}} \hat\sigma_B
+  \label{eq:zbootci}
+\end{equation}
+
+\BeginKnitrBlock{remark}[Assumptions of standard normal bootstrap CI]
+\iffalse{} {Remark (Assumptions of standard normal bootstrap CI). } \fi{}To compute this CI, some entries should be assumed about \(\hat\theta\).
+
+\begin{enumerate}
+  \item $\hat\theta$ is Normal, or is sample mean with large sample size (CLT-based)
+  \item $\hat\theta$ is unbiased.
+\end{enumerate}
+\EndKnitrBlock{remark}
+
+In case of biasedness, it should be corrected. Estimating bias by bootstrap by \(\hat\beta_B\),
+
+\[\hat\theta - \hat\beta_B\]
+
+Hence, we replace \(\hat\theta\) in CI \eqref{eq:zbootci} with above corrected one.
+
+\BeginKnitrBlock{theorem}[Standard normal bootstrap CI]
+\protect\hypertarget{thm:zbootci2}{}{\label{thm:zbootci2} \iffalse (Standard normal bootstrap CI) \fi{} }For the estimator of interest \(\hat\theta\), standard normal bootstrap CI is
+
+\[[\hat\theta - \hat\beta_B] \pm z_{\frac{\alpha}{2}} \hat\sigma_B\]
+
+If \(\hat\theta\) is unbiased, correction is omitted.
+
+\[\hat\theta \pm z_{\frac{\alpha}{2}} \hat\sigma_B\]
+\EndKnitrBlock{theorem}
+
+\begin{algorithm}[H] \label{alg:algzbootci}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{$n$ observations $x_1, \ldots, x_n$}
+  \Input{statistic of interest $\hat\theta$, the number of bootstrap replicates $B$}
+  \For{$b \leftarrow 1$ \KwTo $B$}{
+    Sampling with replacement $X_{1}^{(b)}, \ldots, X_n^{(b)}$ from the observed sample\;
+    Compute estimate $\hat\theta(X_{1}^{(b)}, \ldots, X_n^{(b)}) \equiv \hat\theta_b^{\ast}$\;
+  }
+  $\overline{\hat\theta^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\theta_b^{\ast}$\;
+  Bootsrap standard error $\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}})^2 \bigg]^{\frac{1}{2}}$\;
+  Bootsrap bias $\hat\beta_B = \overline{\hat\theta^{\ast}} - \hat\theta(X_1, \ldots, X_n)$\;
+  \eIf{$\frac{\hat\beta_B}{\hat\sigma_B} < \frac{1}{4}$}{
+    Standard Normal Bootstrap CI $$\hat\theta \pm z_{\frac{\alpha}{2}} \hat\sigma_B$$\;
+  }{
+    Standard Normal Bootstrap CI $$[\hat\theta - \hat\beta_B] \pm z_{\frac{\alpha}{2}} \hat\sigma_B$$\;
+  }
+  \Output{Standard normal bootstrap CI}
+  \caption{Bootstrap algorithm for standard normal bootstrap CI}
+\end{algorithm}
+
+Bias correction, however, is not just constant subtraction. \(\hat\beta_B\) is also an random variable, so the transformed random variable might not have Normal distribution.
 
 \hypertarget{basic-bootstrap-confidence-interval}{%
 \subsection{Basic bootstrap confidence interval}\label{basic-bootstrap-confidence-interval}}
 
+Instead of using bootstrap standard error for observed statistic, i.e.~\(\hat\theta\), the basic bootstrap CI transforms the distribution of \(\hat\theta_b^{\ast}\) by subtracting \(\hat\theta\). Consider \(\frac{\alpha}{2}\) and \(1 - \frac{\alpha}{2}\) quantile values \(\hat\theta_{\frac{\alpha}{2}}^{\ast}\) and \(\hat\theta_{1 - \frac{\alpha}{2}}^{\ast}\). Consider random variable \(\hat\theta - \theta\).
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/quanfig-1} 
+
+}
+
+\caption{$P(\hat\theta - \theta > \alpha_{\frac{\alpha}{2}}) = 1 - \alpha$}\label{fig:quanfig}
+\end{figure}
+
+Let \(\alpha_{\frac{\alpha}{2}}\) be the \(\frac{\alpha}{2}\) quantile of \(\hat\theta - \theta\). Then
+
+\[P(\hat\theta - \theta > \alpha_{\frac{\alpha}{2}}) = 1 - \alpha\]
+
+See Figure \ref{fig:quanfig} for this. It follows that a \(100(1 - \alpha)\%\) CI with symmetricity
+
+\[(\hat\theta - \alpha_{1- \frac{\alpha}{2}}, \hat\theta - \alpha_{\frac{\alpha}{2}})\]
+
+However, \(\alpha\) is unknown. So use bootstrap replicates \(\hat\theta_b^{\ast} - \hat\theta\). Since \(\hat\theta\) is not changed for given sample, we can estimate \(\frac{\alpha}{2}\) quantile by
+
+\[\hat\theta_{\frac{\alpha}{2}}^{\ast} - \hat\theta\]
+
+\(\alpha_{\frac{\alpha}{2}}\) is replaced by this, so upper limit would be
+
+\[\hat\theta - (\hat\theta_{\frac{\alpha}{2}}^{\ast} - \hat\theta) = 2 \hat\theta - \hat\theta_{\frac{\alpha}{2}}^{\ast}\]
+
+One proceeds in a similar way for \(1 - \frac{\alpha}{2}\) quantile that
+
+\[\hat\theta - (\hat\theta_{1 - \frac{\alpha}{2}}^{\ast} - \hat\theta) = 2 \hat\theta - \hat\theta_{1 - \frac{\alpha}{2}}^{\ast}\]
+
+\BeginKnitrBlock{theorem}[Basic bootstrap CI]
+\protect\hypertarget{thm:basicci}{}{\label{thm:basicci} \iffalse (Basic bootstrap CI) \fi{} }Let \(\hat\theta_{\frac{\alpha}{2}}^{\ast}\) and \(\hat\theta_{1 - \frac{\alpha}{2}}^{\ast}\) be \(\frac{\alpha}{2}\) and \(1 - \frac{\alpha}{2}\) quantile values, respectively, obtained from the bootstraped empirical distribution. Then the \textit{basic bootstrap confidence interval} is
+
+\[(2 \hat\theta - \hat\theta_{1 - \frac{\alpha}{2}}^{\ast}, 2 \hat\theta - \hat\theta_{\frac{\alpha}{2}}^{\ast})\]
+\EndKnitrBlock{theorem}
+
+In other words, what we need is quantiles, not standard error.
+
+\begin{algorithm}[H] \label{alg:algbasic}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{$n$ observations $x_1, \ldots, x_n$}
+  \Input{statistic of interest $\hat\theta$, the number of bootstrap replicates $B$}
+  \For{$b \leftarrow 1$ \KwTo $B$}{
+    Sampling with replacement $X_{1}^{(b)}, \ldots, X_n^{(b)}$ from the observed sample\;
+    Compute estimate $\hat\theta(X_{1}^{(b)}, \ldots, X_n^{(b)}) \equiv \hat\theta_b^{\ast}$\;
+  }
+  $1 - \frac{\alpha}{2}$ and $\frac{\alpha}{2}$ quantile values $\hat\theta_{1 - \frac{\alpha}{2}}^{\ast}$ and $\hat\theta_{\frac{\alpha}{2}}^{\ast}$\;
+  Basic bootstrap CI $$(2 \hat\theta - \hat\theta_{1 - \frac{\alpha}{2}}^{\ast}, 2 \hat\theta - \hat\theta_{\frac{\alpha}{2}}^{\ast})$$\; \label{alg:basicline}
+  \Output{Basic bootstrap CI}
+  \caption{Bootstrap algorithm for basic bootstrap CI}
+\end{algorithm}
+
 \hypertarget{percentile-bootstrap-confidence-interval}{%
 \subsection{Percentile bootstrap confidence interval}\label{percentile-bootstrap-confidence-interval}}
+
+Percentile bootstrap confidence interval is quite intuitive. It just finds upper and lower quantile of empirical distribution.
+
+\BeginKnitrBlock{theorem}[Percentile bootstrap CI]
+\protect\hypertarget{thm:percci}{}{\label{thm:percci} \iffalse (Percentile bootstrap CI) \fi{} }Let \(\hat\theta_{\frac{\alpha}{2}}^{\ast}\) and \(\hat\theta_{1 - \frac{\alpha}{2}}^{\ast}\) be \(\frac{\alpha}{2}\) and \(1 - \frac{\alpha}{2}\) quantile values, respectively, obtained from the bootstraped empirical distribution. Then the \textit{basic bootstrap confidence interval} is
+
+\[(\hat\theta_{\frac{\alpha}{2}}^{\ast}, \hat\theta_{1 - \frac{\alpha}{2}}^{\ast})\]
+\EndKnitrBlock{theorem}
+
+Process of getting the CI is similar to Algorithm \(\ref{alg:algbasic}\) but \(\ref{alg:basicline}\).
+
+\begin{algorithm}[H] \label{alg:algperc}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{$n$ observations $x_1, \ldots, x_n$}
+  \Input{statistic of interest $\hat\theta$, the number of bootstrap replicates $B$}
+  \For{$b \leftarrow 1$ \KwTo $B$}{
+    Sampling with replacement $X_{1}^{(b)}, \ldots, X_n^{(b)}$ from the observed sample\;
+    Compute estimate $\hat\theta(X_{1}^{(b)}, \ldots, X_n^{(b)}) \equiv \hat\theta_b^{\ast}$\;
+  }
+  $1 - \frac{\alpha}{2}$ and $\frac{\alpha}{2}$ quantile values $\hat\theta_{1 - \frac{\alpha}{2}}^{\ast}$ and $\hat\theta_{\frac{\alpha}{2}}^{\ast}$\;
+  Percentile bootstrap CI $$(\hat\theta_{\frac{\alpha}{2}}^{\ast}, \hat\theta_{1 - \frac{\alpha}{2}}^{\ast})$$\;
+  \Output{Basic bootstrap CI}
+  \caption{Bootstrap algorithm for percentile bootstrap CI}
+\end{algorithm}
+
+\hypertarget{bootstrap-ci-in-r}{%
+\subsection{\texorpdfstring{Bootstrap CI in \texttt{R}}{Bootstrap CI in R}}\label{bootstrap-ci-in-r}}
+
+\texttt{boot} package has a function \texttt{boot.ci()}. This is used for \texttt{boot} object. Refer to Example \ref{exm:ratbias}. By specifying \texttt{type} argument, we can get various confidence intervals.
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{"norm"}: Standard normal bootstrap confidence interval
+\item
+  \texttt{"basic"}: Basic bootstrap confidence interval
+\item
+  \texttt{"stud"}: Bootstrap \(t\) interval
+\item
+  \texttt{"perc"}: Percentile bootstrap confidence interval
+\item
+  \texttt{"bca"}: Better bootstrap confidence interval (BCa)
+\end{itemize}
+
+Confidence level is set to be \texttt{conf\ =\ .95} by default.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{boot.ci}\NormalTok{(ratio, }\DataTypeTok{type =} \KeywordTok{c}\NormalTok{(}\StringTok{"norm"}\NormalTok{, }\StringTok{"basic"}\NormalTok{, }\StringTok{"perc"}\NormalTok{))}
+\CommentTok{#> BOOTSTRAP CONFIDENCE INTERVAL CALCULATIONS}
+\CommentTok{#> Based on 2000 bootstrap replicates}
+\CommentTok{#> }
+\CommentTok{#> CALL : }
+\CommentTok{#> boot.ci(boot.out = ratio, type = c("norm", "basic", "perc"))}
+\CommentTok{#> }
+\CommentTok{#> Intervals : }
+\CommentTok{#> Level      Normal              Basic              Percentile     }
+\CommentTok{#> 95%   (-0.2732,  0.1164 )   (-0.2998,  0.0797 )   (-0.2223,  0.1572 )  }
+\CommentTok{#> Calculations and Intervals on Original Scale}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{numerical-methods}{%
 \chapter{Numerical Methods}\label{numerical-methods}}
@@ -5351,8 +5534,152 @@ Using initioal values \(x_0 = 0\) and \(X_1 = 100\),
 \caption{Example curve}\label{fig:bisecroot}
 \end{figure}
 
+\hypertarget{brents-method}{%
+\subsection{Brent's method}\label{brents-method}}
+
+Brent's method combines the root bracketing and bisection with inverse quadratic interpolation. \texttt{uniroot()} uses this method. Refer to Example \ref{exm:bisecexm}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(brent <-}\StringTok{ }
+\StringTok{  }\KeywordTok{uniroot}\NormalTok{(}
+    \DataTypeTok{f =}\NormalTok{ f_bisec,}
+    \DataTypeTok{interval =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{100}\NormalTok{),}
+    \DataTypeTok{a =} \FloatTok{.5}\NormalTok{,}
+    \DataTypeTok{n =} \DecValTok{20}
+\NormalTok{  ))}
+\CommentTok{#> $root}
+\CommentTok{#> [1] 4.19}
+\CommentTok{#> }
+\CommentTok{#> $f.root}
+\CommentTok{#> [1] 0.000238}
+\CommentTok{#> }
+\CommentTok{#> $iter}
+\CommentTok{#> [1] 14}
+\CommentTok{#> }
+\CommentTok{#> $init.it}
+\CommentTok{#> [1] NA}
+\CommentTok{#> }
+\CommentTok{#> $estim.prec}
+\CommentTok{#> [1] 6.1e-05}
+\end{Highlighting}
+\end{Shaded}
+
+This method assures convergence of the bisection method. Morover, it is generally faster than bisection.
+
 \hypertarget{numerical-integration}{%
 \section{Numerical Integration}\label{numerical-integration}}
+
+Try to compute
+
+\[I = \int_a^b f(x) dx\]
+
+\hypertarget{trapezoidal-rule}{%
+\subsection{Trapezoidal rule}\label{trapezoidal-rule}}
+
+From definition of Riemann integration, we can compute integration \(I\) by partitioning intervals. Areas of rectangles can be considered or trapezoids can also be considered. If we use trapezoids, it will be more closed to the target curve, but the formula might be quite complex. For the length of subintervals \(h = \frac{b - a}{n}\),
+
+\begin{equation}
+  \frac{h}{2} f(a) + h \sum_{i = 1}^{n - 1} f(x_i) + \frac{h}{2} f(b)
+  \label{eq:trape}
+\end{equation}
+
+For fun, we use \texttt{Rcpp} for trapezoid method. \texttt{Rcpp} integrate \texttt{R} and \texttt{C++}. This accelerate execution speed like loop.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(Rcpp)}
+\end{Highlighting}
+\end{Shaded}
+
+The following code should be written in \texttt{cpp} file separately, or in \texttt{cppFunction()} as character.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\PreprocessorTok{#include }\ImportTok{<Rcpp.h>}
+\KeywordTok{using} \KeywordTok{namespace}\NormalTok{ Rcpp;}
+
+\CommentTok{// [[Rcpp::export]]}
+\NormalTok{NumericVector trapezoid(Function target, }\DataTypeTok{double}\NormalTok{ a, }\DataTypeTok{double}\NormalTok{ b, }\DataTypeTok{int}\NormalTok{ n) \{}
+  \DataTypeTok{double}\NormalTok{ h = (b - a) / n;}
+\NormalTok{  NumericVector fa = target(a);}
+\NormalTok{  NumericVector fb = target(b);}
+\NormalTok{  NumericVector integral = (fa + fb) / }\DecValTok{2}\NormalTok{;}
+  \DataTypeTok{double}\NormalTok{ x = a;}
+\NormalTok{  NumericVector fx = target(x);}
+  
+  \ControlFlowTok{for}\NormalTok{(}\DataTypeTok{int}\NormalTok{ i = }\DecValTok{0}\NormalTok{; i < n; i++) \{}
+\NormalTok{    x += h;}
+\NormalTok{    NumericVector fx = target(x);}
+\NormalTok{    integral += fx;}
+\NormalTok{  \}}
+  
+\NormalTok{  integral = integral * h;}
+  
+  \ControlFlowTok{return}\NormalTok{(integral);}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Consider standard normal densitiy. Compare
+
+\[P(-1.96 \le Z \le 1.96)\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{phi <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+  \DecValTok{1} \OperatorTok{/}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{pi) }\OperatorTok{*}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{)}
+\NormalTok{\}}
+\CommentTok{#----------------------------------}
+\KeywordTok{tibble}\NormalTok{(}\DataTypeTok{x1 =} \FloatTok{-1.96}\NormalTok{, }\DataTypeTok{x2 =} \FloatTok{1.96}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}
+    \DataTypeTok{trapezoid =} \KeywordTok{trapezoid}\NormalTok{(}
+\NormalTok{      phi,}
+      \DataTypeTok{a =}\NormalTok{ x1,}
+      \DataTypeTok{b =}\NormalTok{ x2,}
+      \DataTypeTok{n =} \DecValTok{100}
+\NormalTok{    ),}
+    \DataTypeTok{pnorm =} \KeywordTok{pnorm}\NormalTok{(x2) }\OperatorTok{-}\StringTok{ }\KeywordTok{pnorm}\NormalTok{(x1)}
+\NormalTok{  )}
+\CommentTok{#> # A tibble: 1 x 2}
+\CommentTok{#>   trapezoid pnorm}
+\CommentTok{#>       <dbl> <dbl>}
+\CommentTok{#> 1     0.952 0.950}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{adaptive-quadrature-method}{%
+\subsection{Adaptive quadrature method}\label{adaptive-quadrature-method}}
+
+\texttt{R} provides a function \texttt{integrate()}. This implements a method called an \emph{adaptive quadrature method}. Get
+
+\[\int_0^{\infty} \frac{1}{(\cosh y - \rho r)^{n - 1}}dy\]
+
+with \(\rho \in (-1, 1)\), \(r \in (-1, 1)\), and \(n \ge 2\) integer.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{integrate_exm <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(y, n, r, rho) \{}
+\NormalTok{  (}\KeywordTok{cosh}\NormalTok{(y) }\OperatorTok{-}\StringTok{ }\NormalTok{rho }\OperatorTok{*}\StringTok{ }\NormalTok{r)}\OperatorTok{^}\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{n)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Denote that \(\rho\), \(r\), and \(n\) should be pre-specified. Consider \((0.2, 0.5, 10)\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{integrate}\NormalTok{(}
+  \DataTypeTok{f =}\NormalTok{ integrate_exm,}
+  \DataTypeTok{lower =} \DecValTok{0}\NormalTok{,}
+  \DataTypeTok{upper =} \OtherTok{Inf}\NormalTok{,}
+  \DataTypeTok{n =} \DecValTok{10}\NormalTok{,}
+  \DataTypeTok{r =} \FloatTok{.5}\NormalTok{,}
+  \DataTypeTok{rho =} \FloatTok{.2}
+\NormalTok{)}
+\CommentTok{#> 1.05 with absolute error < 2.3e-05}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{maximum-likelihood-problems}{%
 \section{Maximum Likelihood Problems}\label{maximum-likelihood-problems}}

@@ -1735,14 +1735,190 @@ i.e. $\frac{n}{n - 1}$ times the bootstrap bias for $\hat\theta_Q$.
 
 ## Bootstrap Confidence Intervals
 
+Bootstrap gives empirical distribution of a estimator. Naturally, we want to get confidence interval of this estimator by using standard error or by just arranging replicates. See Figure \@ref(fig:xbarsemc) or \@ref(fig:bootrep). These are empirical distribution. 
+
+<!-- ```{r bootempci, fig.cap="Empirical distribution of bootstrap replicates"} -->
+<!-- tibble(theta = rho$t[,1]) %>%  -->
+<!--   ggplot(aes(x = theta)) + -->
+<!--   geom_histogram(bins = 30) + -->
+<!--   xlab(expression(hat(rho)^"*")) -->
+<!-- ``` -->
+
 ### Standard normal bootstrap confidence interval
+
+Standard normal bootstrap confidence interval is the simplest approach, but not necessarily the best [@Rizzo:2007aa]. If the estimator of interest $\hat\theta$ follows Normal distribution, the only thing we have to do is computing standard error. When is this case? If $\hat\theta$ is a sample mean,
+
+\begin{equation}
+  Z = \frac{\hat\theta - E\hat\theta}{\hat\sigma_B} \stackrel{d}{\rightarrow} N(0, 1) \quad \text{as} \:\: n \rightarrow \infty
+  (\#eq:bootclt)
+\end{equation}
+
+by the *Central limit theorem*. Thus, $100 (1 - \alpha)\%$ confidence for $\theta$ can be computed in this frame
+
+\begin{equation}
+  \hat\theta \pm z_{\frac{\alpha}{2}} \hat\sigma_B
+  (\#eq:zbootci)
+\end{equation}
+
+```{remark, name = "Assumptions of standard normal bootstrap CI"}
+To compute this CI, some entries should be assumed about $\hat\theta$.
+
+\begin{enumerate}
+  \item $\hat\theta$ is Normal, or is sample mean with large sample size (CLT-based)
+  \item $\hat\theta$ is unbiased.
+\end{enumerate}
+```
+
+In case of biasedness, it should be corrected. Estimating bias by bootstrap by $\hat\beta_B$,
+
+$$\hat\theta - \hat\beta_B$$
+
+Hence, we replace $\hat\theta$ in CI \@ref(eq:zbootci) with above corrected one.
+
+```{theorem, zbootci2, name = "Standard normal bootstrap CI"}
+For the estimator of interest $\hat\theta$, standard normal bootstrap CI is
+
+$$[\hat\theta - \hat\beta_B] \pm z_{\frac{\alpha}{2}} \hat\sigma_B$$
+
+If $\hat\theta$ is unbiased, correction is omitted.
+
+$$\hat\theta \pm z_{\frac{\alpha}{2}} \hat\sigma_B$$
+```
+
+\begin{algorithm}[H] \label{alg:algzbootci}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{$n$ observations $x_1, \ldots, x_n$}
+  \Input{statistic of interest $\hat\theta$, the number of bootstrap replicates $B$}
+  \For{$b \leftarrow 1$ \KwTo $B$}{
+    Sampling with replacement $X_{1}^{(b)}, \ldots, X_n^{(b)}$ from the observed sample\;
+    Compute estimate $\hat\theta(X_{1}^{(b)}, \ldots, X_n^{(b)}) \equiv \hat\theta_b^{\ast}$\;
+  }
+  $\overline{\hat\theta^{\ast}} = \frac{1}{B} \sum\limits_{b = 1}^B \hat\theta_b^{\ast}$\;
+  Bootsrap standard error $\hat\sigma_B = \bigg[ \frac{1}{B - 1} \sum_{b = 1}^B (\hat\theta_b^{\ast} - \overline{\hat\theta^{\ast}})^2 \bigg]^{\frac{1}{2}}$\;
+  Bootsrap bias $\hat\beta_B = \overline{\hat\theta^{\ast}} - \hat\theta(X_1, \ldots, X_n)$\;
+  \eIf{$\frac{\hat\beta_B}{\hat\sigma_B} < \frac{1}{4}$}{
+    Standard Normal Bootstrap CI $$\hat\theta \pm z_{\frac{\alpha}{2}} \hat\sigma_B$$\;
+  }{
+    Standard Normal Bootstrap CI $$[\hat\theta - \hat\beta_B] \pm z_{\frac{\alpha}{2}} \hat\sigma_B$$\;
+  }
+  \Output{Standard normal bootstrap CI}
+  \caption{Bootstrap algorithm for standard normal bootstrap CI}
+\end{algorithm}
+
+Bias correction, however, is not just constant subtraction. $\hat\beta_B$ is also an random variable, so the transformed random variable might not have Normal distribution.
 
 ### Basic bootstrap confidence interval
 
+Instead of using bootstrap standard error for observed statistic, i.e. $\hat\theta$, the basic bootstrap CI transforms the distribution of $\hat\theta_b^{\ast}$ by subtracting $\hat\theta$. Consider $\frac{\alpha}{2}$ and $1 - \frac{\alpha}{2}$ quantile values $\hat\theta_{\frac{\alpha}{2}}^{\ast}$ and $\hat\theta_{1 - \frac{\alpha}{2}}^{\ast}$. Consider random variable $\hat\theta - \theta$.
+
+```{r quanfig, echo=FALSE, fig.cap="$P(\\hat\\theta - \\theta > \\alpha_{\\frac{\\alpha}{2}}) = 1 - \\alpha$"}
+tibble(x = seq(-3, 3, by = .01)) %>% 
+  mutate(
+    z = dnorm(x),
+    quan = x > qnorm(.025)
+  ) %>% 
+  ggplot(aes(x = x, y = z)) +
+  geom_path() +
+  geom_area(aes(fill = quan), alpha = .5, show.legend = FALSE) +
+  geom_vline(xintercept = qnorm(.025), col = I("red")) +
+  scale_fill_manual(
+    values = c("FALSE" = NA, "TRUE" = gg_hcl(1))
+  ) +
+  labs(
+    x = expression(hat(theta) - theta),
+    y = expression(f(x))
+  )
+```
+
+Let $\alpha_{\frac{\alpha}{2}}$ be the $\frac{\alpha}{2}$ quantile of $\hat\theta - \theta$. Then
+
+$$P(\hat\theta - \theta > \alpha_{\frac{\alpha}{2}}) = 1 - \alpha$$
+
+See Figure \@ref(fig:quanfig) for this. It follows that a $100(1 - \alpha)\%$ CI with symmetricity
+
+$$(\hat\theta - \alpha_{1- \frac{\alpha}{2}}, \hat\theta - \alpha_{\frac{\alpha}{2}})$$
+
+However, $\alpha$ is unknown. So use bootstrap replicates $\hat\theta_b^{\ast} - \hat\theta$. Since $\hat\theta$ is not changed for given sample, we can estimate $\frac{\alpha}{2}$ quantile by
+
+$$\hat\theta_{\frac{\alpha}{2}}^{\ast} - \hat\theta$$
+
+$\alpha_{\frac{\alpha}{2}}$ is replaced by this, so upper limit would be
+
+$$\hat\theta - (\hat\theta_{\frac{\alpha}{2}}^{\ast} - \hat\theta) = 2 \hat\theta - \hat\theta_{\frac{\alpha}{2}}^{\ast}$$
+
+One proceeds in a similar way for $1 - \frac{\alpha}{2}$ quantile that
+
+$$\hat\theta - (\hat\theta_{1 - \frac{\alpha}{2}}^{\ast} - \hat\theta) = 2 \hat\theta - \hat\theta_{1 - \frac{\alpha}{2}}^{\ast}$$
+
+```{theorem, basicci, name = "Basic bootstrap CI"}
+Let $\hat\theta_{\frac{\alpha}{2}}^{\ast}$ and $\hat\theta_{1 - \frac{\alpha}{2}}^{\ast}$ be $\frac{\alpha}{2}$ and $1 - \frac{\alpha}{2}$ quantile values, respectively, obtained from the bootstraped empirical distribution. Then the \textit{basic bootstrap confidence interval} is
+
+$$(2 \hat\theta - \hat\theta_{1 - \frac{\alpha}{2}}^{\ast}, 2 \hat\theta - \hat\theta_{\frac{\alpha}{2}}^{\ast})$$
+```
+
+In other words, what we need is quantiles, not standard error.
+
+\begin{algorithm}[H] \label{alg:algbasic}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{$n$ observations $x_1, \ldots, x_n$}
+  \Input{statistic of interest $\hat\theta$, the number of bootstrap replicates $B$}
+  \For{$b \leftarrow 1$ \KwTo $B$}{
+    Sampling with replacement $X_{1}^{(b)}, \ldots, X_n^{(b)}$ from the observed sample\;
+    Compute estimate $\hat\theta(X_{1}^{(b)}, \ldots, X_n^{(b)}) \equiv \hat\theta_b^{\ast}$\;
+  }
+  $1 - \frac{\alpha}{2}$ and $\frac{\alpha}{2}$ quantile values $\hat\theta_{1 - \frac{\alpha}{2}}^{\ast}$ and $\hat\theta_{\frac{\alpha}{2}}^{\ast}$\;
+  Basic bootstrap CI $$(2 \hat\theta - \hat\theta_{1 - \frac{\alpha}{2}}^{\ast}, 2 \hat\theta - \hat\theta_{\frac{\alpha}{2}}^{\ast})$$\; \label{alg:basicline}
+  \Output{Basic bootstrap CI}
+  \caption{Bootstrap algorithm for basic bootstrap CI}
+\end{algorithm}
+
 ### Percentile bootstrap confidence interval
 
+Percentile bootstrap confidence interval is quite intuitive. It just finds upper and lower quantile of empirical distribution.
 
+```{theorem, percci, name = "Percentile bootstrap CI"}
+Let $\hat\theta_{\frac{\alpha}{2}}^{\ast}$ and $\hat\theta_{1 - \frac{\alpha}{2}}^{\ast}$ be $\frac{\alpha}{2}$ and $1 - \frac{\alpha}{2}$ quantile values, respectively, obtained from the bootstraped empirical distribution. Then the \textit{basic bootstrap confidence interval} is
 
+$$(\hat\theta_{\frac{\alpha}{2}}^{\ast}, \hat\theta_{1 - \frac{\alpha}{2}}^{\ast})$$
+```
+
+Process of getting the CI is similar to Algorithm $\ref{alg:algbasic}$ but $\ref{alg:basicline}$.
+
+\begin{algorithm}[H] \label{alg:algperc}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{$n$ observations $x_1, \ldots, x_n$}
+  \Input{statistic of interest $\hat\theta$, the number of bootstrap replicates $B$}
+  \For{$b \leftarrow 1$ \KwTo $B$}{
+    Sampling with replacement $X_{1}^{(b)}, \ldots, X_n^{(b)}$ from the observed sample\;
+    Compute estimate $\hat\theta(X_{1}^{(b)}, \ldots, X_n^{(b)}) \equiv \hat\theta_b^{\ast}$\;
+  }
+  $1 - \frac{\alpha}{2}$ and $\frac{\alpha}{2}$ quantile values $\hat\theta_{1 - \frac{\alpha}{2}}^{\ast}$ and $\hat\theta_{\frac{\alpha}{2}}^{\ast}$\;
+  Percentile bootstrap CI $$(\hat\theta_{\frac{\alpha}{2}}^{\ast}, \hat\theta_{1 - \frac{\alpha}{2}}^{\ast})$$\;
+  \Output{Basic bootstrap CI}
+  \caption{Bootstrap algorithm for percentile bootstrap CI}
+\end{algorithm}
+
+### Bootstrap CI in `R`
+
+`boot` package has a function `boot.ci()`. This is used for `boot` object. Refer to Example \@ref(exm:ratbias). By specifying `type` argument, we can get various confidence intervals.
+
+- `"norm"`: Standard normal bootstrap confidence interval
+- `"basic"`: Basic bootstrap confidence interval
+- `"stud"`: Bootstrap $t$ interval
+- `"perc"`: Percentile bootstrap confidence interval
+- `"bca"`: Better bootstrap confidence interval (BCa)
+
+Confidence level is set to be `conf = .95` by default.
+
+```{r}
+boot.ci(ratio, type = c("norm", "basic", "perc"))
+```
 
 
 

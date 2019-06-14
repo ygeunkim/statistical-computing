@@ -157,15 +157,135 @@ $x = `r bi_exm[1]`$ has been computed. The following figure shows that this answ
 ```{r bisecroot, echo=FALSE, fig.cap="Example curve"}
 tibble(x = c(0, 10)) %>% 
   ggplot(aes(x = x)) +
+  modelr::geom_ref_line(h = 0) +
   stat_function(fun = f_bisec) +
-  annotate(geom = "point", x = bi_exm[1], y = f_bisec(bi_exm[1]), col = "red", shape = 4)
+  annotate(
+    geom = "point", 
+    x = bi_exm[1], 
+    y = f_bisec(bi_exm[1]), 
+    col = "red", 
+    shape = 4,
+    size = 3
+  )
 ```
+
+### Brent's method
+
+Brent's method combines the root bracketing and bisection with inverse quadratic interpolation. `uniroot()` uses this method. Refer to Example \@ref(exm:bisecexm).
+
+```{r}
+(brent <- 
+  uniroot(
+    f = f_bisec,
+    interval = c(0, 100),
+    a = .5,
+    n = 20
+  ))
+```
+
+This method assures convergence of the bisection method. Morover, it is generally faster than bisection.
 
 
 ## Numerical Integration
 
+Try to compute
+
+$$I = \int_a^b f(x) dx$$
+
+### Trapezoidal rule
+
+From definition of Riemann integration, we can compute integration $I$ by partitioning intervals. Areas of rectangles can be considered or trapezoids can also be considered. If we use trapezoids, it will be more closed to the target curve, but the formula might be quite complex. For the length of subintervals $h = \frac{b - a}{n}$,
+
+\begin{equation}
+  \frac{h}{2} f(a) + h \sum_{i = 1}^{n - 1} f(x_i) + \frac{h}{2} f(b)
+  (\#eq:trape)
+\end{equation}
+
+For fun, we use `Rcpp` for trapezoid method. `Rcpp` integrate `R` and `C++`. This accelerate execution speed like loop.
+
+```{r, eval=FALSE}
+library(Rcpp)
+```
+
+The following code should be written in `cpp` file separately, or in `cppFunction()` as character.
+
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::export]]
+NumericVector trapezoid(Function target, double a, double b, int n) {
+  double h = (b - a) / n;
+  NumericVector fa = target(a);
+  NumericVector fb = target(b);
+  NumericVector integral = (fa + fb) / 2;
+  double x = a;
+  NumericVector fx = target(x);
+  
+  for(int i = 0; i < n; i++) {
+    x += h;
+    NumericVector fx = target(x);
+    integral += fx;
+  }
+  
+  integral = integral * h;
+  
+  return(integral);
+}
+```
+
+Consider standard normal densitiy. Compare
+
+$$P(-1.96 \le Z \le 1.96)$$
+
+```{r}
+phi <- function(x) {
+  1 / sqrt(2 * pi) * exp(- x^2 / 2)
+}
+#----------------------------------
+tibble(x1 = -1.96, x2 = 1.96) %>% 
+  summarise(
+    trapezoid = trapezoid(
+      phi,
+      a = x1,
+      b = x2,
+      n = 100
+    ),
+    pnorm = pnorm(x2) - pnorm(x1)
+  )
+```
+
+### Adaptive quadrature method
+
+`R` provides a function `integrate()`. This implements a method called an *adaptive quadrature method*. Get
+
+$$\int_0^{\infty} \frac{1}{(\cosh y - \rho r)^{n - 1}}dy$$
+
+with $\rho \in (-1, 1)$, $r \in (-1, 1)$, and $n \ge 2$ integer.
+
+```{r}
+integrate_exm <- function(y, n, r, rho) {
+  (cosh(y) - rho * r)^(1 - n)
+}
+```
+
+Denote that $\rho$, $r$, and $n$ should be pre-specified. Consider $(0.2, 0.5, 10)$.
+
+```{r}
+integrate(
+  f = integrate_exm,
+  lower = 0,
+  upper = Inf,
+  n = 10,
+  r = .5,
+  rho = .2
+)
+```
+
 
 ## Maximum Likelihood Problems
+
+
 
 
 ## One-Dimensional Optimization
