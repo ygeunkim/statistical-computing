@@ -148,6 +148,7 @@
   \end{array}%
 }
 \DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\argmax}{argmax}
 
 \let\oldmaketitle\maketitle
 \AtBeginDocument{\let\maketitle\relax}
@@ -4305,7 +4306,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.26}
+\CommentTok{#> [1] 2.59}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4379,7 +4380,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 2.21}
+\CommentTok{#> [1] 1.88}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4692,7 +4693,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0084       0.116}
+\CommentTok{#> t1*    0.776 -0.0126       0.121}
 \end{Highlighting}
 \end{Shaded}
 
@@ -5684,8 +5685,190 @@ Denote that \(\rho\), \(r\), and \(n\) should be pre-specified. Consider \((0.2,
 \hypertarget{maximum-likelihood-problems}{%
 \section{Maximum Likelihood Problems}\label{maximum-likelihood-problems}}
 
+Maximum likelihood estimator (MLE) is a estimator such that maximizes likelihood function. Given random sample \(x_1, \ldots, x_n \stackrel{iid}{\sim}f(x_i ; \theta)\), likelihood function can be given by
+
+\[L(\theta) = \prod_{i = 1}^n f(x_i)\]
+
+Then MLE \(\hat\theta\) is
+
+\begin{equation}
+  \hat\theta = \argmax_{\theta \in \Theta} L(\theta)
+  \label{eq:mle}
+\end{equation}
+
+Denote that it is equivalent to maximizing log-likilihood \(l(\theta) := \ln L(\theta)\).
+
+\begin{equation}
+  \hat\theta = \argmax_{\theta \in \Theta} l(\theta)
+  \label{eq:mle2}
+\end{equation}
+
+Either for \(L\) or \(l\), we can find the critical point by differentiating in a mathematical point of view.
+
+\[
+\begin{cases}
+  \frac{d}{d \theta} l(\theta) = 0 \\
+  \frac{d^2}{d \theta^2} l(\theta) > 0
+\end{cases}
+\]
+
+Ignoring the second line, try to find root of first dervative. Finding MLE becomes \emph{root-finding of first derivative function} problem. What we need are
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Likelihood function or log-likelihood function
+\item
+  Its derivative
+\end{enumerate}
+
+\BeginKnitrBlock{example}[Exponential distribution]
+\protect\hypertarget{exm:findmle}{}{\label{exm:findmle} \iffalse (Exponential distribution) \fi{} }Let \(Y_1, Y_2 \stackrel{iid}{\sim}Exp(\theta)\), i.e.
+
+\[f(y) = \theta e^{-\theta y}, \quad y > 0, \theta > 0\]
+
+Then the likelihood function is
+
+\[L(\theta) = \theta^2 e^{-\theta(y_1 + y_2)}\]
+
+and log-likelihood
+
+\[l(\theta) = 2 \ln \theta - \theta(y_1 + y_2)\]
+
+Find its MLE \(\hat\theta\).
+\EndKnitrBlock{example}
+
+\BeginKnitrBlock{solution}
+\iffalse{} {Solution. } \fi{}Note that for \(\theta > 0\),
+
+\[\frac{d}{d\theta}l(\theta) = \frac{2}{\theta} - (y_1 + y_2)\]
+
+Hence, we know that the analytical solution is
+
+\[\hat\theta = \frac{2}{y_1 + y_2}\]
+\EndKnitrBlock{solution}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{y <-}\StringTok{ }\KeywordTok{c}\NormalTok{(.}\DecValTok{043}\NormalTok{, }\FloatTok{.502}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Give input as \(l\) and \((y_1, y_2) = (0.043, 0.502)\). Here we will use \texttt{D()} which enables to output analytical derivative function for \texttt{expression}. For example,
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{D}\NormalTok{(}\KeywordTok{expression}\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\KeywordTok{log}\NormalTok{(theta) }\OperatorTok{-}\StringTok{ }\NormalTok{theta }\OperatorTok{*}\StringTok{ }\NormalTok{(y1 }\OperatorTok{+}\StringTok{ }\NormalTok{y2)), }\DataTypeTok{name =} \StringTok{"theta"}\NormalTok{)}
+\CommentTok{#> 2 * (1/theta) - (y1 + y2)}
+\end{Highlighting}
+\end{Shaded}
+
+Then we can make the following function.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{find_mle <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(l, args, name, }\DataTypeTok{interval =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{5}\NormalTok{), ...) \{}
+\NormalTok{  differ <-}\StringTok{ }\KeywordTok{D}\NormalTok{(}\KeywordTok{substitute}\NormalTok{(l), }\DataTypeTok{name =}\NormalTok{ name)}
+\NormalTok{  args[[name]] <-}\StringTok{ }\DecValTok{0}
+\NormalTok{  differ_fun <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+\NormalTok{    args[[name]] <-}\StringTok{ }\NormalTok{x}
+    \KeywordTok{eval}\NormalTok{(differ, }\DataTypeTok{envir =}\NormalTok{ args, }\DataTypeTok{enclos =} \KeywordTok{parent.frame}\NormalTok{())}
+\NormalTok{  \}}
+  \KeywordTok{uniroot}\NormalTok{(}
+    \DataTypeTok{f =}\NormalTok{ differ_fun,}
+    \DataTypeTok{interval =}\NormalTok{ interval,}
+\NormalTok{    ...}
+\NormalTok{  )}\OperatorTok{$}\NormalTok{root}
+\NormalTok{\}}
+\CommentTok{#-------------------------------------}
+\KeywordTok{find_mle}\NormalTok{(}
+  \DecValTok{2} \OperatorTok{*}\StringTok{ }\KeywordTok{log}\NormalTok{(theta) }\OperatorTok{-}\StringTok{ }\NormalTok{theta }\OperatorTok{*}\StringTok{ }\NormalTok{(y1 }\OperatorTok{+}\StringTok{ }\NormalTok{y2), }
+  \DataTypeTok{args =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{y1 =}\NormalTok{ y[}\DecValTok{1}\NormalTok{], }\DataTypeTok{y2 =}\NormalTok{ y[}\DecValTok{2}\NormalTok{]), }
+  \DataTypeTok{name =} \StringTok{"theta"}\NormalTok{,}
+  \DataTypeTok{interval =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{5}\NormalTok{)}
+\NormalTok{)}
+\CommentTok{#> [1] 3.67}
+\end{Highlighting}
+\end{Shaded}
+
+In \texttt{stats4} library, there is a function called \texttt{mle()}. We can also use this one.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{exp_logLik <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(}\DataTypeTok{theta =} \DecValTok{1}\NormalTok{) \{}
+  \OperatorTok{-}\StringTok{ }\KeywordTok{length}\NormalTok{(y) }\OperatorTok{*}\StringTok{ }\KeywordTok{log}\NormalTok{(theta) }\OperatorTok{+}\StringTok{ }\NormalTok{theta }\OperatorTok{*}\StringTok{ }\KeywordTok{sum}\NormalTok{(y) }\CommentTok{# -l(theta)}
+\NormalTok{\}}
+\CommentTok{#-----------------------------------}
+\NormalTok{stats4}\OperatorTok{::}\KeywordTok{mle}\NormalTok{(exp_logLik) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\NormalTok{stats4}\OperatorTok{::}\KeywordTok{summary}\NormalTok{()}
+\CommentTok{#> Maximum likelihood estimation}
+\CommentTok{#> }
+\CommentTok{#> Call:}
+\CommentTok{#> stats4::mle(minuslogl = exp_logLik)}
+\CommentTok{#> }
+\CommentTok{#> Coefficients:}
+\CommentTok{#>       Estimate Std. Error}
+\CommentTok{#> theta     3.67       2.59}
+\CommentTok{#> }
+\CommentTok{#> -2 log L: -1.2}
+\end{Highlighting}
+\end{Shaded}
+
 \hypertarget{one-dimensional-optimization}{%
 \section{One-Dimensional Optimization}\label{one-dimensional-optimization}}
+
+In the last section, our custom function finding MLE have tried to find root. On the contrary, \texttt{stats4::mle()} optimizes given negative log-likelihood, i.e.~find its minimum.
+
+\BeginKnitrBlock{example}[Find maximum of univariate function]
+\protect\hypertarget{exm:maxlike}{}{\label{exm:maxlike} \iffalse (Find maximum of univariate function) \fi{} }Maximize the function
+
+\[f(x) = \frac{\ln (1 + \ln x)}{\ln(1 + x)}\]
+
+with respect to \(x\).
+\EndKnitrBlock{example}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{log_frac <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+  \KeywordTok{log}\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\KeywordTok{log}\NormalTok{(x)) }\OperatorTok{/}\StringTok{ }\KeywordTok{log}\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{x)}
+\NormalTok{\}}
+\CommentTok{#---------------------------}
+\KeywordTok{gg_curve}\NormalTok{(}
+\NormalTok{  log_frac, }\DataTypeTok{from =} \DecValTok{2}\NormalTok{, }\DataTypeTok{to =} \DecValTok{14}\NormalTok{, }
+  \DataTypeTok{ylab =} \KeywordTok{expression}\NormalTok{(}\KeywordTok{log}\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\KeywordTok{log}\NormalTok{(x)) }\OperatorTok{/}\StringTok{ }\KeywordTok{log}\NormalTok{(}\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{x))}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/logfrac-1} 
+
+}
+
+\caption{Function $f$ in Example}\label{fig:logfrac}
+\end{figure}
+
+\texttt{nlm()} finds minimization with a Newton-type algorithm. \texttt{optimize()} performs optimization based on various \texttt{method}. To find maximum, we should specify \texttt{maximum\ =\ TRUE}. It is set to be \texttt{FALSE} by default and find the minimum.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{optimize}\NormalTok{(}
+\NormalTok{  log_frac,}
+  \DataTypeTok{lower =} \DecValTok{2}\NormalTok{,}
+  \DataTypeTok{upper =} \DecValTok{8}\NormalTok{,}
+  \DataTypeTok{maximum =} \OtherTok{TRUE}
+\NormalTok{)}
+\CommentTok{#> $maximum}
+\CommentTok{#> [1] 3.8}
+\CommentTok{#> }
+\CommentTok{#> $objective}
+\CommentTok{#> [1] 0.541}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{maximum} is a point where maximum is occurred and \texttt{objective} is a maximum value of the function.
 
 \hypertarget{two-dimensional-optimization}{%
 \section{Two-Dimensional Optimization}\label{two-dimensional-optimization}}

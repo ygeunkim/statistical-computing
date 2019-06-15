@@ -12,6 +12,7 @@ include-before:
   - \newcommand{\ind}{\perp\!\!\!\perp}
   - \newcommand{\R}{\mathbb{R}}
   - $\DeclareMathOperator*{\argmin}{argmin}$
+  - $\DeclareMathOperator*{\argmax}{argmax}$
 site: bookdown::bookdown_site
 documentclass: book
 bibliography: [book.bib, packages.bib]
