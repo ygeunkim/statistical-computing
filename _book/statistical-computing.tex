@@ -4306,7 +4306,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.59}
+\CommentTok{#> [1] 2.39}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4380,7 +4380,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 1.88}
+\CommentTok{#> [1] 2.16}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4693,7 +4693,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0126       0.121}
+\CommentTok{#> t1*    0.776 -0.0128       0.118}
 \end{Highlighting}
 \end{Shaded}
 
@@ -5873,6 +5873,20 @@ with respect to \(x\).
 \hypertarget{two-dimensional-optimization}{%
 \section{Two-Dimensional Optimization}\label{two-dimensional-optimization}}
 
+\BeginKnitrBlock{example}
+\protect\hypertarget{exm:mixgam}{}{\label{exm:mixgam} }Let \(X_1, \ldots, X_3 \stackrel{indep}{\sim}f(x \mid \lambda_j) \equiv Gamma(r = \frac{1}{2}, \lambda_j)\), i.e.
+
+\[f(x \mid \lambda_j) = \frac{\lambda^{\frac{1}{2}}}{\Gamma(\frac{1}{2})} x^{- \frac{1}{2}} e^{-\lambda x}\]
+
+Then set a mixture \(Y \sim f\) s.t. with mixing probaiblity \(\frac{1}{3}\)
+
+\[f(y) = \sum_{j = 1}^3 \frac{1}{3} f_j (y \mid \lambda_j)\]
+
+provided that \(\lambda_1 + \lambda_2 + \lambda_3 = 1\).
+\EndKnitrBlock{example}
+
+\texttt{optim()} can be used for multi-parameter optimization.
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{mix_ll <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(param, y) \{}
@@ -5893,11 +5907,14 @@ with respect to \(x\).
 \end{Highlighting}
 \end{Shaded}
 
+In \texttt{optim()}, initial value should be supplied to \texttt{par}.
+
 \begin{Shaded}
 \begin{Highlighting}[]
+\NormalTok{thet_lam <-}\StringTok{ }\KeywordTok{c}\NormalTok{(.}\DecValTok{6}\NormalTok{, }\FloatTok{.25}\NormalTok{, }\FloatTok{.15}\NormalTok{)}
 \NormalTok{init_lam <-}\StringTok{ }
 \StringTok{  }\KeywordTok{sample}\NormalTok{(}
-    \KeywordTok{c}\NormalTok{(.}\DecValTok{6}\NormalTok{, }\FloatTok{.25}\NormalTok{, }\FloatTok{.15}\NormalTok{),}
+\NormalTok{    thet_lam, }\CommentTok{# true parameter}
     \DataTypeTok{size =} \DecValTok{2000}\NormalTok{,}
     \DataTypeTok{replace =} \OtherTok{TRUE}
 \NormalTok{  )}
@@ -5907,7 +5924,22 @@ with respect to \(x\).
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{opt <-}\StringTok{ }\KeywordTok{optim}\NormalTok{(}\KeywordTok{c}\NormalTok{(.}\DecValTok{3}\NormalTok{, }\FloatTok{.3}\NormalTok{, }\FloatTok{.5}\NormalTok{, }\FloatTok{.3}\NormalTok{), mix_ll, }\DataTypeTok{y =}\NormalTok{ y)}
+\NormalTok{(opt <-}\StringTok{ }\KeywordTok{optim}\NormalTok{(}\KeywordTok{c}\NormalTok{(.}\DecValTok{3}\NormalTok{, }\FloatTok{.3}\NormalTok{, }\FloatTok{.5}\NormalTok{, }\FloatTok{.3}\NormalTok{), mix_ll, }\DataTypeTok{y =}\NormalTok{ y))}
+\CommentTok{#> $par}
+\CommentTok{#> [1] 0.326 0.296 0.631 0.181}
+\CommentTok{#> }
+\CommentTok{#> $value}
+\CommentTok{#> [1] -852}
+\CommentTok{#> }
+\CommentTok{#> $counts}
+\CommentTok{#> function gradient }
+\CommentTok{#>      101       NA }
+\CommentTok{#> }
+\CommentTok{#> $convergence}
+\CommentTok{#> [1] 0}
+\CommentTok{#> }
+\CommentTok{#> $message}
+\CommentTok{#> NULL}
 \end{Highlighting}
 \end{Shaded}
 
@@ -5930,6 +5962,8 @@ with respect to \(x\).
 \CommentTok{#> 1   0.631   0.181   0.188 0.326 0.296 0.378}
 \end{Highlighting}
 \end{Shaded}
+
+True parameter was 0.6, 0.25, 0.15. Compare MLE to this.
 
 \hypertarget{em-algorithm}{%
 \section{EM Algorithm}\label{em-algorithm}}
