@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{15 Jun, 2019}
+    \date{20 Jun, 2019}
 
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -4306,7 +4306,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.39}
+\CommentTok{#> [1] 2.21}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4380,7 +4380,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 2.16}
+\CommentTok{#> [1] 2.53}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4692,8 +4692,8 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
-\CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0128       0.118}
+\CommentTok{#>     original   bias    std. error}
+\CommentTok{#> t1*    0.776 -0.00804       0.113}
 \end{Highlighting}
 \end{Shaded}
 
@@ -5878,14 +5878,18 @@ with respect to \(x\).
 
 \[f(x \mid \lambda_j) = \frac{\lambda^{\frac{1}{2}}}{\Gamma(\frac{1}{2})} x^{- \frac{1}{2}} e^{-\lambda x}\]
 
-Then set a mixture \(Y \sim f\) s.t. with mixing probaiblity \(\frac{1}{3}\)
+Then set a mixture \(Y \sim f\) s.t. with mixing probaiblity \(p_1, p_2, p_3 \;(p_1 + p_2 + p_3 = 1)\).
 
-\[f(y) = \sum_{j = 1}^3 \frac{1}{3} f_j (y \mid \lambda_j)\]
+\[f(y) = \sum_{j = 1}^3 p_j f_j (y \mid \lambda_j)\]
 
 provided that \(\lambda_1 + \lambda_2 + \lambda_3 = 1\).
 \EndKnitrBlock{example}
 
-\texttt{optim()} can be used for multi-parameter optimization.
+\texttt{optim()} can be used for multi-parameter optimization. It finds minimum of given function in \texttt{fn}. Since we are interested in maximum, we have to \emph{add minus sign in front of the final result to get minimum}.
+
+\[\max f = - \min ( - f)\]
+
+For simplicity, set \texttt{param\ =\ c(p1,\ p2,\ lambda1,\ lambda2)}. First compute log-likelihood for mixture.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -5900,10 +5904,45 @@ provided that \(\lambda_1 + \lambda_2 + \lambda_3 = 1\).
 \StringTok{    }\KeywordTok{sapply}\NormalTok{(rate, }\ControlFlowTok{function}\NormalTok{(b) \{}
       \KeywordTok{dgamma}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ y, }\DataTypeTok{shape =} \DecValTok{1} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{, }\DataTypeTok{rate =} \DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{b))}
 \NormalTok{    \}) }\OperatorTok{%*%}
-\StringTok{    }\KeywordTok{diag}\NormalTok{(prob) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{diag}\NormalTok{(prob) }\OperatorTok{%>%}\StringTok{ }\CommentTok{# p_j * f_j}
 \StringTok{    }\KeywordTok{rowSums}\NormalTok{()}
-  \OperatorTok{-}\KeywordTok{sum}\NormalTok{(}\KeywordTok{log}\NormalTok{(dens))}
+  \OperatorTok{-}\KeywordTok{sum}\NormalTok{(}\KeywordTok{log}\NormalTok{(dens)) }\CommentTok{# negative log-likelihood}
 \NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{thet_lam <-}\StringTok{ }\KeywordTok{c}\NormalTok{(.}\DecValTok{6}\NormalTok{, }\FloatTok{.25}\NormalTok{, }\FloatTok{.15}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Let 0.6, 0.25, 0.15 be the true \((\lambda_1, \lambda_2, \lambda_3)^T\). Also, \(p_1 = p_2 = p_3 = \frac{1}{3}\).
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Generate random number from this parameter, which play a role of observed sample
+\item
+  Set an initial value for each parameter
+\item
+  Each step: Get log-likelihood value from this sample using pre-defined \texttt{mix\_ll()}
+\item
+  Find minimum
+\end{enumerate}
+
+Following \texttt{y} is used for \texttt{mix\_ll(y\ =\ y)}, i.e.~sample for likelihood.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{init_lam <-}\StringTok{ }
+\StringTok{  }\KeywordTok{sample}\NormalTok{( }\CommentTok{# p1 = p2 = p3 = 1/3}
+\NormalTok{    thet_lam, }\CommentTok{# true parameter}
+    \DataTypeTok{size =} \DecValTok{2000}\NormalTok{,}
+    \DataTypeTok{replace =} \OtherTok{TRUE}
+\NormalTok{  )}
+\NormalTok{y <-}\StringTok{ }\KeywordTok{rgamma}\NormalTok{(}\DecValTok{2000}\NormalTok{, }\DataTypeTok{shape =} \DecValTok{1} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{, }\DataTypeTok{rate =}  \DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{init_lam)) }\CommentTok{# mixture gamma with 1/3}
 \end{Highlighting}
 \end{Shaded}
 
@@ -5911,20 +5950,7 @@ In \texttt{optim()}, initial value should be supplied to \texttt{par}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{thet_lam <-}\StringTok{ }\KeywordTok{c}\NormalTok{(.}\DecValTok{6}\NormalTok{, }\FloatTok{.25}\NormalTok{, }\FloatTok{.15}\NormalTok{)}
-\NormalTok{init_lam <-}\StringTok{ }
-\StringTok{  }\KeywordTok{sample}\NormalTok{(}
-\NormalTok{    thet_lam, }\CommentTok{# true parameter}
-    \DataTypeTok{size =} \DecValTok{2000}\NormalTok{,}
-    \DataTypeTok{replace =} \OtherTok{TRUE}
-\NormalTok{  )}
-\NormalTok{y <-}\StringTok{ }\KeywordTok{rgamma}\NormalTok{(}\DecValTok{2000}\NormalTok{, }\DataTypeTok{shape =} \DecValTok{1} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{, }\DataTypeTok{rate =}  \DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{init_lam))}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{(opt <-}\StringTok{ }\KeywordTok{optim}\NormalTok{(}\KeywordTok{c}\NormalTok{(.}\DecValTok{3}\NormalTok{, }\FloatTok{.3}\NormalTok{, }\FloatTok{.5}\NormalTok{, }\FloatTok{.3}\NormalTok{), mix_ll, }\DataTypeTok{y =}\NormalTok{ y))}
+\NormalTok{(opt <-}\StringTok{ }\KeywordTok{optim}\NormalTok{(}\DataTypeTok{par =} \KeywordTok{c}\NormalTok{(.}\DecValTok{3}\NormalTok{, }\FloatTok{.3}\NormalTok{, }\FloatTok{.5}\NormalTok{, }\FloatTok{.3}\NormalTok{), }\DataTypeTok{fn =}\NormalTok{ mix_ll, }\DataTypeTok{y =}\NormalTok{ y))}
 \CommentTok{#> $par}
 \CommentTok{#> [1] 0.326 0.296 0.631 0.181}
 \CommentTok{#> }
@@ -5943,12 +5969,14 @@ In \texttt{optim()}, initial value should be supplied to \texttt{par}.
 \end{Highlighting}
 \end{Shaded}
 
+\texttt{\$value} is the minimum value of \texttt{fn}. \texttt{\$par} is our interest, parameter vector where the function is minimized. \texttt{broom::tidy()} also has a method for \texttt{optim} result. This changes it to \texttt{tibble} with two columns - \texttt{parameter} (parameter name) and \texttt{value} (its value).
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{opt_df <-}\StringTok{ }
 \StringTok{  }\NormalTok{broom}\OperatorTok{::}\KeywordTok{tidy}\NormalTok{(opt) }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{spread}\NormalTok{(parameter, value)}
-\CommentTok{#---------------------}
+\CommentTok{#-------------------------}
 \KeywordTok{colnames}\NormalTok{(opt_df) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"prob1"}\NormalTok{, }\StringTok{"prob2"}\NormalTok{, }\StringTok{"lambda1"}\NormalTok{, }\StringTok{"lambda2"}\NormalTok{)}
 \NormalTok{opt_df }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}
@@ -5963,10 +5991,207 @@ In \texttt{optim()}, initial value should be supplied to \texttt{par}.
 \end{Highlighting}
 \end{Shaded}
 
-True parameter was 0.6, 0.25, 0.15. Compare MLE to this.
+Compare this MLE to the true \(\lambda_j\) 0.6, 0.25, 0.15.
 
 \hypertarget{em-algorithm}{%
 \section{EM Algorithm}\label{em-algorithm}}
+
+EM algorithm is often applied to find MLE, especially when data are incomplete. This section is mainly following explanation of \citet{Bilmes:1998tg}. Let \(\mathcal{X}\) be the observed data set. Assume that this is incomplete. Then let \(\mathcal{Y}\) be the missing part. Assume that the complete data set exists \(\mathcal{Z} = (\mathcal{X}, \mathcal{Y})\). Then the joint density of \(\mathcal{Z}\) is
+
+\begin{equation}
+  p(\mathbf{z} \mid \boldsymbol\theta) = p(\mathbf{x}, \mathbf{y} \mid \boldsymbol\theta) = p(\mathbf{y} \mid \mathbf{x}, \boldsymbol\theta) p(\mathbf{x} \mid \boldsymbol\theta)
+  \label{eq:completejoint}
+\end{equation}
+
+MLE problem tries to find the maximum of
+
+\begin{equation}
+  L(\boldsymbol\theta \mid \mathcal{X}, \mathcal{Y}) = p(\mathcal{X}, \mathcal{Y} \mid \boldsymbol\theta)
+  \label{eq:completelike}
+\end{equation}
+
+which is called \emph{complete-data likelihood}. For this kind of likelihood, we use EM algorithm. \textbf{E} stands for expectation and \textbf{M} for maximization. EM algorithm consists of these two step.
+
+\hypertarget{expectation-step-e-step}{%
+\subsection{Expectation step (E-step)}\label{expectation-step-e-step}}
+
+At first, expectation step finds conditional expectation of complete-data likelihood \eqref{eq:completelike} or its log given observed sample and current parameter estimates. Denote that random \(\mathcal{Y}\) has not been observed. So we should remove it. Conditinal expectation does this job.
+
+Let \(\boldsymbol\theta^{(i - 1)}\) be the current parameter estimates. EM algorithm keeps updating the parameters. At each step, we would have each updated value. What we want is conditional expectation under \(\mathcal{Y} \mid \mathcal{X}, \boldsymbol\theta\). Then we should know its conditional density, i.e.
+
+\begin{equation}
+  f(\mathbf{y} \mid \mathcal{X}, \boldsymbol\theta)
+  \label{eq:missingcond}
+\end{equation}
+
+Then E-step calculate the following. Writing the support of \(\mathcal{Y}\) by \(\mathbb{Y}\),
+
+\begin{equation}
+  Q(\boldsymbol\theta, \boldsymbol\theta^{(i - 1)}) := E \bigg[ \ln p(\mathcal{X}, \mathcal{Y} \mid \boldsymbol\theta) \; \Big\vert \; \mathcal{X}, \boldsymbol\theta^{(i - 1)} \bigg] = \int_{\mathbb{Y}} \ln p(\mathcal{X}, \mathbf{y} \mid \boldsymbol\theta) f(\mathbf{y} \mid \mathcal{X}, \boldsymbol\theta^{(i - 1)}) d \mathbf{y}
+  \label{eq:estep}
+\end{equation}
+
+\hypertarget{maximization-step-m-step}{%
+\subsection{Maximization step (M-step)}\label{maximization-step-m-step}}
+
+Maximization step maximizes the conditional expectation \(Q\) \eqref{eq:estep} with respect to \(\boldsymbol\theta\) given \(\boldsymbol\theta^{(i - 1)}\) \citep{Rizzo:2007aa}.
+
+\begin{equation}
+  \boldsymbol\theta^{(i)} = \argmax_{\boldsymbol\theta} Q(\boldsymbol\theta, \boldsymbol\theta^{(i - 1)})
+  \label{eq:mstep}
+\end{equation}
+
+E-step \eqref{eq:estep} and M-step \eqref{eq:mstep} are repeated. It is guaranteed that the log-likelihood is always increasing and the algorithm converges to local maximum.
+
+\hypertarget{em-algorithm-for-a-mixture-model}{%
+\subsection{EM algorithm for a mixture model}\label{em-algorithm-for-a-mixture-model}}
+
+EM algorithm is widely used for mixture model. Recall that
+
+\[p(\mathbf{x} \mid \boldsymbol\beta) = \sum_{m = 1}^M \alpha_m p_m(\mathbf{x} \mid \theta_m)\]
+
+with parameter vector \(\boldsymbol\beta = (\alpha_1, \ldots, \alpha_M, \theta_1, \ldots, \theta_M)\). \(\alpha_m\) is an mixing probability satisfying that
+
+\[\sum_{m = 1}^M \alpha_m = 1\]
+
+Each \(\theta_m\) parameterizes individual density \(p_m\). Consider complete sample \(\mathcal{Z} = (\mathcal{X}, \mathcal{Y}) = \{ (\mathbf{x}_i, \mathbf{y}_i) \}_1^N\) with unobserved \(\mathcal{Y}\). Assume that for each \(i = 1, \ldots, N\),
+
+\[\mathbf{x}_i \sim p_k(\mathbf{x} \mid \theta_k) \Rightarrow y_i = k\]
+
+Given \(\mathcal{Y}\) values, the log of complete-data likelihood is
+
+\begin{equation}
+  \begin{split}
+    l(\boldsymbol\beta \mid \mathcal{X}, \mathcal{Y}) & = \ln p(\mathcal{X}, \mathcal{Y} \mid \boldsymbol\beta) \\
+    & = \sum_{i = 1}^N \ln p(\mathbf{x}_i \mid \mathbf{y}_i) p(\mathbf{y}_i) \\
+    & = \sum_{i = 1}^N \ln \alpha_{\mathbf{y}_i} p_{\mathbf{y}_i}(\mathbf{x}_i \mid \theta_{\mathbf{y}_i})
+  \end{split}
+  \label{eq:logmix}
+\end{equation}
+
+Recall that \(\mathcal{Y}\) has not been observed. So let \(\mathcal{Y}\) be random. In each step we update (guess) the parameter for above likelihood \eqref{eq:logmix}. Write it as
+
+\[\boldsymbol\beta^g = (\alpha_1^g, \ldots, \alpha_M^g, \theta_1^g, \ldots, \theta_M^g)\]
+
+Given \(\boldsymbol\beta^g\), compute \(p_j(\mathbf{x}_i \mid \theta_j^g)\) for each \(i\) and \(j\). Bayes rule implies that
+
+\begin{equation}
+  \begin{split}
+    p(\mathbf{y}_i \mid \mathbf{x}_i, \boldsymbol\beta^g) & = \frac{\alpha_{\mathbf{y}_i}^g p_{\mathbf{y}_i}(\mathbf{x}_i \mid \theta_{\mathbf{y}_i}^g)}{p_j(\mathbf{x}_i \mid \theta_j^g)} \\
+    & = \frac{\alpha_{\mathbf{y}_i}^g p_{\mathbf{y}_i}(\mathbf{x}_i \mid \theta_{\mathbf{y}_i}^g)}{\sum\limits_{m = 1}^M \alpha_m^g p_m(\mathbf{x}_i \mid \theta_m^g)}
+  \end{split}
+  \label{eq:mixbayes}
+\end{equation}
+
+Denote that \(\alpha_j = P(\text{component}\; j)\) are kind of prior probabilities. Let \(\mathbf{y} = (\mathbf{y}_1, \ldots, \mathbf{y}_N)\). Then E-step \eqref{eq:estep} becomes
+
+\begin{equation}
+  \begin{split}
+    Q(\boldsymbol\beta, \boldsymbol\beta^g) & = \sum_{\mathbf{y} \in \mathbb{Y}} l(\boldsymbol\beta \mid \mathcal{X}, \mathbf{y}) p(\mathbf{y} \mid \mathcal{X}, \boldsymbol\beta^g) \\
+    & = \sum_{\mathbf{y} \in \mathbb{Y}} {\color{blue}{\sum_{i = 1}^N \ln \alpha_{\mathbf{y}_i} p_{\mathbf{y}_i}(\mathbf{x}_i \mid \theta_{\mathbf{y}_i})}} \prod_{j = 1}^N p(\mathbf{y}_j \mid \mathbf{x}_j, \boldsymbol\beta^g) \\
+    & = \underbrace{\sum_{y_1 = 1}^M \sum_{y_2 = 1}^M \cdots \sum_{y_N = 1}^M}_{\mathbb{Y}} {\color{blue}{\sum_{i = 1}^N \sum_{l = 1}^M \delta_{l, \mathbf{y}_i} \ln \alpha_l p_l (\mathbf{x}_i \mid \theta_l)}} \prod_{j = 1}^N p(\mathbf{y}_j \mid \mathbf{x}_j, \boldsymbol\beta^g) \\
+    & = {\color{blue}{\sum_{l = 1}^M \sum_{i = 1}^N \ln \alpha_l p_l (\mathbf{x}_i \mid \theta_l)}} \underbrace{\sum_{y_1 = 1}^M \sum_{y_2 = 1}^M \cdots \sum_{y_N = 1}^M {\color{blue}{\delta_{l, \mathbf{y}_i}}} \prod_{j = 1}^N p(\mathbf{y}_j \mid \mathbf{x}_j, \boldsymbol\beta^g)}_{(\ast)}
+  \end{split}
+  \label{eq:mixcond}
+\end{equation}
+
+To simplify Equation \eqref{eq:mixcond}, see \((\ast)\) part.
+
+\begin{equation}
+  \begin{split}
+    (\ast) & = \bigg( \sum_{y_1 = 1}^M \cdots \sum_{y_{i - 1} = 1}^M \sum_{y_{i + 1} = 1}^M \cdots \sum_{y_N = 1}^M \prod_{j \neq i}^N p(\mathbf{y}_j \mid \mathbf{x}_j, \boldsymbol\beta^g) \bigg) \\
+    & = \prod_{j \neq i}^N \bigg( \underbrace{\sum_{y_j = 1}^M p(\mathbf{y}_j \mid \mathbf{x}_j, \boldsymbol\beta^g)}_{= 1} \bigg) p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) \\
+    & = p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) \quad \because \sum_{i = 1}^N p(i \mid \mathbf{x}_j, \boldsymbol\beta^g) = 1
+  \end{split}
+  \label{eq:mixsimple}
+\end{equation}
+
+From Equations \eqref{eq:mixcond} and \eqref{eq:mixsimple}, we can conclude E-step.
+
+\begin{equation}
+  \begin{split}
+    Q(\boldsymbol\beta, \boldsymbol\beta^g) & = \sum_{l = 1}^M \sum_{i = 1}^N \ln (\alpha_l p_l (\mathbf{x}_i \mid \theta_l)) p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) \\
+    & = \sum_{l = 1}^M \sum_{i = 1}^N (\ln \alpha_l) p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) + \sum_{l = 1}^M \sum_{i = 1}^N (\ln p_l (\mathbf{x}_i \mid \theta_l)) p(l \mid \mathbf{x}_i, \boldsymbol\beta^g)
+  \end{split}
+  \label{eq:mixestep}
+\end{equation}
+
+Now M-step: maximize \(Q\).
+
+\begin{equation}
+  \begin{cases}
+    \alpha_l^{new} = \frac{1}{N} \sum_{i = 1}^N p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) \\
+    \boldsymbol\mu_l^{new} = \frac{\sum \mathbf{x}_i p(l \mid \mathbf{x}_i, \boldsymbol\beta^g)}{\sum p(l \mid \mathbf{x}_i, \boldsymbol\beta^g)} \in \mathbb{R}^p \\
+    \Sigma_l^{new} = \frac{\sum p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) (\mathbf{x}_l - \boldsymbol\mu_l^{new}) (\mathbf{x}_l - \boldsymbol\mu_l^{new})^T}{\sum p(l \mid \mathbf{x}_i, \boldsymbol\beta^g)} \in \mathbb{R}^{p \times p}
+  \end{cases}
+  \label{eq:mixmstep}
+\end{equation}
+
+Refer to Example \ref{exm:mixgam}. Use the same generated data.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mix_em <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(}\DataTypeTok{fn =}\NormalTok{ dgamma, x, }\DataTypeTok{N =} \DecValTok{10000}\NormalTok{, par, }\DataTypeTok{par_name =} \StringTok{"rate"}\NormalTok{, }\DataTypeTok{tol =}\NormalTok{ .Machine}\OperatorTok{$}\NormalTok{double.eps}\OperatorTok{^}\NormalTok{.}\DecValTok{5}\NormalTok{, ...) \{}
+\NormalTok{  ll <-}\StringTok{ }\KeywordTok{list}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, ...)}
+\NormalTok{  dens <-}\StringTok{ }
+\StringTok{    }\KeywordTok{tibble}\NormalTok{(}
+      \DataTypeTok{key =} \KeywordTok{paste0}\NormalTok{(}\StringTok{"f"}\NormalTok{, }\DecValTok{1}\OperatorTok{:}\DecValTok{3}\NormalTok{),}
+      \DataTypeTok{mu =} \KeywordTok{double}\NormalTok{(3L),}
+      \DataTypeTok{lam =}\NormalTok{ par}
+\NormalTok{    )}
+\NormalTok{  lam_old <-}\StringTok{ }\NormalTok{par }\OperatorTok{+}\StringTok{ }\DecValTok{1}
+  \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \KeywordTok{seq_len}\NormalTok{(N)) \{}
+\NormalTok{    dens <-}\StringTok{ }
+\StringTok{      }\KeywordTok{lapply}\NormalTok{(}
+\NormalTok{        dens}\OperatorTok{$}\NormalTok{lam,}
+        \ControlFlowTok{function}\NormalTok{(y) \{}
+\NormalTok{          ll[[par_name]] <-}\StringTok{ }\DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{y)}
+          \KeywordTok{do.call}\NormalTok{(fn, ll)}
+\NormalTok{        \}}
+\NormalTok{      ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{bind_cols}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{rename_all}\NormalTok{(}
+        \DataTypeTok{.funs =} \KeywordTok{list}\NormalTok{(}
+          \OperatorTok{~}\KeywordTok{str_replace_all}\NormalTok{(., }\DataTypeTok{pattern =} \StringTok{"V"}\NormalTok{, }\DataTypeTok{replacement =} \StringTok{"f"}\NormalTok{)}
+\NormalTok{        )}
+\NormalTok{      ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{total =} \KeywordTok{apply}\NormalTok{(., }\DecValTok{1}\NormalTok{, sum)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{gather}\NormalTok{(}\OperatorTok{-}\NormalTok{total, }\DataTypeTok{key =} \StringTok{"key"}\NormalTok{, }\DataTypeTok{value =} \StringTok{"value"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{post =}\NormalTok{ value }\OperatorTok{/}\StringTok{ }\NormalTok{total) }\OperatorTok{%>%}\StringTok{ }\CommentTok{# posterior prob y from each f1, f2, f3 - E step}
+\StringTok{      }\KeywordTok{group_by}\NormalTok{(key) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{      }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{mu =} \KeywordTok{sum}\NormalTok{(y }\OperatorTok{*}\StringTok{ }\NormalTok{post) }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(post)) }\OperatorTok{%>%}\StringTok{  }\CommentTok{# update means - M step}
+\StringTok{      }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{lam =}\NormalTok{ mu }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(mu))}
+    \ControlFlowTok{if}\NormalTok{ (}
+\NormalTok{      dens }\OperatorTok{%>%}
+\StringTok{      }\KeywordTok{summarise}\NormalTok{(}
+        \KeywordTok{sum}\NormalTok{(}\KeywordTok{abs}\NormalTok{(lam }\OperatorTok{-}\StringTok{ }\NormalTok{lam_old) }\OperatorTok{/}\StringTok{ }\NormalTok{lam_old)}
+\NormalTok{      ) }\OperatorTok{%>%}
+\StringTok{      }\KeywordTok{pull}\NormalTok{() }\OperatorTok{<}\StringTok{ }\NormalTok{tol}
+\NormalTok{    ) }\ControlFlowTok{break}\NormalTok{()}
+\NormalTok{    lam_old <-}\StringTok{ }\NormalTok{dens }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(lam) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{()}
+\NormalTok{  \}}
+  \KeywordTok{list}\NormalTok{(}\DataTypeTok{lambda =}\NormalTok{ dens }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(lam), }\DataTypeTok{iter =}\NormalTok{ i)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+The result for same initial \(\lambda\) is:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{mix_em}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ y, }\DataTypeTok{par =} \KeywordTok{c}\NormalTok{(.}\DecValTok{5}\NormalTok{, }\FloatTok{.4}\NormalTok{, }\FloatTok{.1}\NormalTok{), }\DataTypeTok{shape =} \DecValTok{1} \OperatorTok{/}\StringTok{ }\DecValTok{2}\NormalTok{)}
+\CommentTok{#> $lambda}
+\CommentTok{#> # A tibble: 3 x 1}
+\CommentTok{#>     lam}
+\CommentTok{#>   <dbl>}
+\CommentTok{#> 1 0.631}
+\CommentTok{#> 2 0.185}
+\CommentTok{#> 3 0.185}
+\CommentTok{#> }
+\CommentTok{#> $iter}
+\CommentTok{#> [1] 878}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{markov-chain-monte-carlo-methods}{%
 \chapter{Markov Chain Monte Carlo Methods}\label{markov-chain-monte-carlo-methods}}
@@ -6033,15 +6258,353 @@ Let \(S\) be the state of MC.
 \end{itemize}
 \EndKnitrBlock{definition}
 
+It is obvious that if a chain has a period, it won't be convergent.
+
 \BeginKnitrBlock{definition}[Irreducibility]
 \protect\hypertarget{def:mcreduc}{}{\label{def:mcreduc} \iffalse (Irreducibility) \fi{} }Markov chain is \textbf{\textit{irreducible}} iff it is possible to go from any state to any other state. Otherwise, it is called \textbf{\textit{reducible}}.
 \EndKnitrBlock{definition}
+
+Intuitively, the states must be a \emph{single closed communicating} class for convergence.
 
 \BeginKnitrBlock{definition}[Positive recurrence]
 \protect\hypertarget{def:mcrecc}{}{\label{def:mcrecc} \iffalse (Positive recurrence) \fi{} }Markov chain is \textbf{\textit{recurrent}} iff
 
 \[\forall i \in S : \: \text{chain starts at}\: i \: \text{and it will eventually return to}\: i \: \text{with probabbility}\: 1\]
 \EndKnitrBlock{definition}
+
+When these properties - aperiodicity, irreducibility, and positive recurrent - MC can be guaranteed to be convergent provided finite moment.
+
+\BeginKnitrBlock{theorem}[Ergodic theorem]
+\protect\hypertarget{thm:ergodic}{}{\label{thm:ergodic} \iffalse (Ergodic theorem) \fi{} }Suppose that \(\{ X_i \} \sim MC\) is aperiodic, irreducible and positive recurrent with \(E \lvert h(X_j) \rvert < \infty\). Then
+
+\[\frac{1}{N} \sum_{i = 1}^N h(X_i) \stackrel{a.s}{\rightarrow} \int_{\Omega} h(X_i) \pi(X_i) dP\]
+
+as \(N \rightarrow \infty\)
+\EndKnitrBlock{theorem}
+
+This ergodic theorem \ref{thm:ergodic} is an MC analog to the strong law of large numbers.
+
+\hypertarget{stationary-limiting-distribution}{%
+\subsection{Stationary limiting distribution}\label{stationary-limiting-distribution}}
+
+Using transition kernel, we might get the limiting distribution. For example,
+
+\begin{equation}
+  \begin{split}
+    \boldsymbol\pi^{(1)} & = \boldsymbol\pi^{(0)} P \\
+    & = \begin{bmatrix}
+      \pi_1 & \pi_2 & \pi_3
+    \end{bmatrix} \begin{bmatrix}
+      \pi_{11} & \pi_{12} & \pi_{13} \\
+      \pi_{21} & \pi_{22} & \pi_{23} \\
+      \pi_{31} & \pi_{32} & \pi_{33}
+    \end{bmatrix}
+  \end{split}
+  \label{eq:transiter}
+\end{equation}
+
+Recursively,
+
+\begin{equation}
+  \begin{split}
+    \boldsymbol\pi^{(t)} & = \boldsymbol\pi^{(t - 1)} P \\
+    & = \boldsymbol\pi^{(0)} P^t
+  \end{split}
+  \label{eq:transiter2}
+\end{equation}
+
+\BeginKnitrBlock{theorem}[Stationary probabilities]
+\protect\hypertarget{thm:station}{}{\label{thm:station} \iffalse (Stationary probabilities) \fi{} }Suppose that \(\{ X_i \} \sim MC\) is aperiodic, irreducible and positive recurrent with \(E \lvert h(X_j) \rvert < \infty\). Then there exists an invariant distribution \(\boldsymbol\pi\) uniquely s.t.
+
+\[
+\begin{cases}
+  \boldsymbol\pi = \boldsymbol\pi P \\
+  \boldsymbol\pi \mathbf{1}^T = 1
+\end{cases}
+\]
+
+Denote that every vector is a row vector here.
+\EndKnitrBlock{theorem}
+
+\hypertarget{burn-in-period}{%
+\subsection{Burn-in period}\label{burn-in-period}}
+
+This kind of convergence is usually gauranted for any starting distribution, but the time varies according to its starting point. Thus, we \emph{throw out a certain number of the first draws} so that stationarity less dependends on the starting point. It is called burn-in period.
+
+\hypertarget{thinning}{%
+\subsection{Thinning}\label{thinning}}
+
+Denote that MC has a dependency structure. So we jump the chain, i.e.~break the dependence. However, this process is unnecessary with Ergodic theorem and increases the variance of MC estiamtes.
+
+\hypertarget{metropolis-hastings-algorithm}{%
+\section{Metropolis-Hastings Algorithm}\label{metropolis-hastings-algorithm}}
+
+\emph{Markov Chain Monte Carlo (MCMC) Methods} includes in metropolis-hastings algorithm and gibbs sampler. In fact, gibbs sampler is a special form of the former. Here we follow the notation of \citet{Chib:1995de}.
+
+\BeginKnitrBlock{definition}[Density]
+\protect\hypertarget{def:mcnote}{}{\label{def:mcnote} \iffalse (Density) \fi{} }In Metropolis-hastings (M-H) algorithm, we take care about the following two densities. Denote that terms and process are similar to A-R process.
+
+\begin{enumerate}
+  \item Target density $\pi(\cdot)$ density that we try to generate sample from
+  \item Candidate-generating density $q(\cdot \mid \cdot)$ density that we will actually generate random sample from
+\end{enumerate}
+\EndKnitrBlock{definition}
+
+\hypertarget{metropolis-hastings-sampler}{%
+\subsection{Metropolis-hastings sampler}\label{metropolis-hastings-sampler}}
+
+\begin{algorithm}[H] \label{alg:mhalg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{Starting point $x_0$, burn-in period $b$}
+  \For{$i \leftarrow 1$ \KwTo $N$}{
+    Draw a candidate distribution $Y \sim q(\cdot \mid x^{(j)})$\;
+    $U \sim unif(0, 1) \perp\!\!\!\perp Y$\;
+    Acceptance rate $$\alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)} \mid y)}{\pi(x^{(j)}), q(y \mid x^{(j)})}, 1 \bigg)$$\;
+    \eIf{$U \le \alpha(x^{(j)}, y)$}{
+      Accept so that $x^{(j + 1)} = y$\;
+    }{
+      Reject so that $x^{(j + 1)} = x^{(j)}$\;
+    }
+  }
+  Draw out the first $b \; x^{(j)}$ (Burn-in)\;
+  \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
+  \caption{Metropolis-Hastings algorithm with burn-in period}
+\end{algorithm}
+
+\BeginKnitrBlock{example}[Rayleigh density]
+\protect\hypertarget{exm:mhray}{}{\label{exm:mhray} \iffalse (Rayleigh density) \fi{} }Generate a sample from a Rayleigh density
+
+\[f(x) = \frac{x}{\sigma^2} e^{- \frac{x^2}{2 \sigma^2}}\]
+\EndKnitrBlock{example}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{dray <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, sd) \{}
+  \ControlFlowTok{if}\NormalTok{ (sd }\OperatorTok{<=}\StringTok{ }\DecValTok{0}\NormalTok{ ) }\KeywordTok{stop}\NormalTok{(}\KeywordTok{gettextf}\NormalTok{(}\StringTok{"%s should be positive"}\NormalTok{, }\KeywordTok{expression}\NormalTok{(sd)))}
+  \KeywordTok{ifelse}\NormalTok{(}
+\NormalTok{    x }\OperatorTok{>=}\StringTok{ }\DecValTok{0}\NormalTok{,}
+\NormalTok{    x }\OperatorTok{/}\StringTok{ }\NormalTok{sd}\OperatorTok{^}\DecValTok{2} \OperatorTok{*}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2} \OperatorTok{/}\StringTok{ }\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{sd}\OperatorTok{^}\DecValTok{2}\NormalTok{)),}
+    \DecValTok{0}
+\NormalTok{  )}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Consider \(\chi^2(x^{(j)})\) as candidate. The following function calcuates acceptance rate.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{acc_mc <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, y, }\DataTypeTok{sd =} \DecValTok{4}\NormalTok{) \{}
+\NormalTok{  ( (}\KeywordTok{dray}\NormalTok{(y, sd) }\OperatorTok{*}\StringTok{ }\KeywordTok{dchisq}\NormalTok{(x, }\DataTypeTok{df =}\NormalTok{ y)) }\OperatorTok{/}\StringTok{ }\NormalTok{(}\KeywordTok{dray}\NormalTok{(x, sd) }\OperatorTok{*}\StringTok{ }\KeywordTok{dchisq}\NormalTok{(y, }\DataTypeTok{df =}\NormalTok{ x)) ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{min}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+To enhance the speed, we register parallel backends.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{MC_CORES <-}\StringTok{ }\NormalTok{future}\OperatorTok{::}\KeywordTok{availableCores}\NormalTok{() }\OperatorTok{-}\StringTok{ }\DecValTok{1}
+\NormalTok{cl <-}\StringTok{ }\NormalTok{parallel}\OperatorTok{::}\KeywordTok{makeCluster}\NormalTok{(MC_CORES)}
+\NormalTok{doParallel}\OperatorTok{::}\KeywordTok{registerDoParallel}\NormalTok{(cl, }\DataTypeTok{cores =}\NormalTok{ MC_CORES)}
+\NormalTok{parallel}\OperatorTok{::}\KeywordTok{clusterExport}\NormalTok{(cl, }\KeywordTok{c}\NormalTok{(}\StringTok{"acc_mc"}\NormalTok{, }\StringTok{"dray"}\NormalTok{))}
+\NormalTok{parallel}\OperatorTok{::}\KeywordTok{clusterEvalQ}\NormalTok{(cl, }\KeywordTok{c}\NormalTok{(}\KeywordTok{library}\NormalTok{(dplyr), }\KeywordTok{library}\NormalTok{(data.table)))}
+\CommentTok{#> [[1]]}
+\CommentTok{#>  [1] "dplyr"      "stats"      "graphics"   "grDevices"  "utils"     }
+\CommentTok{#>  [6] "datasets"   "methods"    "base"       "data.table" "dplyr"     }
+\CommentTok{#> [11] "stats"      "graphics"   "grDevices"  "utils"      "datasets"  }
+\CommentTok{#> [16] "methods"    "base"      }
+\CommentTok{#> }
+\CommentTok{#> [[2]]}
+\CommentTok{#>  [1] "dplyr"      "stats"      "graphics"   "grDevices"  "utils"     }
+\CommentTok{#>  [6] "datasets"   "methods"    "base"       "data.table" "dplyr"     }
+\CommentTok{#> [11] "stats"      "graphics"   "grDevices"  "utils"      "datasets"  }
+\CommentTok{#> [16] "methods"    "base"      }
+\CommentTok{#> }
+\CommentTok{#> [[3]]}
+\CommentTok{#>  [1] "dplyr"      "stats"      "graphics"   "grDevices"  "utils"     }
+\CommentTok{#>  [6] "datasets"   "methods"    "base"       "data.table" "dplyr"     }
+\CommentTok{#> [11] "stats"      "graphics"   "grDevices"  "utils"      "datasets"  }
+\CommentTok{#> [16] "methods"    "base"}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mc_ray <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(}\DataTypeTok{N =} \DecValTok{10000}\NormalTok{, x0, }\DataTypeTok{sd =} \DecValTok{4}\NormalTok{, }\DataTypeTok{burn =} \DecValTok{1000}\NormalTok{) \{}
+\NormalTok{  x <-}\StringTok{ }\NormalTok{x0}
+\NormalTok{  y <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(1L)}
+\NormalTok{  acc <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(1L)}
+  \KeywordTok{foreach}\NormalTok{(}\DataTypeTok{i =} \KeywordTok{seq_len}\NormalTok{(N), }\DataTypeTok{.combine =}\NormalTok{ rbind) }\OperatorTok{%dopar%}\StringTok{ }\NormalTok{\{}
+\NormalTok{    y <-}\StringTok{ }\KeywordTok{rchisq}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DataTypeTok{df =}\NormalTok{ x)}
+\NormalTok{    acc <-}\StringTok{ }\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<=}\StringTok{ }\KeywordTok{acc_mc}\NormalTok{(x, y, sd)}
+\NormalTok{    x <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(acc, y, x)}
+    \KeywordTok{data.table}\NormalTok{(}
+      \DataTypeTok{draw =}\NormalTok{ i,}
+      \DataTypeTok{acc =}\NormalTok{ acc,}
+      \DataTypeTok{x =}\NormalTok{ x}
+\NormalTok{    )}
+\NormalTok{  \} }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\NormalTok{.[(burn }\OperatorTok{+}\StringTok{ }\DecValTok{1}\NormalTok{)}\OperatorTok{:}\NormalTok{(.N)]}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+For a better result, try \emph{burn-in period} 2000.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ray <-}\StringTok{ }\KeywordTok{mc_ray}\NormalTok{(}\DataTypeTok{N =} \DecValTok{10000}\NormalTok{, }\DataTypeTok{x0 =} \DecValTok{1}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{4}\NormalTok{, }\DataTypeTok{burn =} \DecValTok{2000}\NormalTok{)}
+\CommentTok{#---------------------------------------------------}
+\NormalTok{parallel}\OperatorTok{::}\KeywordTok{stopCluster}\NormalTok{(cl)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ray }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ acc, }\DataTypeTok{group =} \DecValTok{1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
+    \DataTypeTok{colour =} \StringTok{"Acceptance"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/raymhpath-1} 
+
+}
+
+\caption{M-H sampling from Chisq to target Rayleigh}\label{fig:raymhpath}
+\end{figure}
+
+\hypertarget{mixing}{%
+\subsection{Mixing}\label{mixing}}
+
+Looking at Figure \ref{fig:raymhpath}, it seems that the chain converges well.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ray }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_jitter}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ x, }\DataTypeTok{alpha =} \KeywordTok{abs}\NormalTok{(x)), }\DataTypeTok{show.legend =} \OtherTok{FALSE}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_colour_gradient}\NormalTok{(}\DataTypeTok{low =} \StringTok{"#0091ff"}\NormalTok{, }\DataTypeTok{high =} \StringTok{"#f0650e"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Draw"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/raymix-1} 
+
+}
+
+\caption{Metropolis-Hastings sampling mixing}\label{fig:raymix}
+\end{figure}
+
+See Figure \ref{fig:raymix}. We can see that the random numbers are mixed well.
+
+\hypertarget{gibbs-sampler}{%
+\section{Gibbs Sampler}\label{gibbs-sampler}}
+
+\hypertarget{concept-of-gibbs-sampler}{%
+\subsection{Concept of gibbs sampler}\label{concept-of-gibbs-sampler}}
+
+We are given the joint density. For this joint density, the following theorem can be proven.
+
+\BeginKnitrBlock{theorem}[Hammersley-Clifford Theorem]
+\protect\hypertarget{thm:ham}{}{\label{thm:ham} \iffalse (Hammersley-Clifford Theorem) \fi{} }Suppose that \((X, Y)^T \sim f(x, y)\). Then
+
+\[f(x, y) = \frac{f(y \mid x)}{\int_{\mathbb{R}} \frac{f(y \mid x)}{f(x \mid y)} dy}\]
+\EndKnitrBlock{theorem}
+
+By definition, \(f(x, y) \propto f(y \mid x)\). However, the above theorem gives that this joint density is proportional to both conditional densities, i.e.~also to \(f(x \mid y)\).
+
+\BeginKnitrBlock{corollary}
+\protect\hypertarget{cor:hamcor}{}{\label{cor:hamcor} }Theorem \ref{thm:ham} implies the second
+
+\begin{itemize}
+  \item $f(x, y) \propto f(y \mid x)$
+  \item $f(x, y) \propto f(x \mid y)$
+\end{itemize}
+\EndKnitrBlock{corollary}
+
+This can be extended to cases more than two blocks.
+
+\BeginKnitrBlock{definition}[Full conditional distribution]
+\protect\hypertarget{def:fullcond}{}{\label{def:fullcond} \iffalse (Full conditional distribution) \fi{} }Let \(\mathbf{X} = (X_1, \ldots, X_p)^T \in \mathbb{R}^p\) be a \(p\)-dimensional random vector. Then the \textbf{\textit{full conditional distribution}} of \(X_j\) is
+
+\[f(X_j \mid \mathbf{X}_{(-j)})\]
+
+where \(\mathbf{X}_{(-j)} = (X_1, \ldots, X_{j - 1}, X_{j + 1}, \ldots, X_p)^T\).
+\EndKnitrBlock{definition}
+
+Gibbs sampler iterate to generate a number from each full conditional distribution so that we finally get the joint density, i.e.
+
+\[X_j \sim f(X_j \mid \mathbf{X}_{(-j)})\]
+
+For instance, for \(p = 3\),
+
+\[
+\begin{cases}
+  X^{(1)} \sim f(x \mid y^{(0)}, z^{(0)}) \\
+  Y^{(1)} \sim f(y \mid \color{blue}{x^{(1)}}, z^{(0)}) \\
+  Z^{(1)} \sim f(z \mid \color{blue}{x^{(1)}}, \color{blue}{y^{(1)}})
+\end{cases}
+\]
+
+and so \((X^{(1)}, Y^{(1)}, Z^{(1)})^T \sim f(x, y, z)\). Next,
+
+\[
+\begin{cases}
+  X^{(2)} \sim f(x \mid \color{blue}{y^{(1)}}, \color{blue}{z^{(1)}}) \\
+  Y^{(2)} \sim f(y \mid \color{red}{x^{(2)}}, \color{blue}{z^{(1)}}) \\
+  Z^{(2)} \sim f(z \mid \color{red}{x^{(2)}}, \color{red}{y^{(2)}})
+\end{cases}
+\]
+
+so that \((X^{(2)}, Y^{(2)}, Z^{(2)})^T \sim f(x, y, z)\), and so on. Here, of course, we should know \(f(\cdot \mid \cdot)\). In some cases, the closed form can be given. Otherwise, there are some calculation methods. In this problem, its closed form was calculated by someone.
+
+\[
+\begin{cases}
+  f(x \mid y) = \binom{n}{x} y^x (1 - y)^x \equiv B(n, y) \\
+  f(y \mid x) = \frac{1}{B(x + a, n - x + b)} y^{x + a - 1}(1 - y)^{n - x + b - 1} \equiv Beta(x + a, n - x + b)
+\end{cases}
+\]
+
+Hence, we just iterate the above set of process until gaining \(N\) draws.
+
+\hypertarget{gibbs-sampler-1}{%
+\subsection{Gibbs sampler}\label{gibbs-sampler-1}}
+
+\begin{algorithm}[H] \label{alg:gibbalg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{Full conditional distribution $f$}
+  \Input{Starting values $(x_1^{(0)}, x_2^{(0)})$, burn-in period $b$}
+  \For{$i \leftarrow 1$ \KwTo $N$}{
+    Set $x_2^{\ast} = x_2^{(i - 1)}$\;
+    \For{$j \leftarrow 1$ \KwTo $2$}{
+      Generate $x_j^{(i)} \sim f(x_j \mid x_{(-j)} = x_{(-j)}^{\ast})$\;
+      Set or update $x_j^{\ast} = x_j^{(i)}$\;
+    }
+  }
+  Draw out the first $b \; x^{(j)}$ (Burn-in)\;
+  \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
+  \caption{Gibbs-sampler steps}
+\end{algorithm}
+
+Sometimes Gibbs sampler algorithm \(\ref{alg:gibbalg}\) requires nested loop, whose efficiency becomes quite awful. In \texttt{R}, \texttt{C++} implementation can be a solution \citep{Wickham:2019aa}. The following code is executed in \texttt{Rcpp} environment in \texttt{rmd} document. Or \texttt{cppFunction()} can also be used in ordinary \texttt{R} usage.
+
+\hypertarget{monitoring-convergence}{%
+\section{Monitoring Convergence}\label{monitoring-convergence}}
 
 \bibliography{book.bib,packages.bib}
 

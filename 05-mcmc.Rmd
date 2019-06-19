@@ -60,9 +60,13 @@ Let $i \in S$ be a state.
 \end{itemize}
 ```
 
+It is obvious that if a chain has a period, it won't be convergent.
+
 ```{definition, mcreduc, name = "Irreducibility"}
 Markov chain is \textbf{\textit{irreducible}} iff it is possible to go from any state to any other state. Otherwise, it is called \textbf{\textit{reducible}}.
 ```
+
+Intuitively, the states must be a *single closed communicating* class for convergence.
 
 ```{definition, mcrecc, name = "Positive recurrence"}
 Markov chain is \textbf{\textit{recurrent}} iff
@@ -70,6 +74,285 @@ Markov chain is \textbf{\textit{recurrent}} iff
 $$\forall i \in S : \: \text{chain starts at}\: i \: \text{and it will eventually return to}\: i \: \text{with probabbility}\: 1$$
 ```
 
+When these properties - aperiodicity, irreducibility, and positive recurrent - MC can be guaranteed to be convergent provided finite moment.
+
+```{theorem, ergodic, name = "Ergodic theorem"}
+Suppose that $\{ X_i \} \sim MC$ is aperiodic, irreducible and positive recurrent with $E \lvert h(X_j) \rvert < \infty$. Then
+
+$$\frac{1}{N} \sum_{i = 1}^N h(X_i) \stackrel{a.s}{\rightarrow} \int_{\Omega} h(X_i) \pi(X_i) dP$$
+
+as $N \rightarrow \infty$
+```
+
+This ergodic theorem \@ref(thm:ergodic) is an MC analog to the strong law of large numbers.
+
+### Stationary limiting distribution
+
+Using transition kernel, we might get the limiting distribution. For example,
+
+\begin{equation}
+  \begin{split}
+    \boldsymbol\pi^{(1)} & = \boldsymbol\pi^{(0)} P \\
+    & = \begin{bmatrix}
+      \pi_1 & \pi_2 & \pi_3
+    \end{bmatrix} \begin{bmatrix}
+      \pi_{11} & \pi_{12} & \pi_{13} \\
+      \pi_{21} & \pi_{22} & \pi_{23} \\
+      \pi_{31} & \pi_{32} & \pi_{33}
+    \end{bmatrix}
+  \end{split}
+  (\#eq:transiter)
+\end{equation}
+
+Recursively,
+
+\begin{equation}
+  \begin{split}
+    \boldsymbol\pi^{(t)} & = \boldsymbol\pi^{(t - 1)} P \\
+    & = \boldsymbol\pi^{(0)} P^t
+  \end{split}
+  (\#eq:transiter2)
+\end{equation}
+
+```{theorem, station, name = "Stationary probabilities"}
+Suppose that $\{ X_i \} \sim MC$ is aperiodic, irreducible and positive recurrent with $E \lvert h(X_j) \rvert < \infty$. Then there exists an invariant distribution $\boldsymbol\pi$ uniquely s.t.
+
+$$
+\begin{cases}
+  \boldsymbol\pi = \boldsymbol\pi P \\
+  \boldsymbol\pi \mathbf{1}^T = 1
+\end{cases}
+$$
+
+Denote that every vector is a row vector here.
+```
+
+### Burn-in period
+
+This kind of convergence is usually gauranted for any starting distribution, but the time varies according to its starting point. Thus, we *throw out a certain number of the first draws* so that stationarity less dependends on the starting point. It is called burn-in period.
+
+### Thinning
+
+Denote that MC has a dependency structure. So we jump the chain, i.e. break the dependence. However, this process is unnecessary with Ergodic theorem and increases the variance of MC estiamtes.
+
+## Metropolis-Hastings Algorithm
+
+*Markov Chain Monte Carlo (MCMC) Methods* includes in metropolis-hastings algorithm and gibbs sampler. In fact, gibbs sampler is a special form of the former. Here we follow the notation of @Chib:1995de.
+
+```{definition, mcnote, name = "Density"}
+In Metropolis-hastings (M-H) algorithm, we take care about the following two densities. Denote that terms and process are similar to A-R process.
+
+\begin{enumerate}
+  \item Target density $\pi(\cdot)$ density that we try to generate sample from
+  \item Candidate-generating density $q(\cdot \mid \cdot)$ density that we will actually generate random sample from
+\end{enumerate}
+```
+
+### Metropolis-hastings sampler
+
+\begin{algorithm}[H] \label{alg:mhalg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{Starting point $x_0$, burn-in period $b$}
+  \For{$i \leftarrow 1$ \KwTo $N$}{
+    Draw a candidate distribution $Y \sim q(\cdot \mid x^{(j)})$\;
+    $U \sim unif(0, 1) \ind Y$\;
+    Acceptance rate $$\alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)} \mid y)}{\pi(x^{(j)}), q(y \mid x^{(j)})}, 1 \bigg)$$\;
+    \eIf{$U \le \alpha(x^{(j)}, y)$}{
+      Accept so that $x^{(j + 1)} = y$\;
+    }{
+      Reject so that $x^{(j + 1)} = x^{(j)}$\;
+    }
+  }
+  Draw out the first $b \; x^{(j)}$ (Burn-in)\;
+  \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
+  \caption{Metropolis-Hastings algorithm with burn-in period}
+\end{algorithm}
+
+```{example, mhray, name = "Rayleigh density"}
+Generate a sample from a Rayleigh density
+
+$$f(x) = \frac{x}{\sigma^2} e^{- \frac{x^2}{2 \sigma^2}}$$
+```
+
+```{r}
+dray <- function(x, sd) {
+  if (sd <= 0 ) stop(gettextf("%s should be positive", expression(sd)))
+  ifelse(
+    x >= 0,
+    x / sd^2 * exp(- x^2 / (2 * sd^2)),
+    0
+  )
+}
+```
+
+Consider $\chi^2(x^{(j)})$ as candidate. The following function calcuates acceptance rate.
+
+```{r}
+acc_mc <- function(x, y, sd = 4) {
+  ( (dray(y, sd) * dchisq(x, df = y)) / (dray(x, sd) * dchisq(y, df = x)) ) %>% 
+    min(1)
+}
+```
+
+To enhance the speed, we register parallel backends.
+
+```{r, message=FALSE}
+MC_CORES <- future::availableCores() - 1
+cl <- parallel::makeCluster(MC_CORES)
+doParallel::registerDoParallel(cl, cores = MC_CORES)
+parallel::clusterExport(cl, c("acc_mc", "dray"))
+parallel::clusterEvalQ(cl, c(library(dplyr), library(data.table)))
+```
+
+
+```{r}
+mc_ray <- function(N = 10000, x0, sd = 4, burn = 1000) {
+  x <- x0
+  y <- numeric(1L)
+  acc <- numeric(1L)
+  foreach(i = seq_len(N), .combine = rbind) %dopar% {
+    y <- rchisq(1, df = x)
+    acc <- runif(1) <= acc_mc(x, y, sd)
+    x <- ifelse(acc, y, x)
+    data.table(
+      draw = i,
+      acc = acc,
+      x = x
+    )
+  } %>% 
+    .[(burn + 1):(.N)]
+}
+```
+
+For a better result, try *burn-in period* 2000.
+
+```{r}
+ray <- mc_ray(N = 10000, x0 = 1, sd = 4, burn = 2000)
+#---------------------------------------------------
+parallel::stopCluster(cl)
+```
+
+```{r raymhpath, fig.cap="M-H sampling from Chisq to target Rayleigh"}
+ray %>% 
+  ggplot(aes(x = draw, y = x)) +
+  geom_path(aes(colour = acc, group = 1)) +
+  labs(
+    x = "Draw",
+    colour = "Acceptance"
+  )
+```
+
+### Mixing
+
+Looking at Figure \@ref(fig:raymhpath), it seems that the chain converges well.
+
+```{r raymix, fig.cap="Metropolis-Hastings sampling mixing"}
+ray %>% 
+  ggplot(aes(x = draw, y = x)) +
+  geom_jitter(aes(colour = x, alpha = abs(x)), show.legend = FALSE) +
+  scale_colour_gradient(low = "#0091ff", high = "#f0650e") +
+  xlab("Draw")
+```
+
+See Figure \@ref(fig:raymix). We can see that the random numbers are mixed well.
+
+
+
+## Gibbs Sampler
+
+### Concept of gibbs sampler
+
+We are given the joint density. For this joint density, the following theorem can be proven.
+
+```{theorem, ham, name = "Hammersley-Clifford Theorem"}
+Suppose that $(X, Y)^T \sim f(x, y)$. Then
+
+$$f(x, y) = \frac{f(y \mid x)}{\int_{\R} \frac{f(y \mid x)}{f(x \mid y)} dy}$$
+```
+
+By definition, $f(x, y) \propto f(y \mid x)$. However, the above theorem gives that this joint density is proportional to both conditional densities, i.e. also to $f(x \mid y)$.
+
+```{corollary, hamcor}
+Theorem \@ref(thm:ham) implies the second 
+
+\begin{itemize}
+  \item $f(x, y) \propto f(y \mid x)$
+  \item $f(x, y) \propto f(x \mid y)$
+\end{itemize}
+```
+
+This can be extended to cases more than two blocks.
+
+```{definition, fullcond, name = "Full conditional distribution"}
+Let $\mathbf{X} = (X_1, \ldots, X_p)^T \in \R^p$ be a $p$-dimensional random vector. Then the \textbf{\textit{full conditional distribution}} of $X_j$ is
+
+$$f(X_j \mid \mathbf{X}_{(-j)})$$
+
+where $\mathbf{X}_{(-j)} = (X_1, \ldots, X_{j - 1}, X_{j + 1}, \ldots, X_p)^T$.
+```
+
+Gibbs sampler iterate to generate a number from each full conditional distribution so that we finally get the joint density, i.e.
+
+$$X_j \sim f(X_j \mid \mathbf{X}_{(-j)})$$
+
+For instance, for $p = 3$,
+
+$$
+\begin{cases}
+  X^{(1)} \sim f(x \mid y^{(0)}, z^{(0)}) \\
+  Y^{(1)} \sim f(y \mid \color{blue}{x^{(1)}}, z^{(0)}) \\
+  Z^{(1)} \sim f(z \mid \color{blue}{x^{(1)}}, \color{blue}{y^{(1)}})
+\end{cases}
+$$
+
+and so $(X^{(1)}, Y^{(1)}, Z^{(1)})^T \sim f(x, y, z)$. Next,
+
+$$
+\begin{cases}
+  X^{(2)} \sim f(x \mid \color{blue}{y^{(1)}}, \color{blue}{z^{(1)}}) \\
+  Y^{(2)} \sim f(y \mid \color{red}{x^{(2)}}, \color{blue}{z^{(1)}}) \\
+  Z^{(2)} \sim f(z \mid \color{red}{x^{(2)}}, \color{red}{y^{(2)}})
+\end{cases}
+$$
+
+so that $(X^{(2)}, Y^{(2)}, Z^{(2)})^T \sim f(x, y, z)$, and so on. Here, of course, we should know $f(\cdot \mid \cdot)$. In some cases, the closed form can be given. Otherwise, there are some calculation methods. In this problem, its closed form was calculated by someone.
+
+$$
+\begin{cases}
+  f(x \mid y) = \binom{n}{x} y^x (1 - y)^x \equiv B(n, y) \\
+  f(y \mid x) = \frac{1}{B(x + a, n - x + b)} y^{x + a - 1}(1 - y)^{n - x + b - 1} \equiv Beta(x + a, n - x + b)
+\end{cases}
+$$
+
+Hence, we just iterate the above set of process until gaining $N$ draws.
+
+### Gibbs sampler
+
+\begin{algorithm}[H] \label{alg:gibbalg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{Full conditional distribution $f$}
+  \Input{Starting values $(x_1^{(0)}, x_2^{(0)})$, burn-in period $b$}
+  \For{$i \leftarrow 1$ \KwTo $N$}{
+    Set $x_2^{\ast} = x_2^{(i - 1)}$\;
+    \For{$j \leftarrow 1$ \KwTo $2$}{
+      Generate $x_j^{(i)} \sim f(x_j \mid x_{(-j)} = x_{(-j)}^{\ast})$\;
+      Set or update $x_j^{\ast} = x_j^{(i)}$\;
+    }
+  }
+  Draw out the first $b \; x^{(j)}$ (Burn-in)\;
+  \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
+  \caption{Gibbs-sampler steps}
+\end{algorithm}
+
+Sometimes Gibbs sampler algorithm $\ref{alg:gibbalg}$ requires nested loop, whose efficiency becomes quite awful. In `R`, `C++` implementation can be a solution [@Wickham:2019aa]. The following code is executed in `Rcpp` environment in `rmd` document. Or `cppFunction()` can also be used in ordinary `R` usage.
+
+
+
+## Monitoring Convergence
 
 
 

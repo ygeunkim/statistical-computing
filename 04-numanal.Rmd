@@ -433,14 +433,18 @@ Let $X_1, \ldots, X_3 \indep f(x \mid \lambda_j) \equiv Gamma(r = \frac{1}{2}, \
 
 $$f(x \mid \lambda_j) = \frac{\lambda^{\frac{1}{2}}}{\Gamma(\frac{1}{2})} x^{- \frac{1}{2}} e^{-\lambda x}$$
 
-Then set a mixture $Y \sim f$ s.t. with mixing probaiblity $\frac{1}{3}$
+Then set a mixture $Y \sim f$ s.t. with mixing probaiblity $p_1, p_2, p_3 \;(p_1 + p_2 + p_3 = 1)$.
 
-$$f(y) = \sum_{j = 1}^3 \frac{1}{3} f_j (y \mid \lambda_j)$$
+$$f(y) = \sum_{j = 1}^3 p_j f_j (y \mid \lambda_j)$$
 
 provided that $\lambda_1 + \lambda_2 + \lambda_3 = 1$.
 ```
 
-`optim()` can be used for multi-parameter optimization.
+`optim()` can be used for multi-parameter optimization. It finds minimum of given function in `fn`. Since we are interested in maximum, we have to *add minus sign in front of the final result to get minimum*.
+
+$$\max f = - \min ( - f)$$
+
+For simplicity, set `param = c(p1, p2, lambda1, lambda2)`. First compute log-likelihood for mixture.
 
 ```{r}
 mix_ll <- function(param, y) {
@@ -454,34 +458,48 @@ mix_ll <- function(param, y) {
     sapply(rate, function(b) {
       dgamma(x = y, shape = 1 / 2, rate = 1 / (2 * b))
     }) %*%
-    diag(prob) %>% 
+    diag(prob) %>% # p_j * f_j
     rowSums()
-  -sum(log(dens))
+  -sum(log(dens)) # negative log-likelihood
 }
+```
+
+```{r}
+thet_lam <- c(.6, .25, .15)
+```
+
+Let `r thet_lam` be the true $(\lambda_1, \lambda_2, \lambda_3)^T$. Also, $p_1 = p_2 = p_3 = \frac{1}{3}$.
+
+1. Generate random number from this parameter, which play a role of observed sample
+2. Set an initial value for each parameter
+3. Each step: Get log-likelihood value from this sample using pre-defined `mix_ll()`
+4. Find minimum
+
+Following `y` is used for `mix_ll(y = y)`, i.e. sample for likelihood.
+
+```{r optim_init}
+init_lam <- 
+  sample( # p1 = p2 = p3 = 1/3
+    thet_lam, # true parameter
+    size = 2000,
+    replace = TRUE
+  )
+y <- rgamma(2000, shape = 1 / 2, rate =  1 / (2 * init_lam)) # mixture gamma with 1/3
 ```
 
 In `optim()`, initial value should be supplied to `par`.
 
 ```{r}
-thet_lam <- c(.6, .25, .15)
-init_lam <- 
-  sample(
-    thet_lam, # true parameter
-    size = 2000,
-    replace = TRUE
-  )
-y <- rgamma(2000, shape = 1 / 2, rate =  1 / (2 * init_lam))
+(opt <- optim(par = c(.3, .3, .5, .3), fn = mix_ll, y = y))
 ```
 
-```{r}
-(opt <- optim(c(.3, .3, .5, .3), mix_ll, y = y))
-```
+`$value` is the minimum value of `fn`. `$par` is our interest, parameter vector where the function is minimized. `broom::tidy()` also has a method for `optim` result. This changes it to `tibble` with two columns - `parameter` (parameter name) and `value` (its value).
 
 ```{r}
 opt_df <- 
   broom::tidy(opt) %>% 
   spread(parameter, value)
-#---------------------
+#-------------------------
 colnames(opt_df) <- c("prob1", "prob2", "lambda1", "lambda2")
 opt_df %>% 
   mutate(
@@ -491,10 +509,191 @@ opt_df %>%
   select(order(colnames(.)))
 ```
 
-True parameter was `r c(.6, .25, .15)`. Compare MLE to this.
+Compare this MLE to the true $\lambda_j$ `r thet_lam`.
 
 
 ## EM Algorithm
+
+EM algorithm is often applied to find MLE, especially when data are incomplete. This section is mainly following explanation of @Bilmes:1998tg. Let $\mathcal{X}$ be the observed data set. Assume that this is incomplete. Then let $\mathcal{Y}$ be the missing part. Assume that the complete data set exists $\mathcal{Z} = (\mathcal{X}, \mathcal{Y})$. Then the joint density of $\mathcal{Z}$ is
+
+\begin{equation}
+  p(\mathbf{z} \mid \boldsymbol\theta) = p(\mathbf{x}, \mathbf{y} \mid \boldsymbol\theta) = p(\mathbf{y} \mid \mathbf{x}, \boldsymbol\theta) p(\mathbf{x} \mid \boldsymbol\theta)
+  (\#eq:completejoint)
+\end{equation}
+
+MLE problem tries to find the maximum of
+
+\begin{equation}
+  L(\boldsymbol\theta \mid \mathcal{X}, \mathcal{Y}) = p(\mathcal{X}, \mathcal{Y} \mid \boldsymbol\theta)
+  (\#eq:completelike)
+\end{equation}
+
+which is called *complete-data likelihood*. For this kind of likelihood, we use EM algorithm. **E** stands for expectation and **M** for maximization. EM algorithm consists of these two step.
+
+### Expectation step (E-step)
+
+At first, expectation step finds conditional expectation of complete-data likelihood \@ref(eq:completelike) or its log given observed sample and current parameter estimates. Denote that random $\mathcal{Y}$ has not been observed. So we should remove it. Conditinal expectation does this job.
+
+Let $\boldsymbol\theta^{(i - 1)}$ be the current parameter estimates. EM algorithm keeps updating the parameters. At each step, we would have each updated value. What we want is conditional expectation under $\mathcal{Y} \mid \mathcal{X}, \boldsymbol\theta$. Then we should know its conditional density, i.e.
+
+\begin{equation}
+  f(\mathbf{y} \mid \mathcal{X}, \boldsymbol\theta)
+  (\#eq:missingcond)
+\end{equation}
+
+Then E-step calculate the following. Writing the support of $\mathcal{Y}$ by $\mathbb{Y}$,
+
+\begin{equation}
+  Q(\boldsymbol\theta, \boldsymbol\theta^{(i - 1)}) := E \bigg[ \ln p(\mathcal{X}, \mathcal{Y} \mid \boldsymbol\theta) \; \Big\vert \; \mathcal{X}, \boldsymbol\theta^{(i - 1)} \bigg] = \int_{\mathbb{Y}} \ln p(\mathcal{X}, \mathbf{y} \mid \boldsymbol\theta) f(\mathbf{y} \mid \mathcal{X}, \boldsymbol\theta^{(i - 1)}) d \mathbf{y}
+  (\#eq:estep)
+\end{equation}
+
+### Maximization step (M-step)
+
+Maximization step maximizes the conditional expectation $Q$ \@ref(eq:estep) with respect to $\boldsymbol\theta$ given $\boldsymbol\theta^{(i - 1)}$ [@Rizzo:2007aa].
+
+\begin{equation}
+  \boldsymbol\theta^{(i)} = \argmax_{\boldsymbol\theta} Q(\boldsymbol\theta, \boldsymbol\theta^{(i - 1)})
+  (\#eq:mstep)
+\end{equation}
+
+E-step \@ref(eq:estep) and M-step \@ref(eq:mstep) are repeated. It is guaranteed that the log-likelihood is always increasing and the algorithm converges to local maximum.
+
+### EM algorithm for a mixture model
+
+EM algorithm is widely used for mixture model. Recall that
+
+$$p(\mathbf{x} \mid \boldsymbol\beta) = \sum_{m = 1}^M \alpha_m p_m(\mathbf{x} \mid \theta_m)$$
+
+with parameter vector $\boldsymbol\beta = (\alpha_1, \ldots, \alpha_M, \theta_1, \ldots, \theta_M)$. $\alpha_m$ is an mixing probability satisfying that
+
+$$\sum_{m = 1}^M \alpha_m = 1$$
+
+Each $\theta_m$ parameterizes individual density $p_m$. Consider complete sample $\mathcal{Z} = (\mathcal{X}, \mathcal{Y}) = \{ (\mathbf{x}_i, \mathbf{y}_i) \}_1^N$ with unobserved $\mathcal{Y}$. Assume that for each $i = 1, \ldots, N$,
+
+$$\mathbf{x}_i \sim p_k(\mathbf{x} \mid \theta_k) \Rightarrow y_i = k$$
+
+Given $\mathcal{Y}$ values, the log of complete-data likelihood is
+
+\begin{equation}
+  \begin{split}
+    l(\boldsymbol\beta \mid \mathcal{X}, \mathcal{Y}) & = \ln p(\mathcal{X}, \mathcal{Y} \mid \boldsymbol\beta) \\
+    & = \sum_{i = 1}^N \ln p(\mathbf{x}_i \mid \mathbf{y}_i) p(\mathbf{y}_i) \\
+    & = \sum_{i = 1}^N \ln \alpha_{\mathbf{y}_i} p_{\mathbf{y}_i}(\mathbf{x}_i \mid \theta_{\mathbf{y}_i})
+  \end{split}
+  (\#eq:logmix)
+\end{equation}
+
+Recall that $\mathcal{Y}$ has not been observed. So let $\mathcal{Y}$ be random. In each step we update (guess) the parameter for above likelihood \@ref(eq:logmix). Write it as
+
+$$\boldsymbol\beta^g = (\alpha_1^g, \ldots, \alpha_M^g, \theta_1^g, \ldots, \theta_M^g)$$
+
+Given $\boldsymbol\beta^g$, compute $p_j(\mathbf{x}_i \mid \theta_j^g)$ for each $i$ and $j$. Bayes rule implies that
+
+\begin{equation}
+  \begin{split}
+    p(\mathbf{y}_i \mid \mathbf{x}_i, \boldsymbol\beta^g) & = \frac{\alpha_{\mathbf{y}_i}^g p_{\mathbf{y}_i}(\mathbf{x}_i \mid \theta_{\mathbf{y}_i}^g)}{p_j(\mathbf{x}_i \mid \theta_j^g)} \\
+    & = \frac{\alpha_{\mathbf{y}_i}^g p_{\mathbf{y}_i}(\mathbf{x}_i \mid \theta_{\mathbf{y}_i}^g)}{\sum\limits_{m = 1}^M \alpha_m^g p_m(\mathbf{x}_i \mid \theta_m^g)}
+  \end{split}
+  (\#eq:mixbayes)
+\end{equation}
+
+Denote that $\alpha_j = P(\text{component}\; j)$ are kind of prior probabilities. Let $\mathbf{y} = (\mathbf{y}_1, \ldots, \mathbf{y}_N)$. Then E-step \@ref(eq:estep) becomes
+
+\begin{equation}
+  \begin{split}
+    Q(\boldsymbol\beta, \boldsymbol\beta^g) & = \sum_{\mathbf{y} \in \mathbb{Y}} l(\boldsymbol\beta \mid \mathcal{X}, \mathbf{y}) p(\mathbf{y} \mid \mathcal{X}, \boldsymbol\beta^g) \\
+    & = \sum_{\mathbf{y} \in \mathbb{Y}} {\color{blue}{\sum_{i = 1}^N \ln \alpha_{\mathbf{y}_i} p_{\mathbf{y}_i}(\mathbf{x}_i \mid \theta_{\mathbf{y}_i})}} \prod_{j = 1}^N p(\mathbf{y}_j \mid \mathbf{x}_j, \boldsymbol\beta^g) \\
+    & = \underbrace{\sum_{y_1 = 1}^M \sum_{y_2 = 1}^M \cdots \sum_{y_N = 1}^M}_{\mathbb{Y}} {\color{blue}{\sum_{i = 1}^N \sum_{l = 1}^M \delta_{l, \mathbf{y}_i} \ln \alpha_l p_l (\mathbf{x}_i \mid \theta_l)}} \prod_{j = 1}^N p(\mathbf{y}_j \mid \mathbf{x}_j, \boldsymbol\beta^g) \\
+    & = {\color{blue}{\sum_{l = 1}^M \sum_{i = 1}^N \ln \alpha_l p_l (\mathbf{x}_i \mid \theta_l)}} \underbrace{\sum_{y_1 = 1}^M \sum_{y_2 = 1}^M \cdots \sum_{y_N = 1}^M {\color{blue}{\delta_{l, \mathbf{y}_i}}} \prod_{j = 1}^N p(\mathbf{y}_j \mid \mathbf{x}_j, \boldsymbol\beta^g)}_{(\ast)}
+  \end{split}
+  (\#eq:mixcond)
+\end{equation}
+
+To simplify Equation \@ref(eq:mixcond), see $(\ast)$ part.
+
+\begin{equation}
+  \begin{split}
+    (\ast) & = \bigg( \sum_{y_1 = 1}^M \cdots \sum_{y_{i - 1} = 1}^M \sum_{y_{i + 1} = 1}^M \cdots \sum_{y_N = 1}^M \prod_{j \neq i}^N p(\mathbf{y}_j \mid \mathbf{x}_j, \boldsymbol\beta^g) \bigg) \\
+    & = \prod_{j \neq i}^N \bigg( \underbrace{\sum_{y_j = 1}^M p(\mathbf{y}_j \mid \mathbf{x}_j, \boldsymbol\beta^g)}_{= 1} \bigg) p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) \\
+    & = p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) \quad \because \sum_{i = 1}^N p(i \mid \mathbf{x}_j, \boldsymbol\beta^g) = 1
+  \end{split}
+  (\#eq:mixsimple)
+\end{equation}
+
+From Equations \@ref(eq:mixcond) and \@ref(eq:mixsimple), we can conclude E-step.
+
+\begin{equation}
+  \begin{split}
+    Q(\boldsymbol\beta, \boldsymbol\beta^g) & = \sum_{l = 1}^M \sum_{i = 1}^N \ln (\alpha_l p_l (\mathbf{x}_i \mid \theta_l)) p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) \\
+    & = \sum_{l = 1}^M \sum_{i = 1}^N (\ln \alpha_l) p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) + \sum_{l = 1}^M \sum_{i = 1}^N (\ln p_l (\mathbf{x}_i \mid \theta_l)) p(l \mid \mathbf{x}_i, \boldsymbol\beta^g)
+  \end{split}
+  (\#eq:mixestep)
+\end{equation}
+
+Now M-step: maximize $Q$.
+
+\begin{equation}
+  \begin{cases}
+    \alpha_l^{new} = \frac{1}{N} \sum_{i = 1}^N p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) \\
+    \boldsymbol\mu_l^{new} = \frac{\sum \mathbf{x}_i p(l \mid \mathbf{x}_i, \boldsymbol\beta^g)}{\sum p(l \mid \mathbf{x}_i, \boldsymbol\beta^g)} \in \R^p \\
+    \Sigma_l^{new} = \frac{\sum p(l \mid \mathbf{x}_i, \boldsymbol\beta^g) (\mathbf{x}_l - \boldsymbol\mu_l^{new}) (\mathbf{x}_l - \boldsymbol\mu_l^{new})^T}{\sum p(l \mid \mathbf{x}_i, \boldsymbol\beta^g)} \in \R^{p \times p}
+  \end{cases}
+  (\#eq:mixmstep)
+\end{equation}
+
+Refer to Example \@ref(exm:mixgam). Use the same generated data.
+
+```{r}
+mix_em <- function(fn = dgamma, x, N = 10000, par, par_name = "rate", tol = .Machine$double.eps^.5, ...) {
+  ll <- list(x = x, ...)
+  dens <- 
+    tibble(
+      key = paste0("f", 1:3),
+      mu = double(3L),
+      lam = par
+    )
+  lam_old <- par + 1
+  for (i in seq_len(N)) {
+    dens <- 
+      lapply(
+        dens$lam,
+        function(y) {
+          ll[[par_name]] <- 1 / (2 * y)
+          do.call(fn, ll)
+        }
+      ) %>% 
+      bind_cols() %>% 
+      rename_all(
+        .funs = list(
+          ~str_replace_all(., pattern = "V", replacement = "f")
+        )
+      ) %>% 
+      mutate(total = apply(., 1, sum)) %>% 
+      gather(-total, key = "key", value = "value") %>% 
+      mutate(post = value / total) %>% # posterior prob y from each f1, f2, f3 - E step
+      group_by(key) %>% 
+      summarise(mu = sum(y * post) / sum(post)) %>%  # update means - M step
+      mutate(lam = mu / sum(mu))
+    if (
+      dens %>%
+      summarise(
+        sum(abs(lam - lam_old) / lam_old)
+      ) %>%
+      pull() < tol
+    ) break()
+    lam_old <- dens %>% select(lam) %>% pull()
+  }
+  list(lambda = dens %>% select(lam), iter = i)
+}
+```
+
+The result for same initial $\lambda$ is:
+
+```{r}
+mix_em(x = y, par = c(.5, .4, .1), shape = 1 / 2)
+```
+
 
 
 
