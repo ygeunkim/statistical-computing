@@ -4306,7 +4306,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.21}
+\CommentTok{#> [1] 2.09}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4380,7 +4380,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 2.53}
+\CommentTok{#> [1] 2.08}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4692,8 +4692,8 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
-\CommentTok{#>     original   bias    std. error}
-\CommentTok{#> t1*    0.776 -0.00804       0.113}
+\CommentTok{#>     original  bias    std. error}
+\CommentTok{#> t1*    0.776 -0.0116       0.119}
 \end{Highlighting}
 \end{Shaded}
 
@@ -6438,7 +6438,7 @@ To enhance the speed, we register parallel backends.
 \NormalTok{  x <-}\StringTok{ }\NormalTok{x0}
 \NormalTok{  y <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(1L)}
 \NormalTok{  acc <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(1L)}
-  \KeywordTok{foreach}\NormalTok{(}\DataTypeTok{i =} \KeywordTok{seq_len}\NormalTok{(N), }\DataTypeTok{.combine =}\NormalTok{ rbind) }\OperatorTok{%dopar%}\StringTok{ }\NormalTok{\{}
+  \KeywordTok{foreach}\NormalTok{(}\DataTypeTok{i =} \KeywordTok{seq_len}\NormalTok{(N), }\DataTypeTok{.combine =}\NormalTok{ rbind, }\DataTypeTok{.inorder =} \OtherTok{TRUE}\NormalTok{) }\OperatorTok{%dopar%}\StringTok{ }\NormalTok{\{}
 \NormalTok{    y <-}\StringTok{ }\KeywordTok{rchisq}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DataTypeTok{df =}\NormalTok{ x)}
 \NormalTok{    acc <-}\StringTok{ }\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<=}\StringTok{ }\KeywordTok{acc_mc}\NormalTok{(x, y, sd)}
 \NormalTok{    x <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(acc, y, x)}
@@ -6463,6 +6463,21 @@ For a better result, try \emph{burn-in period} 2000.
 \end{Highlighting}
 \end{Shaded}
 
+Among 8000 chain, 4740 candidiate points are rejected.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ray[,}
+\NormalTok{    .N,}
+\NormalTok{    by =}\StringTok{ }\NormalTok{acc]}
+\CommentTok{#>      acc    N}
+\CommentTok{#> 1: FALSE 3260}
+\CommentTok{#> 2:  TRUE 4740}
+\end{Highlighting}
+\end{Shaded}
+
+Recall that A-R method have tried to elevate the acceptance rate for efficiency.
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ray }\OperatorTok{%>%}\StringTok{ }
@@ -6471,7 +6486,8 @@ For a better result, try \emph{burn-in period} 2000.
 \StringTok{  }\KeywordTok{labs}\NormalTok{(}
     \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
     \DataTypeTok{colour =} \StringTok{"Acceptance"}
-\NormalTok{  )}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -6482,6 +6498,30 @@ For a better result, try \emph{burn-in period} 2000.
 }
 
 \caption{M-H sampling from Chisq to target Rayleigh}\label{fig:raymhpath}
+\end{figure}
+
+In Figure \ref{fig:raymhpath}, the short horizontal paths might be represented as rejection points.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ray[}\DecValTok{3000}\OperatorTok{:}\DecValTok{3500}\NormalTok{] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ acc, }\DataTypeTok{group =} \DecValTok{1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
+    \DataTypeTok{colour =} \StringTok{"Acceptance"}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/raypathpart-1} 
+
+}
+
+\caption{Part of a chain from M-H sampling}\label{fig:raypathpart}
 \end{figure}
 
 \hypertarget{mixing}{%
@@ -6509,6 +6549,12 @@ Looking at Figure \ref{fig:raymhpath}, it seems that the chain converges well.
 \end{figure}
 
 See Figure \ref{fig:raymix}. We can see that the random numbers are mixed well.
+
+\hypertarget{random-walk-metropolis}{%
+\subsection{Random walk metropolis}\label{random-walk-metropolis}}
+
+\hypertarget{independence-sampler}{%
+\subsection{Independence sampler}\label{independence-sampler}}
 
 \hypertarget{gibbs-sampler}{%
 \section{Gibbs Sampler}\label{gibbs-sampler}}
@@ -6569,19 +6615,53 @@ and so \((X^{(1)}, Y^{(1)}, Z^{(1)})^T \sim f(x, y, z)\). Next,
 \end{cases}
 \]
 
-so that \((X^{(2)}, Y^{(2)}, Z^{(2)})^T \sim f(x, y, z)\), and so on. Here, of course, we should know \(f(\cdot \mid \cdot)\). In some cases, the closed form can be given. Otherwise, there are some calculation methods. In this problem, its closed form was calculated by someone.
+so that \((X^{(2)}, Y^{(2)}, Z^{(2)})^T \sim f(x, y, z)\), and so on.
+
+\hypertarget{full-conditional-distributions}{%
+\subsection{Full conditional distributions}\label{full-conditional-distributions}}
+
+Suppose that we only have
+
+Here, of course, we should know \(f(\cdot \mid \cdot)\). In some cases, the closed form can be given. Otherwise, there are some calculation methods.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  normalized posterior
+\item
+  drop the irrelevant terms
+\item
+  closed form
+\item
+  Repeat 2 and 3 for all parameter blocks
+\end{enumerate}
+
+\BeginKnitrBlock{example}[Bivariate normal distribution]
+\protect\hypertarget{exm:bivgibbs}{}{\label{exm:bivgibbs} \iffalse (Bivariate normal distribution) \fi{} }Generate
+
+\[
+(X_1, X_2) \mid \mu_1, \mu_2, \sigma_1^2, \sigma_2^2, \rho \sim N_2 \bigg( (\mu_1, \mu_2)^T, \begin{bmatrix}
+  \sigma_1^2 & \rho \\
+  \rho & \sigma_2^2
+\end{bmatrix}
+\bigg)
+\]
+\EndKnitrBlock{example}
+
+In this problem, its closed can easily calculated.
 
 \[
 \begin{cases}
-  f(x \mid y) = \binom{n}{x} y^x (1 - y)^x \equiv B(n, y) \\
-  f(y \mid x) = \frac{1}{B(x + a, n - x + b)} y^{x + a - 1}(1 - y)^{n - x + b - 1} \equiv Beta(x + a, n - x + b)
+  X_1 \mid X_2, \mu_1, \mu_2, \sigma_1^2, \sigma_2^2, \rho \sim N \Big( \mu_1 + \rho \frac{\sigma_1}{\sigma_2} (X_2 - \mu_2), (1 - \rho^2) \sigma_1^2 \Big) \\
+  X_2 \mid X_1, \mu_1, \mu_2, \sigma_1^2, \sigma_2^2, \rho \sim N \Big( \mu_2 + \rho \frac{\sigma_2}{\sigma_1} (X_1 - \mu_1), (1 - \rho^2) \sigma_2^2 \Big)
 \end{cases}
 \]
 
 Hence, we just iterate the above set of process until gaining \(N\) draws.
 
-\hypertarget{gibbs-sampler-1}{%
-\subsection{Gibbs sampler}\label{gibbs-sampler-1}}
+\hypertarget{gibbs-sampler-step}{%
+\subsection{Gibbs sampler step}\label{gibbs-sampler-step}}
 
 \begin{algorithm}[H] \label{alg:gibbalg}
   \SetAlgoLined
@@ -6601,7 +6681,62 @@ Hence, we just iterate the above set of process until gaining \(N\) draws.
   \caption{Gibbs-sampler steps}
 \end{algorithm}
 
-Sometimes Gibbs sampler algorithm \(\ref{alg:gibbalg}\) requires nested loop, whose efficiency becomes quite awful. In \texttt{R}, \texttt{C++} implementation can be a solution \citep{Wickham:2019aa}. The following code is executed in \texttt{Rcpp} environment in \texttt{rmd} document. Or \texttt{cppFunction()} can also be used in ordinary \texttt{R} usage.
+Sometimes Gibbs sampler algorithm \(\ref{alg:gibbalg}\) requires nested loop, whose efficiency becomes quite awful. In \texttt{R}, \texttt{C++} implementation can be a solution \citep{Wickham:2019aa}. The following code is executed in \texttt{Rcpp} environment in \texttt{rmd} document. In practice, this should be placed in \texttt{cpp} file. Or \texttt{cppFunction()} can also be used.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\PreprocessorTok{#include }\ImportTok{<Rcpp.h>}
+\KeywordTok{using} \KeywordTok{namespace}\NormalTok{ Rcpp;}
+
+\CommentTok{// [[Rcpp::export]]}
+\NormalTok{NumericMatrix gibbs_bvn(}\DataTypeTok{int}\NormalTok{ N, }\DataTypeTok{double}\NormalTok{ x, }\DataTypeTok{double}\NormalTok{ y, }\DataTypeTok{int}\NormalTok{ burn, }
+                        \DataTypeTok{double}\NormalTok{ mu1, }\DataTypeTok{double}\NormalTok{ mu2, }\DataTypeTok{double}\NormalTok{ sig1, }\DataTypeTok{double}\NormalTok{ sig2, }\DataTypeTok{double}\NormalTok{ rho) \{}
+\NormalTok{  NumericMatrix mat(N - burn, }\DecValTok{2}\NormalTok{);}
+  
+  \ControlFlowTok{for}\NormalTok{(}\DataTypeTok{int}\NormalTok{ i = }\DecValTok{0}\NormalTok{; i < burn; i++) \{}
+\NormalTok{    x = rnorm(}\DecValTok{1}\NormalTok{, mu1 + rho * sig1 / sig2 * (y - mu2), (}\DecValTok{1}\NormalTok{ - pow(rho, }\DecValTok{2}\NormalTok{)) * pow(sig1, }\DecValTok{2}\NormalTok{))[}\DecValTok{0}\NormalTok{];}
+\NormalTok{    y = rnorm(}\DecValTok{1}\NormalTok{, mu2 + rho * sig2 / sig1 * (x - mu1), (}\DecValTok{1}\NormalTok{ - pow(rho, }\DecValTok{2}\NormalTok{)) * pow(sig2, }\DecValTok{2}\NormalTok{))[}\DecValTok{0}\NormalTok{];}
+\NormalTok{  \}}
+  
+  \ControlFlowTok{for}\NormalTok{(}\DataTypeTok{int}\NormalTok{ i = burn; i < N; i++) \{}
+\NormalTok{    x = rnorm(}\DecValTok{1}\NormalTok{, mu1 + rho * sig1 / sig2 * (y - mu2), (}\DecValTok{1}\NormalTok{ - pow(rho, }\DecValTok{2}\NormalTok{)) * pow(sig1, }\DecValTok{2}\NormalTok{))[}\DecValTok{0}\NormalTok{];}
+\NormalTok{    y = rnorm(}\DecValTok{1}\NormalTok{, mu2 + rho * sig2 / sig1 * (x - mu1), (}\DecValTok{1}\NormalTok{ - pow(rho, }\DecValTok{2}\NormalTok{)) * pow(sig2, }\DecValTok{2}\NormalTok{))[}\DecValTok{0}\NormalTok{];}
+\NormalTok{    mat(i - burn, }\DecValTok{0}\NormalTok{) = x;}
+\NormalTok{    mat(i - burn, }\DecValTok{1}\NormalTok{) = y;}
+\NormalTok{  \}}
+  
+  \ControlFlowTok{return}\NormalTok{(mat);}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+By executing above code, \texttt{gibbs\_bvn(N,\ x,\ y,\ burn,\ mu1,\ mu2,\ sig1,\ sig2,\ rho)} function is created.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{bvn <-}\StringTok{ }
+\StringTok{  }\KeywordTok{gibbs_bvn}\NormalTok{(}\DecValTok{5000}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{1000}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{2}\NormalTok{, }\DecValTok{1}\NormalTok{, }\FloatTok{.5}\NormalTok{, }\FloatTok{-.75}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{data.table}\NormalTok{()}
+\KeywordTok{setnames}\NormalTok{(bvn, }\KeywordTok{c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+We have generated bivariate normal random numbers. See Figure \ref{fig:bvnscatter}. Compare with our \(\boldsymbol\mu\) and \(\Sigma\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{gg_scatter}\NormalTok{(bvn, }\KeywordTok{aes}\NormalTok{(x, y))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/bvnscatter-1} 
+
+}
+
+\caption{Bivariate normal chain by the gibbs sampler}\label{fig:bvnscatter}
+\end{figure}
 
 \hypertarget{monitoring-convergence}{%
 \section{Monitoring Convergence}\label{monitoring-convergence}}

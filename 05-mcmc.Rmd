@@ -212,7 +212,7 @@ mc_ray <- function(N = 10000, x0, sd = 4, burn = 1000) {
   x <- x0
   y <- numeric(1L)
   acc <- numeric(1L)
-  foreach(i = seq_len(N), .combine = rbind) %dopar% {
+  foreach(i = seq_len(N), .combine = rbind, .inorder = TRUE) %dopar% {
     y <- rchisq(1, df = x)
     acc <- runif(1) <= acc_mc(x, y, sd)
     x <- ifelse(acc, y, x)
@@ -234,6 +234,16 @@ ray <- mc_ray(N = 10000, x0 = 1, sd = 4, burn = 2000)
 parallel::stopCluster(cl)
 ```
 
+Among 8000 chain, `r ray[, .N, by = acc][2, N]` candidiate points are rejected.
+
+```{r}
+ray[,
+    .N,
+    by = acc]
+```
+
+Recall that A-R method have tried to elevate the acceptance rate for efficiency.
+
 ```{r raymhpath, fig.cap="M-H sampling from Chisq to target Rayleigh"}
 ray %>% 
   ggplot(aes(x = draw, y = x)) +
@@ -241,7 +251,21 @@ ray %>%
   labs(
     x = "Draw",
     colour = "Acceptance"
-  )
+  ) +
+  theme(legend.position = "bottom")
+```
+
+In Figure \@ref(fig:raymhpath), the short horizontal paths might be represented as rejection points.
+
+```{r raypathpart, fig.cap="Part of a chain from M-H sampling"}
+ray[3000:3500] %>% 
+  ggplot(aes(x = draw, y = x)) +
+  geom_path(aes(colour = acc, group = 1)) +
+  labs(
+    x = "Draw",
+    colour = "Acceptance"
+  ) +
+  theme(legend.position = "bottom")
 ```
 
 ### Mixing
@@ -257,6 +281,11 @@ ray %>%
 ```
 
 See Figure \@ref(fig:raymix). We can see that the random numbers are mixed well.
+
+### Random walk metropolis
+
+
+### Independence sampler
 
 
 
@@ -317,18 +346,43 @@ $$
 \end{cases}
 $$
 
-so that $(X^{(2)}, Y^{(2)}, Z^{(2)})^T \sim f(x, y, z)$, and so on. Here, of course, we should know $f(\cdot \mid \cdot)$. In some cases, the closed form can be given. Otherwise, there are some calculation methods. In this problem, its closed form was calculated by someone.
+so that $(X^{(2)}, Y^{(2)}, Z^{(2)})^T \sim f(x, y, z)$, and so on.
+
+### Full conditional distributions
+
+Suppose that we only have 
+
+Here, of course, we should know $f(\cdot \mid \cdot)$. In some cases, the closed form can be given. Otherwise, there are some calculation methods.
+
+1. normalized posterior
+2. drop the irrelevant terms
+3. closed form
+4. Repeat 2 and 3 for all parameter blocks
+
+```{example, bivgibbs, name = "Bivariate normal distribution"}
+Generate
+
+$$
+(X_1, X_2) \mid \mu_1, \mu_2, \sigma_1^2, \sigma_2^2, \rho \sim N_2 \bigg( (\mu_1, \mu_2)^T, \begin{bmatrix}
+  \sigma_1^2 & \rho \\
+  \rho & \sigma_2^2
+\end{bmatrix}
+\bigg)
+$$
+```
+
+In this problem, its closed can easily calculated.
 
 $$
 \begin{cases}
-  f(x \mid y) = \binom{n}{x} y^x (1 - y)^x \equiv B(n, y) \\
-  f(y \mid x) = \frac{1}{B(x + a, n - x + b)} y^{x + a - 1}(1 - y)^{n - x + b - 1} \equiv Beta(x + a, n - x + b)
+  X_1 \mid X_2, \mu_1, \mu_2, \sigma_1^2, \sigma_2^2, \rho \sim N \Big( \mu_1 + \rho \frac{\sigma_1}{\sigma_2} (X_2 - \mu_2), (1 - \rho^2) \sigma_1^2 \Big) \\
+  X_2 \mid X_1, \mu_1, \mu_2, \sigma_1^2, \sigma_2^2, \rho \sim N \Big( \mu_2 + \rho \frac{\sigma_2}{\sigma_1} (X_1 - \mu_1), (1 - \rho^2) \sigma_2^2 \Big)
 \end{cases}
 $$
 
 Hence, we just iterate the above set of process until gaining $N$ draws.
 
-### Gibbs sampler
+### Gibbs sampler step
 
 \begin{algorithm}[H] \label{alg:gibbalg}
   \SetAlgoLined
@@ -348,8 +402,47 @@ Hence, we just iterate the above set of process until gaining $N$ draws.
   \caption{Gibbs-sampler steps}
 \end{algorithm}
 
-Sometimes Gibbs sampler algorithm $\ref{alg:gibbalg}$ requires nested loop, whose efficiency becomes quite awful. In `R`, `C++` implementation can be a solution [@Wickham:2019aa]. The following code is executed in `Rcpp` environment in `rmd` document. Or `cppFunction()` can also be used in ordinary `R` usage.
+Sometimes Gibbs sampler algorithm $\ref{alg:gibbalg}$ requires nested loop, whose efficiency becomes quite awful. In `R`, `C++` implementation can be a solution [@Wickham:2019aa]. The following code is executed in `Rcpp` environment in `rmd` document. In practice, this should be placed in `cpp` file. Or `cppFunction()` can also be used.
 
+```{Rcpp}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::export]]
+NumericMatrix gibbs_bvn(int N, double x, double y, int burn, 
+                        double mu1, double mu2, double sig1, double sig2, double rho) {
+  NumericMatrix mat(N - burn, 2);
+  
+  for(int i = 0; i < burn; i++) {
+    x = rnorm(1, mu1 + rho * sig1 / sig2 * (y - mu2), (1 - pow(rho, 2)) * pow(sig1, 2))[0];
+    y = rnorm(1, mu2 + rho * sig2 / sig1 * (x - mu1), (1 - pow(rho, 2)) * pow(sig2, 2))[0];
+  }
+  
+  for(int i = burn; i < N; i++) {
+    x = rnorm(1, mu1 + rho * sig1 / sig2 * (y - mu2), (1 - pow(rho, 2)) * pow(sig1, 2))[0];
+    y = rnorm(1, mu2 + rho * sig2 / sig1 * (x - mu1), (1 - pow(rho, 2)) * pow(sig2, 2))[0];
+    mat(i - burn, 0) = x;
+    mat(i - burn, 1) = y;
+  }
+  
+  return(mat);
+}
+```
+
+By executing above code, `gibbs_bvn(N, x, y, burn, mu1, mu2, sig1, sig2, rho)` function is created.
+
+```{r}
+bvn <- 
+  gibbs_bvn(5000, 0, 0, 1000, 0, 2, 1, .5, -.75) %>% 
+  data.table()
+setnames(bvn, c("x", "y"))
+```
+
+We have generated bivariate normal random numbers. See Figure \@ref(fig:bvnscatter). Compare with our $\boldsymbol\mu$ and $\Sigma$.
+
+```{r bvnscatter, fig.cap="Bivariate normal chain by the gibbs sampler"}
+gg_scatter(bvn, aes(x, y))
+```
 
 
 ## Monitoring Convergence
