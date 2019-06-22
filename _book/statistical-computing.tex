@@ -4306,7 +4306,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.1}
+\CommentTok{#> [1] 1.98}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4693,7 +4693,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0136       0.116}
+\CommentTok{#> t1*    0.776 -0.0097       0.118}
 \end{Highlighting}
 \end{Shaded}
 
@@ -6336,298 +6336,10 @@ This kind of convergence is usually gauranted for any starting distribution, but
 
 Denote that MC has a dependency structure. So we jump the chain, i.e.~break the dependence. However, this process is unnecessary with Ergodic theorem and increases the variance of MC estiamtes.
 
-\hypertarget{metropolis-hastings-algorithm}{%
-\section{Metropolis-Hastings Algorithm}\label{metropolis-hastings-algorithm}}
-
-\emph{Markov Chain Monte Carlo (MCMC) Methods} includes in metropolis-hastings algorithm and gibbs sampler. In fact, gibbs sampler is a special form of the former. Here we follow the notation of \citet{Chib:1995de}.
-
-\BeginKnitrBlock{definition}[Density]
-\protect\hypertarget{def:mcnote}{}{\label{def:mcnote} \iffalse (Density) \fi{} }In Metropolis-hastings (M-H) algorithm, we take care about the following two densities. Denote that terms and process are similar to A-R process.
-
-\begin{enumerate}
-  \item Target density $\pi(\cdot)$ density that we try to generate sample from
-  \item Candidate-generating density $q(\cdot \mid \cdot)$ density that we will actually generate random sample from
-\end{enumerate}
-\EndKnitrBlock{definition}
-
-\hypertarget{metropolis-hastings-sampler}{%
-\subsection{Metropolis-hastings sampler}\label{metropolis-hastings-sampler}}
-
-\begin{algorithm}[H] \label{alg:mhalg}
-  \SetAlgoLined
-  \SetKwInOut{Input}{input}
-  \SetKwInOut{Output}{output}
-  \Input{Starting point $x_0$, burn-in period $b$}
-  \For{$i \leftarrow 1$ \KwTo $N$}{
-    Draw a candidate distribution $Y \sim q(\cdot \mid x^{(j)})$\;
-    $U \sim unif(0, 1) \perp\!\!\!\perp Y$\;
-    Acceptance rate $$\alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)} \mid y)}{\pi(x^{(j)}) q(y \mid x^{(j)})}, 1 \bigg)$$\;
-    \eIf{$U \le \alpha(x^{(j)}, y)$}{
-      Accept so that $x^{(j + 1)} = y$\;
-    }{
-      Reject so that $x^{(j + 1)} = x^{(j)}$\;
-    }
-  }
-  Draw out the first $b \; x^{(j)}$ (Burn-in)\;
-  \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
-  \caption{Metropolis-Hastings algorithm with burn-in period}
-\end{algorithm}
-
-\BeginKnitrBlock{example}[Rayleigh density]
-\protect\hypertarget{exm:mhray}{}{\label{exm:mhray} \iffalse (Rayleigh density) \fi{} }Generate a sample from a Rayleigh density
-
-\[f(x) = \frac{x}{\sigma^2} e^{- \frac{x^2}{2 \sigma^2}}\]
-\EndKnitrBlock{example}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{dray <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, sd) \{}
-  \ControlFlowTok{if}\NormalTok{ (sd }\OperatorTok{<=}\StringTok{ }\DecValTok{0}\NormalTok{ ) }\KeywordTok{stop}\NormalTok{(}\KeywordTok{gettextf}\NormalTok{(}\StringTok{"%s should be positive"}\NormalTok{, }\KeywordTok{expression}\NormalTok{(sd)))}
-  \KeywordTok{ifelse}\NormalTok{(}
-\NormalTok{    x }\OperatorTok{>=}\StringTok{ }\DecValTok{0}\NormalTok{,}
-\NormalTok{    x }\OperatorTok{/}\StringTok{ }\NormalTok{sd}\OperatorTok{^}\DecValTok{2} \OperatorTok{*}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2} \OperatorTok{/}\StringTok{ }\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{sd}\OperatorTok{^}\DecValTok{2}\NormalTok{)),}
-    \DecValTok{0}
-\NormalTok{  )}
-\NormalTok{\}}
-\end{Highlighting}
-\end{Shaded}
-
-Consider \(\chi^2(x^{(j)})\) as candidate. The following function calcuates acceptance rate.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{acc_mc <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, y, }\DataTypeTok{sd =} \DecValTok{4}\NormalTok{) \{}
-\NormalTok{  ( (}\KeywordTok{dray}\NormalTok{(y, sd) }\OperatorTok{*}\StringTok{ }\KeywordTok{dchisq}\NormalTok{(x, }\DataTypeTok{df =}\NormalTok{ y)) }\OperatorTok{/}\StringTok{ }\NormalTok{(}\KeywordTok{dray}\NormalTok{(x, sd) }\OperatorTok{*}\StringTok{ }\KeywordTok{dchisq}\NormalTok{(y, }\DataTypeTok{df =}\NormalTok{ x)) ) }\OperatorTok{%>%}\StringTok{ }
-\StringTok{    }\KeywordTok{min}\NormalTok{(}\DecValTok{1}\NormalTok{)}
-\NormalTok{\}}
-\end{Highlighting}
-\end{Shaded}
-
-To enhance the speed, we register parallel backends.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{MC_CORES <-}\StringTok{ }\NormalTok{future}\OperatorTok{::}\KeywordTok{availableCores}\NormalTok{() }\OperatorTok{-}\StringTok{ }\DecValTok{1}
-\NormalTok{cl <-}\StringTok{ }\NormalTok{parallel}\OperatorTok{::}\KeywordTok{makeCluster}\NormalTok{(MC_CORES)}
-\NormalTok{doParallel}\OperatorTok{::}\KeywordTok{registerDoParallel}\NormalTok{(cl, }\DataTypeTok{cores =}\NormalTok{ MC_CORES)}
-\NormalTok{parallel}\OperatorTok{::}\KeywordTok{clusterExport}\NormalTok{(cl, }\KeywordTok{c}\NormalTok{(}\StringTok{"acc_mc"}\NormalTok{, }\StringTok{"dray"}\NormalTok{))}
-\NormalTok{parallel}\OperatorTok{::}\KeywordTok{clusterEvalQ}\NormalTok{(cl, }\KeywordTok{c}\NormalTok{(}\KeywordTok{library}\NormalTok{(dplyr), }\KeywordTok{library}\NormalTok{(data.table)))}
-\CommentTok{#> [[1]]}
-\CommentTok{#>  [1] "dplyr"      "stats"      "graphics"   "grDevices"  "utils"     }
-\CommentTok{#>  [6] "datasets"   "methods"    "base"       "data.table" "dplyr"     }
-\CommentTok{#> [11] "stats"      "graphics"   "grDevices"  "utils"      "datasets"  }
-\CommentTok{#> [16] "methods"    "base"      }
-\CommentTok{#> }
-\CommentTok{#> [[2]]}
-\CommentTok{#>  [1] "dplyr"      "stats"      "graphics"   "grDevices"  "utils"     }
-\CommentTok{#>  [6] "datasets"   "methods"    "base"       "data.table" "dplyr"     }
-\CommentTok{#> [11] "stats"      "graphics"   "grDevices"  "utils"      "datasets"  }
-\CommentTok{#> [16] "methods"    "base"      }
-\CommentTok{#> }
-\CommentTok{#> [[3]]}
-\CommentTok{#>  [1] "dplyr"      "stats"      "graphics"   "grDevices"  "utils"     }
-\CommentTok{#>  [6] "datasets"   "methods"    "base"       "data.table" "dplyr"     }
-\CommentTok{#> [11] "stats"      "graphics"   "grDevices"  "utils"      "datasets"  }
-\CommentTok{#> [16] "methods"    "base"}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{mc_ray <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(}\DataTypeTok{N =} \DecValTok{10000}\NormalTok{, x0, }\DataTypeTok{sd =} \DecValTok{4}\NormalTok{, }\DataTypeTok{burn =} \DecValTok{1000}\NormalTok{) \{}
-\NormalTok{  x <-}\StringTok{ }\NormalTok{x0}
-\NormalTok{  y <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(1L)}
-\NormalTok{  acc <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(1L)}
-  \KeywordTok{foreach}\NormalTok{(}\DataTypeTok{i =} \KeywordTok{seq_len}\NormalTok{(N), }\DataTypeTok{.combine =}\NormalTok{ rbind, }\DataTypeTok{.inorder =} \OtherTok{TRUE}\NormalTok{) }\OperatorTok{%dopar%}\StringTok{ }\NormalTok{\{}
-\NormalTok{    y <-}\StringTok{ }\KeywordTok{rchisq}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DataTypeTok{df =}\NormalTok{ x)}
-\NormalTok{    acc <-}\StringTok{ }\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<=}\StringTok{ }\KeywordTok{acc_mc}\NormalTok{(x, y, sd)}
-\NormalTok{    x <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(acc, y, x)}
-    \KeywordTok{data.table}\NormalTok{(}
-      \DataTypeTok{draw =}\NormalTok{ i,}
-      \DataTypeTok{acc =}\NormalTok{ acc,}
-      \DataTypeTok{x =}\NormalTok{ x}
-\NormalTok{    )}
-\NormalTok{  \} }\OperatorTok{%>%}\StringTok{ }
-\StringTok{    }\NormalTok{.[(burn }\OperatorTok{+}\StringTok{ }\DecValTok{1}\NormalTok{)}\OperatorTok{:}\NormalTok{(.N)]}
-\NormalTok{\}}
-\end{Highlighting}
-\end{Shaded}
-
-For a better result, try \emph{burn-in period} 2000.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ray <-}\StringTok{ }\KeywordTok{mc_ray}\NormalTok{(}\DataTypeTok{N =} \DecValTok{10000}\NormalTok{, }\DataTypeTok{x0 =} \DecValTok{1}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{4}\NormalTok{, }\DataTypeTok{burn =} \DecValTok{2000}\NormalTok{)}
-\CommentTok{#---------------------------------------------------}
-\NormalTok{parallel}\OperatorTok{::}\KeywordTok{stopCluster}\NormalTok{(cl)}
-\end{Highlighting}
-\end{Shaded}
-
-Among 8000 chain, 3323 candidiate points are rejected.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ray[,}
-\NormalTok{    .N,}
-\NormalTok{    by =}\StringTok{ }\NormalTok{acc]}
-\CommentTok{#>      acc    N}
-\CommentTok{#> 1:  TRUE 4677}
-\CommentTok{#> 2: FALSE 3323}
-\end{Highlighting}
-\end{Shaded}
-
-Recall that A-R method have tried to elevate the acceptance rate for efficiency.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ray }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ acc, }\DataTypeTok{group =} \DecValTok{1}\NormalTok{)) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{labs}\NormalTok{(}
-    \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
-    \DataTypeTok{colour =} \StringTok{"Acceptance"}
-\NormalTok{  ) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{figure}[H]
-
-{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/raymhpath-1} 
-
-}
-
-\caption{M-H sampling from Chisq to target Rayleigh}\label{fig:raymhpath}
-\end{figure}
-
-In Figure \ref{fig:raymhpath}, the short horizontal paths might be represented as rejection points.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ray[}\DecValTok{3000}\OperatorTok{:}\DecValTok{3500}\NormalTok{] }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ acc, }\DataTypeTok{group =} \DecValTok{1}\NormalTok{)) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{labs}\NormalTok{(}
-    \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
-    \DataTypeTok{colour =} \StringTok{"Acceptance"}
-\NormalTok{  ) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{figure}[H]
-
-{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/raypathpart-1} 
-
-}
-
-\caption{Part of a chain from M-H sampling}\label{fig:raypathpart}
-\end{figure}
-
-Now we can see how the chain is mixed.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{ray }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{geom_jitter}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ x, }\DataTypeTok{alpha =} \KeywordTok{abs}\NormalTok{(x)), }\DataTypeTok{show.legend =} \OtherTok{FALSE}\NormalTok{) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{scale_colour_gradient}\NormalTok{(}\DataTypeTok{low =} \StringTok{"#0091ff"}\NormalTok{, }\DataTypeTok{high =} \StringTok{"#f0650e"}\NormalTok{) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Draw"}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{figure}[H]
-
-{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/raymix-1} 
-
-}
-
-\caption{Metropolis-Hastings sampling mixing}\label{fig:raymix}
-\end{figure}
-
-See Figure \ref{fig:raymix}. We can see that the random numbers are mixed well.
-
-\hypertarget{jumping-distribution}{%
-\subsection{Jumping distribution}\label{jumping-distribution}}
-
-Candidiate distribution is also called in that it decides where will be the chain move in the next iteration. As in A-R, we should choose this candidate \(q\) such that
-
-\[spt \pi \subseteq spt q\]
-
-\begin{figure}[H]
-
-{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/jumpdist-1} 
-
-}
-
-\caption{Choice of candidate distribution - Rayleigh}\label{fig:jumpdist}
-\end{figure}
-
-According to this jumping distribution, M-H sampler becomes \emph{random walk M-H and independent M-H}. Theses are the famous examples among M-H samplers.
-
-\hypertarget{random-walk-m-h}{%
-\subsection{Random walk M-H}\label{random-walk-m-h}}
-
-Let the candidate distribution be a \emph{symmetric random walk}. Then this is called random walk M-H.
-
-\begin{equation}
-  q(y \mid x) = q_1(\lvert y - x \rvert)
-  \label{eq:symjump}
-\end{equation}
-
-Then
-
-\[q(y \mid x) = q(x \mid y)\]
-
-and hence the acceptance ratio becomes
-
-\begin{equation}
-  \alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y)}{\pi(x^{(j)})}, 1 \bigg)
-  \label{eq:symacc}
-\end{equation}
-
-Here, candidate number \(y\) is generated in the form of
-
-\begin{equation}
-  y = x + z
-  \label{eq:symcandpt}
-\end{equation}
-
-with increment \(z \sim q(\lvert z \rvert)\).
-
-\BeginKnitrBlock{example}[Random walk metropolis]
-\protect\hypertarget{exm:mct}{}{\label{exm:mct} \iffalse (Random walk metropolis) \fi{} }Generate \(t(\nu)\) using the random walk M-H.
-\EndKnitrBlock{example}
-
-Use the proposal distribution \(N(X^{(j)}, \sigma^2)\). Denote that normal distribution is symmetric. Then
-
-\[q(x \mid y) = q(y \mid x)\]
-
-Thus,
-
-\[\alpha(x^{(j)}, y) = \min \bigg(\frac{\pi(y)}{\pi(x^{(j)})}, 1 \bigg) = \min \bigg( \frac{t(y)}{t(x^{(j)})}, 1 \bigg)\]
-
-\hypertarget{independence-m-h}{%
-\subsection{Independence M-H}\label{independence-m-h}}
-
-When the candidate distribution does not depend on the previous value of the chain, it is called the \emph{independence sampler}.
-
-\begin{equation}
-  q(y \mid x) = q(y)
-  \label{eq:indepjump}
-\end{equation}
-
-Thus, the acceptance ratio is
-
-\begin{equation}
-  \alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)})}{\pi(x^{(j)}) q(y)}, 1 \bigg)
-  \label{eq:indepacc}
-\end{equation}
-
-The independence sampler is simple. Also, it gives a nice result provided that the jumping distribution is closed to the target. Otherwise, it does not perform well, which is the most case.
-
 \hypertarget{gibbs-sampler}{%
 \section{Gibbs Sampler}\label{gibbs-sampler}}
+
+\emph{Markov Chain Monte Carlo (MCMC) Methods} includes in gibbs sampler and metropolis-hastings algorithm. In fact, gibbs sampler is a special form of the latter. Here we follow the notation of \citet{Chib:1995de}.
 
 \hypertarget{concept-of-gibbs-sampler}{%
 \subsection{Concept of gibbs sampler}\label{concept-of-gibbs-sampler}}
@@ -6808,6 +6520,274 @@ We have generated bivariate normal random numbers. See Figure \ref{fig:bvnscatte
 \caption{Bivariate normal chain by the gibbs sampler}\label{fig:bvnscatter}
 \end{figure}
 
+\hypertarget{metropolis-hastings-algorithm}{%
+\section{Metropolis-Hastings Algorithm}\label{metropolis-hastings-algorithm}}
+
+We try to generate a random numer from \(f(x) \propto \pi(x)\), i.e.
+
+\[f(x) = k \pi(x)\]
+
+but we do not know the normalized constant
+
+\[k = \frac{1}{\int \pi(x) dx}\]
+
+\BeginKnitrBlock{definition}[Density]
+\protect\hypertarget{def:mcnote}{}{\label{def:mcnote} \iffalse (Density) \fi{} }In Metropolis-hastings (M-H) algorithm, we take care about the following two densities. Denote that terms and process are similar to A-R process.
+
+\begin{enumerate}
+  \item Target density $\pi(\cdot)$ density that we try to generate sample from
+  \item Candidate-generating density $q(\cdot \mid \cdot)$ density that we will actually generate random sample from
+\end{enumerate}
+\EndKnitrBlock{definition}
+
+Using these two target and candidate densities, we apply \textbf{A-R method} \(\ref{alg:algar}\). Since this only uses \(\frac{\pi(x^{\ast})}{\pi(x^{(j - 1)})}\), we do not need to know \(k\).
+
+\hypertarget{metropolis-hastings-sampler}{%
+\subsection{Metropolis-hastings sampler}\label{metropolis-hastings-sampler}}
+
+\begin{algorithm}[H] \label{alg:mhalg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{Starting point $x_0$, burn-in period $b$}
+  \For{$i \leftarrow 1$ \KwTo $N$}{
+    Draw a candidate distribution $Y \sim q(\cdot \mid x^{(j)})$\;
+    $U \sim unif(0, 1) \perp\!\!\!\perp Y$\;
+    Acceptance rate $$\alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)} \mid y)}{\pi(x^{(j)}) q(y \mid x^{(j)})}, 1 \bigg)$$\;
+    \eIf{$U \le \alpha(x^{(j)}, y)$}{
+      Accept so that $x^{(j + 1)} = y$\;
+    }{
+      Reject so that $x^{(j + 1)} = x^{(j)}$\;
+    }
+  }
+  Draw out the first $b \; x^{(j)}$ (Burn-in)\;
+  \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
+  \caption{Metropolis-Hastings algorithm with burn-in period}
+\end{algorithm}
+
+\BeginKnitrBlock{example}[Rayleigh density]
+\protect\hypertarget{exm:mhray}{}{\label{exm:mhray} \iffalse (Rayleigh density) \fi{} }Generate a sample from a Rayleigh density
+
+\[f(x) = \frac{x}{\sigma^2} e^{- \frac{x^2}{2 \sigma^2}}\]
+\EndKnitrBlock{example}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{dray <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, sd) \{}
+  \ControlFlowTok{if}\NormalTok{ (sd }\OperatorTok{<=}\StringTok{ }\DecValTok{0}\NormalTok{ ) }\KeywordTok{stop}\NormalTok{(}\KeywordTok{gettextf}\NormalTok{(}\StringTok{"%s should be positive"}\NormalTok{, }\KeywordTok{expression}\NormalTok{(sd)))}
+  \KeywordTok{ifelse}\NormalTok{(}
+\NormalTok{    x }\OperatorTok{>=}\StringTok{ }\DecValTok{0}\NormalTok{,}
+\NormalTok{    x }\OperatorTok{/}\StringTok{ }\NormalTok{sd}\OperatorTok{^}\DecValTok{2} \OperatorTok{*}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\OperatorTok{-}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2} \OperatorTok{/}\StringTok{ }\NormalTok{(}\DecValTok{2} \OperatorTok{*}\StringTok{ }\NormalTok{sd}\OperatorTok{^}\DecValTok{2}\NormalTok{)),}
+    \DecValTok{0}
+\NormalTok{  )}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Consider \(\chi^2(x^{(j)})\) as candidate. The following function calcuates acceptance rate.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{acc_mc <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, y, }\DataTypeTok{sd =} \DecValTok{4}\NormalTok{) \{}
+\NormalTok{  ( (}\KeywordTok{dray}\NormalTok{(y, sd) }\OperatorTok{*}\StringTok{ }\KeywordTok{dchisq}\NormalTok{(x, }\DataTypeTok{df =}\NormalTok{ y)) }\OperatorTok{/}\StringTok{ }\NormalTok{(}\KeywordTok{dray}\NormalTok{(x, sd) }\OperatorTok{*}\StringTok{ }\KeywordTok{dchisq}\NormalTok{(y, }\DataTypeTok{df =}\NormalTok{ x)) ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{min}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mc_ray <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(}\DataTypeTok{N =} \DecValTok{10000}\NormalTok{, x0, }\DataTypeTok{sd =} \DecValTok{4}\NormalTok{, }\DataTypeTok{burn =} \DecValTok{1000}\NormalTok{) \{}
+\NormalTok{  x <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(N)}
+\NormalTok{  x[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\NormalTok{x0}
+\NormalTok{  y <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(1L)}
+\NormalTok{  acc <-}\StringTok{ }\KeywordTok{logical}\NormalTok{(N)}
+\NormalTok{  acc[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\OtherTok{TRUE}
+  \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \KeywordTok{seq_len}\NormalTok{(N)[}\OperatorTok{-}\DecValTok{1}\NormalTok{]) \{}
+\NormalTok{    y[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\KeywordTok{rchisq}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DataTypeTok{df =}\NormalTok{ x[i }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{])}
+\NormalTok{    acc[i] <-}\StringTok{ }\NormalTok{( }\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<=}\StringTok{ }\KeywordTok{acc_mc}\NormalTok{(x[i }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{], y, sd) )}
+\NormalTok{    x[i] <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(acc[i], y, x[i }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{])}
+\NormalTok{  \}}
+  \KeywordTok{data.table}\NormalTok{(}
+    \DataTypeTok{draw =} \KeywordTok{seq_len}\NormalTok{(N),}
+    \DataTypeTok{acc =}\NormalTok{ acc,}
+    \DataTypeTok{x =}\NormalTok{ x}
+\NormalTok{  )[(burn }\OperatorTok{+}\StringTok{ }\DecValTok{1}\NormalTok{)}\OperatorTok{:}\NormalTok{(.N)]}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+For a better result, try \emph{burn-in period} 2000.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ray <-}\StringTok{ }\KeywordTok{mc_ray}\NormalTok{(}\DataTypeTok{N =} \DecValTok{10000}\NormalTok{, }\DataTypeTok{x0 =} \DecValTok{1}\NormalTok{, }\DataTypeTok{sd =} \DecValTok{4}\NormalTok{, }\DataTypeTok{burn =} \DecValTok{2000}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Among 8000 chain, 3182 candidiate points are rejected.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ray[,}
+\NormalTok{    .N,}
+\NormalTok{    by =}\StringTok{ }\NormalTok{acc]}
+\CommentTok{#>      acc    N}
+\CommentTok{#> 1:  TRUE 4818}
+\CommentTok{#> 2: FALSE 3182}
+\end{Highlighting}
+\end{Shaded}
+
+Recall that A-R method have tried to elevate the acceptance rate for efficiency.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ray }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ acc, }\DataTypeTok{group =} \DecValTok{1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
+    \DataTypeTok{colour =} \StringTok{"Acceptance"}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/raymhpath-1} 
+
+}
+
+\caption{M-H sampling from Chisq to target Rayleigh}\label{fig:raymhpath}
+\end{figure}
+
+In Figure \ref{fig:raymhpath}, the short horizontal paths might be represented as rejection points.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ray[}\DecValTok{3000}\OperatorTok{:}\DecValTok{3500}\NormalTok{] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ acc, }\DataTypeTok{group =} \DecValTok{1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
+    \DataTypeTok{colour =} \StringTok{"Acceptance"}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/raypathpart-1} 
+
+}
+
+\caption{Part of a chain from M-H sampling}\label{fig:raypathpart}
+\end{figure}
+
+Now we can see how the chain is mixed.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ray }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_jitter}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ x, }\DataTypeTok{alpha =} \KeywordTok{abs}\NormalTok{(x)), }\DataTypeTok{show.legend =} \OtherTok{FALSE}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_colour_gradient}\NormalTok{(}\DataTypeTok{low =} \StringTok{"#0091ff"}\NormalTok{, }\DataTypeTok{high =} \StringTok{"#f0650e"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Draw"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/raymix-1} 
+
+}
+
+\caption{Metropolis-Hastings sampling mixing}\label{fig:raymix}
+\end{figure}
+
+See Figure \ref{fig:raymix}. We can see that the random numbers are mixed well.
+
+\hypertarget{jumping-distribution}{%
+\subsection{Jumping distribution}\label{jumping-distribution}}
+
+Candidiate distribution is also called in that it decides where will be the chain move in the next iteration. As in A-R, we should choose this candidate \(q\) such that
+
+\[spt \pi \subseteq spt q\]
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/jumpdist-1} 
+
+}
+
+\caption{Choice of candidate distribution - Rayleigh}\label{fig:jumpdist}
+\end{figure}
+
+According to this jumping distribution, M-H sampler becomes \emph{random walk M-H and independent M-H}. Theses are the famous examples among M-H samplers.
+
+\hypertarget{random-walk-m-h}{%
+\subsection{Random walk M-H}\label{random-walk-m-h}}
+
+Let the candidate distribution be a \emph{symmetric random walk}. Then this is called random walk M-H.
+
+\begin{equation}
+  q(y \mid x) = q_1(\lvert y - x \rvert)
+  \label{eq:symjump}
+\end{equation}
+
+Then
+
+\[q(y \mid x) = q(x \mid y)\]
+
+and hence the acceptance ratio becomes
+
+\begin{equation}
+  \alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y)}{\pi(x^{(j)})}, 1 \bigg)
+  \label{eq:symacc}
+\end{equation}
+
+Here, candidate number \(y\) is generated in the form of
+
+\begin{equation}
+  y = x + z
+  \label{eq:symcandpt}
+\end{equation}
+
+with increment \(z \sim q(\lvert z \rvert)\).
+
+\BeginKnitrBlock{example}[Random walk metropolis]
+\protect\hypertarget{exm:mct}{}{\label{exm:mct} \iffalse (Random walk metropolis) \fi{} }Generate \(t(\nu)\) using the random walk M-H.
+\EndKnitrBlock{example}
+
+Use the proposal distribution \(N(X^{(j)}, \sigma^2)\). Denote that normal distribution is symmetric. Then
+
+\[q(x \mid y) = q(y \mid x)\]
+
+Thus,
+
+\[\alpha(x^{(j)}, y) = \min \bigg(\frac{\pi(y)}{\pi(x^{(j)})}, 1 \bigg) = \min \bigg( \frac{t(y)}{t(x^{(j)})}, 1 \bigg)\]
+
+\hypertarget{independence-m-h}{%
+\subsection{Independence M-H}\label{independence-m-h}}
+
+When the candidate distribution does not depend on the previous value of the chain, it is called the \emph{independence sampler}.
+
+\begin{equation}
+  q(y \mid x) = q(y)
+  \label{eq:indepjump}
+\end{equation}
+
+Thus, the acceptance ratio is
+
+\begin{equation}
+  \alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)})}{\pi(x^{(j)}) q(y)}, 1 \bigg)
+  \label{eq:indepacc}
+\end{equation}
+
+The independence sampler is simple. Also, it gives a nice result provided that the jumping distribution is closed to the target. Otherwise, it does not perform well, which is the most case.
+
 \hypertarget{monitoring-convergence}{%
 \section{Monitoring Convergence}\label{monitoring-convergence}}
 
@@ -6816,7 +6796,57 @@ See Figure \ref{fig:raymhpath}, a chain generated by M-H sampling. Is this conve
 \hypertarget{gelman-rubin-method}{%
 \subsection{Gelman-Rubin method}\label{gelman-rubin-method}}
 
-Geolman-Rubin method monitors convergence of a M-H chain. It requires \emph{multiple chains and compare the behavior of them with respect to the variance of one or more scalar summary statistics}. The estimates of variance are similar to between- and within- mean squared erros in \textbf{one-way ANOVA}. Consider \(k\) chains of length \(n\), saying \(\{ X_{ij} : 1 \le i \le k, 1 \le j \le n \}\). Let \(\psi\) be a scalar summary statistic that estimates some parameter of the target distribution. Compute scalar summary statistic for each chain \(\{ \psi_{in} = \psi(X_{i1}, \ldots, X_{in}) \}\). Then we expect that
+Geolman-Rubin method monitors convergence of a M-H chain. It requires \emph{multiple chains and compare the behavior of them with respect to the variance of one or more scalar summary statistics}. The estimates of variance are similar to between- and within- mean squared erros in \textbf{one-way ANOVA}.
+
+Consider \(k\) chains of length \(n\), saying \(\{ X_{ij} : 1 \le i \le n, 1 \le j \le k \}\). Let \(\psi\) be a scalar summary statistic that estimates some parameter of the target distribution. Compute scalar summary statistic for each chain \(\{ \psi_{nj} = \psi(X_{1j}, \ldots, X_{nj}) \}\). If the chains are converging to the target distribution, then the sampling distribution of \(\{ \psi_{nj} \}\) should be \emph{converging to a common distribution}.
+
+\BeginKnitrBlock{definition}[Sequence mean and variance]
+\protect\hypertarget{def:seqvar}{}{\label{def:seqvar} \iffalse (Sequence mean and variance) \fi{} }Given \(\{ X_{ij} : 1 \le i \le n, 1 \le j \le k \}\) and corresponding \(\{ \psi_{nj} \}\),
+
+\begin{itemize}
+  \item \textit{Overall mean} $$\overline{\psi}_{..} := \frac{1}{nk} \sum_{i,j} \psi_{ij}$$
+  \item \textit{Within-sequence mean} $$\overline{\psi}_{.j} := \frac{1}{n} \sum_i \psi_{ij}$$
+  \item \textit{Within-sequence variance} $$s_j^2 := \frac{1}{n - 1} \sum_{i = 1}^n (\psi_{ij} - \overline{\psi}_{.j})^2$$
+\end{itemize}
+\EndKnitrBlock{definition}
+
+Using Notations in Definition \ref{def:seqvar}, we can get the \textbf{Gelman-rubin statistic} step-by-step as follows.
+
+\begin{algorithm}[H] \label{alg:gelmanalg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{$k$ chains $\{ X_{ij} : 1 \le i \le n, 1 \le j \le k \}$ and corresponding statistic $\{ \psi_{nj} \}$}
+  Between-sequence variance $$B := \frac{n}{k -1}\sum_{j = 1}^k (\overline{\psi}_{.j} - \overline{\psi}_{..})^2$$\;
+  Within-sequence variance $$W := \frac{1}{k} \sum_{j = 1}^k s_j^2$$\;
+  Compute $$V = \frac{n - 1}{n} W + \frac{1}{n} B$$\; \label{alg:gelpostalg}
+  Potential scale reduction factor $$\hat{R} = \sqrt{\frac{V}{W}}$$\; \label{alg:gelpotalg}
+  \Output{$\hat{R}$}
+  \caption{Gelman-Rubin method}
+\end{algorithm}
+
+What does this mean? Each \(B\) and \(W\) computes between- and within- sequence variance as in one-way ANOVA. See Line \(\ref{alg:gelpostalg}\). This estimates the marginal posterior variance of \(\psi\) by a weighted average of \(W\) and \(B\).
+
+\begin{equation}
+  \widehat{Var}(\psi \mid x) = \frac{n - 1}{n} W + \frac{1}{n} B
+  \label{eq:gelmarg}
+\end{equation}
+
+Assuming that the starting distribution \(q(\cdot \mid x^{(0)})\) is overdispersed, i.e.~variance is larger than expectation, \(V\) overestimates \(Var(\psi \mid x)\). Under stationariy, however, starting distribution is indentical to the target, so it is unbiased. It is same for large \(n\).
+
+For any \(n \in \mathbb{R}\), \(W\) underestimates \(Var(\psi \mid x)\). This is because a single chain has less variability. As \(n \rightarrow \infty\), its expectation finally goes to \(Var(\psi \mid x)\).
+
+\BeginKnitrBlock{definition}[Gelman-Rubin statistic]
+\protect\hypertarget{def:gelstat}{}{\label{def:gelstat} \iffalse (Gelman-Rubin statistic) \fi{} }Gelman-Rubin statistic is the \textit{estimated potential scale reduction} by
+
+\[\hat{R} = \sqrt{\frac{V}{W}}\]
+
+which declines to \(1\) as \(n \rightarrow \infty\).
+\EndKnitrBlock{definition}
+
+If this \(\hat{R}\) is large, we might say that further simulations will improve the inference about target. On the other hand, we get \(\hat{R}\) less than \(1.1\) or \(1.2\), the chain can be said to be converged to the target.
+
+Refer to Example \ref{exm:mhray}. Is this chain convergent?
 
 \bibliography{book.bib,packages.bib}
 

@@ -135,233 +135,10 @@ This kind of convergence is usually gauranted for any starting distribution, but
 
 Denote that MC has a dependency structure. So we jump the chain, i.e. break the dependence. However, this process is unnecessary with Ergodic theorem and increases the variance of MC estiamtes.
 
-## Metropolis-Hastings Algorithm
-
-*Markov Chain Monte Carlo (MCMC) Methods* includes in metropolis-hastings algorithm and gibbs sampler. In fact, gibbs sampler is a special form of the former. Here we follow the notation of @Chib:1995de.
-
-```{definition, mcnote, name = "Density"}
-In Metropolis-hastings (M-H) algorithm, we take care about the following two densities. Denote that terms and process are similar to A-R process.
-
-\begin{enumerate}
-  \item Target density $\pi(\cdot)$ density that we try to generate sample from
-  \item Candidate-generating density $q(\cdot \mid \cdot)$ density that we will actually generate random sample from
-\end{enumerate}
-```
-
-### Metropolis-hastings sampler
-
-\begin{algorithm}[H] \label{alg:mhalg}
-  \SetAlgoLined
-  \SetKwInOut{Input}{input}
-  \SetKwInOut{Output}{output}
-  \Input{Starting point $x_0$, burn-in period $b$}
-  \For{$i \leftarrow 1$ \KwTo $N$}{
-    Draw a candidate distribution $Y \sim q(\cdot \mid x^{(j)})$\;
-    $U \sim unif(0, 1) \ind Y$\;
-    Acceptance rate $$\alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)} \mid y)}{\pi(x^{(j)}) q(y \mid x^{(j)})}, 1 \bigg)$$\;
-    \eIf{$U \le \alpha(x^{(j)}, y)$}{
-      Accept so that $x^{(j + 1)} = y$\;
-    }{
-      Reject so that $x^{(j + 1)} = x^{(j)}$\;
-    }
-  }
-  Draw out the first $b \; x^{(j)}$ (Burn-in)\;
-  \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
-  \caption{Metropolis-Hastings algorithm with burn-in period}
-\end{algorithm}
-
-```{example, mhray, name = "Rayleigh density"}
-Generate a sample from a Rayleigh density
-
-$$f(x) = \frac{x}{\sigma^2} e^{- \frac{x^2}{2 \sigma^2}}$$
-```
-
-```{r}
-dray <- function(x, sd) {
-  if (sd <= 0 ) stop(gettextf("%s should be positive", expression(sd)))
-  ifelse(
-    x >= 0,
-    x / sd^2 * exp(- x^2 / (2 * sd^2)),
-    0
-  )
-}
-```
-
-Consider $\chi^2(x^{(j)})$ as candidate. The following function calcuates acceptance rate.
-
-```{r}
-acc_mc <- function(x, y, sd = 4) {
-  ( (dray(y, sd) * dchisq(x, df = y)) / (dray(x, sd) * dchisq(y, df = x)) ) %>% 
-    min(1)
-}
-```
-
-To enhance the speed, we register parallel backends.
-
-```{r, message=FALSE}
-MC_CORES <- future::availableCores() - 1
-cl <- parallel::makeCluster(MC_CORES)
-doParallel::registerDoParallel(cl, cores = MC_CORES)
-parallel::clusterExport(cl, c("acc_mc", "dray"))
-parallel::clusterEvalQ(cl, c(library(dplyr), library(data.table)))
-```
-
-
-```{r}
-mc_ray <- function(N = 10000, x0, sd = 4, burn = 1000) {
-  x <- x0
-  y <- numeric(1L)
-  acc <- numeric(1L)
-  foreach(i = seq_len(N), .combine = rbind, .inorder = TRUE) %dopar% {
-    y <- rchisq(1, df = x)
-    acc <- runif(1) <= acc_mc(x, y, sd)
-    x <- ifelse(acc, y, x)
-    data.table(
-      draw = i,
-      acc = acc,
-      x = x
-    )
-  } %>% 
-    .[(burn + 1):(.N)]
-}
-```
-
-For a better result, try *burn-in period* 2000.
-
-```{r}
-ray <- mc_ray(N = 10000, x0 = 1, sd = 4, burn = 2000)
-#---------------------------------------------------
-parallel::stopCluster(cl)
-```
-
-Among 8000 chain, `r ray[, .N, by = acc][2, N]` candidiate points are rejected.
-
-```{r}
-ray[,
-    .N,
-    by = acc]
-```
-
-Recall that A-R method have tried to elevate the acceptance rate for efficiency.
-
-```{r raymhpath, fig.cap="M-H sampling from Chisq to target Rayleigh"}
-ray %>% 
-  ggplot(aes(x = draw, y = x)) +
-  geom_path(aes(colour = acc, group = 1)) +
-  labs(
-    x = "Draw",
-    colour = "Acceptance"
-  ) +
-  theme(legend.position = "bottom")
-```
-
-In Figure \@ref(fig:raymhpath), the short horizontal paths might be represented as rejection points.
-
-```{r raypathpart, fig.cap="Part of a chain from M-H sampling"}
-ray[3000:3500] %>% 
-  ggplot(aes(x = draw, y = x)) +
-  geom_path(aes(colour = acc, group = 1)) +
-  labs(
-    x = "Draw",
-    colour = "Acceptance"
-  ) +
-  theme(legend.position = "bottom")
-```
-
-Now we can see how the chain is mixed.
-
-```{r raymix, fig.cap="Metropolis-Hastings sampling mixing"}
-ray %>% 
-  ggplot(aes(x = draw, y = x)) +
-  geom_jitter(aes(colour = x, alpha = abs(x)), show.legend = FALSE) +
-  scale_colour_gradient(low = "#0091ff", high = "#f0650e") +
-  xlab("Draw")
-```
-
-See Figure \@ref(fig:raymix). We can see that the random numbers are mixed well.
-
-### Jumping distribution
-
-Candidiate distribution is also called in that it decides where will be the chain move in the next iteration. As in A-R, we should choose this candidate $q$ such that
-
-$$spt \pi \subseteq spt q$$
-
-```{r jumpdist, echo=FALSE, fig.cap="Choice of candidate distribution - Rayleigh"}
-tibble(x = seq(0, 20, by = .01)) %>% 
-  mutate_all(
-    .funs = list(
-      ~dray(., sd = 4),
-      ~dchisq(., df = 6)
-    )
-  ) %>% 
-  gather(-x, key = "jumping", value = "density") %>% 
-  ggplot(aes(x = x, y = density, colour = jumping)) +
-  geom_path()
-```
-
-According to this jumping distribution, M-H sampler becomes *random walk M-H and independent M-H*. Theses are the famous examples among M-H samplers.
-
-### Random walk M-H
-
-Let the candidate distribution be a *symmetric random walk*. Then this is called random walk M-H.
-
-\begin{equation}
-  q(y \mid x) = q_1(\lvert y - x \rvert)
-  (\#eq:symjump)
-\end{equation}
-
-Then
-
-$$q(y \mid x) = q(x \mid y)$$
-
-and hence the acceptance ratio becomes
-
-\begin{equation}
-  \alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y)}{\pi(x^{(j)})}, 1 \bigg)
-  (\#eq:symacc)
-\end{equation}
-
-Here, candidate number $y$ is generated in the form of
-
-\begin{equation}
-  y = x + z
-  (\#eq:symcandpt)
-\end{equation}
-
-with increment $z \sim q(\lvert z \rvert)$.
-
-```{example, mct, name = "Random walk metropolis"}
-Generate $t(\nu)$ using the random walk M-H.
-```
-
-Use the proposal distribution $N(X^{(j)}, \sigma^2)$. Denote that normal distribution is symmetric. Then
-
-$$q(x \mid y) = q(y \mid x)$$
-
-Thus,
-
-$$\alpha(x^{(j)}, y) = \min \bigg(\frac{\pi(y)}{\pi(x^{(j)})}, 1 \bigg) = \min \bigg( \frac{t(y)}{t(x^{(j)})}, 1 \bigg)$$
-
-### Independence M-H
-
-When the candidate distribution does not depend on the previous value of the chain, it is called the *independence sampler*.
-
-\begin{equation}
-  q(y \mid x) = q(y)
-  (\#eq:indepjump)
-\end{equation}
-
-Thus, the acceptance ratio is
-
-\begin{equation}
-  \alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)})}{\pi(x^{(j)}) q(y)}, 1 \bigg)
-  (\#eq:indepacc)
-\end{equation}
-
-The independence sampler is simple. Also, it gives a nice result provided that the jumping distribution is closed to the target. Otherwise, it does not perform well, which is the most case.
-
 
 ## Gibbs Sampler
+
+*Markov Chain Monte Carlo (MCMC) Methods* includes in gibbs sampler and metropolis-hastings algorithm. In fact, gibbs sampler is a special form of the latter. Here we follow the notation of @Chib:1995de.
 
 ### Concept of gibbs sampler
 
@@ -517,23 +294,315 @@ gg_scatter(bvn, aes(x, y))
 ```
 
 
+## Metropolis-Hastings Algorithm
+
+We try to generate a random numer from $f(x) \propto \pi(x)$, i.e.
+
+$$f(x) = k \pi(x)$$
+
+but we do not know the normalized constant
+
+$$k = \frac{1}{\int \pi(x) dx}$$
+
+```{definition, mcnote, name = "Density"}
+In Metropolis-hastings (M-H) algorithm, we take care about the following two densities. Denote that terms and process are similar to A-R process.
+
+\begin{enumerate}
+  \item Target density $\pi(\cdot)$ density that we try to generate sample from
+  \item Candidate-generating density $q(\cdot \mid \cdot)$ density that we will actually generate random sample from
+\end{enumerate}
+```
+
+Using these two target and candidate densities, we apply **A-R method** $\ref{alg:algar}$. Since this only uses $\frac{\pi(x^{\ast})}{\pi(x^{(j - 1)})}$, we do not need to know $k$.
+
+### Metropolis-hastings sampler
+
+\begin{algorithm}[H] \label{alg:mhalg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \Input{Starting point $x_0$, burn-in period $b$}
+  \For{$i \leftarrow 1$ \KwTo $N$}{
+    Draw a candidate distribution $Y \sim q(\cdot \mid x^{(j)})$\;
+    $U \sim unif(0, 1) \ind Y$\;
+    Acceptance rate $$\alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)} \mid y)}{\pi(x^{(j)}) q(y \mid x^{(j)})}, 1 \bigg)$$\;
+    \eIf{$U \le \alpha(x^{(j)}, y)$}{
+      Accept so that $x^{(j + 1)} = y$\;
+    }{
+      Reject so that $x^{(j + 1)} = x^{(j)}$\;
+    }
+  }
+  Draw out the first $b \; x^{(j)}$ (Burn-in)\;
+  \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
+  \caption{Metropolis-Hastings algorithm with burn-in period}
+\end{algorithm}
+
+```{example, mhray, name = "Rayleigh density"}
+Generate a sample from a Rayleigh density
+
+$$f(x) = \frac{x}{\sigma^2} e^{- \frac{x^2}{2 \sigma^2}}$$
+```
+
+```{r}
+dray <- function(x, sd) {
+  if (sd <= 0 ) stop(gettextf("%s should be positive", expression(sd)))
+  ifelse(
+    x >= 0,
+    x / sd^2 * exp(- x^2 / (2 * sd^2)),
+    0
+  )
+}
+```
+
+Consider $\chi^2(x^{(j)})$ as candidate. The following function calcuates acceptance rate.
+
+```{r}
+acc_mc <- function(x, y, sd = 4) {
+  ( (dray(y, sd) * dchisq(x, df = y)) / (dray(x, sd) * dchisq(y, df = x)) ) %>% 
+    min(1)
+}
+```
+
+<!-- To enhance the speed, we register parallel backends. -->
+
+<!-- ```{r, message=FALSE} -->
+<!-- MC_CORES <- future::availableCores() - 1 -->
+<!-- cl <- parallel::makeCluster(MC_CORES) -->
+<!-- doParallel::registerDoParallel(cl, cores = MC_CORES) -->
+<!-- parallel::clusterExport(cl, c("acc_mc", "dray")) -->
+<!-- parallel::clusterEvalQ(cl, c(library(dplyr), library(data.table))) -->
+<!-- ``` -->
+
+```{r}
+mc_ray <- function(N = 10000, x0, sd = 4, burn = 1000) {
+  x <- numeric(N)
+  x[1] <- x0
+  y <- numeric(1L)
+  acc <- logical(N)
+  acc[1] <- TRUE
+  for (i in seq_len(N)[-1]) {
+    y[1] <- rchisq(1, df = x[i - 1])
+    acc[i] <- ( runif(1) <= acc_mc(x[i - 1], y, sd) )
+    x[i] <- ifelse(acc[i], y, x[i - 1])
+  }
+  data.table(
+    draw = seq_len(N),
+    acc = acc,
+    x = x
+  )[(burn + 1):(.N)]
+}
+```
+
+<!-- ```{r} -->
+<!-- foreach(i = seq_len(N), .combine = rbind, .inorder = TRUE) %dopar% { -->
+<!--     y[1] <- rchisq(1, df = x) -->
+<!--     acc[1] <- ( runif(1) <= acc_mc(x, y, sd) ) -->
+<!--     x[1] <- ifelse(acc, y, x) -->
+<!--     data.table( -->
+<!--       draw = i, -->
+<!--       acc = acc, -->
+<!--       x = x -->
+<!--     ) -->
+<!--   } %>% -->
+<!--     .[(burn + 1):(.N)] -->
+<!-- ``` -->
+
+For a better result, try *burn-in period* 2000.
+
+```{r}
+ray <- mc_ray(N = 10000, x0 = 1, sd = 4, burn = 2000)
+```
+
+<!-- ```{r} -->
+<!-- ray <- mc_ray(N = 10000, x0 = 1, sd = 4, burn = 2000) -->
+<!-- #--------------------------------------------------- -->
+<!-- parallel::stopCluster(cl) -->
+<!-- ``` -->
+
+Among 8000 chain, `r ray[, .N, by = acc][2, N]` candidiate points are rejected.
+
+```{r}
+ray[,
+    .N,
+    by = acc]
+```
+
+Recall that A-R method have tried to elevate the acceptance rate for efficiency.
+
+```{r raymhpath, fig.cap="M-H sampling from Chisq to target Rayleigh"}
+ray %>% 
+  ggplot(aes(x = draw, y = x)) +
+  geom_path(aes(colour = acc, group = 1)) +
+  labs(
+    x = "Draw",
+    colour = "Acceptance"
+  ) +
+  theme(legend.position = "bottom")
+```
+
+In Figure \@ref(fig:raymhpath), the short horizontal paths might be represented as rejection points.
+
+```{r raypathpart, fig.cap="Part of a chain from M-H sampling"}
+ray[3000:3500] %>% 
+  ggplot(aes(x = draw, y = x)) +
+  geom_path(aes(colour = acc, group = 1)) +
+  labs(
+    x = "Draw",
+    colour = "Acceptance"
+  ) +
+  theme(legend.position = "bottom")
+```
+
+Now we can see how the chain is mixed.
+
+```{r raymix, fig.cap="Metropolis-Hastings sampling mixing"}
+ray %>% 
+  ggplot(aes(x = draw, y = x)) +
+  geom_jitter(aes(colour = x, alpha = abs(x)), show.legend = FALSE) +
+  scale_colour_gradient(low = "#0091ff", high = "#f0650e") +
+  xlab("Draw")
+```
+
+See Figure \@ref(fig:raymix). We can see that the random numbers are mixed well.
+
+### Jumping distribution
+
+Candidiate distribution is also called in that it decides where will be the chain move in the next iteration. As in A-R, we should choose this candidate $q$ such that
+
+$$spt \pi \subseteq spt q$$
+
+```{r jumpdist, echo=FALSE, fig.cap="Choice of candidate distribution - Rayleigh"}
+tibble(x = seq(0, 20, by = .01)) %>% 
+  mutate_all(
+    .funs = list(
+      ~dray(., sd = 4),
+      ~dchisq(., df = 6)
+    )
+  ) %>% 
+  gather(-x, key = "jumping", value = "density") %>% 
+  ggplot(aes(x = x, y = density, colour = jumping)) +
+  geom_path()
+```
+
+According to this jumping distribution, M-H sampler becomes *random walk M-H and independent M-H*. Theses are the famous examples among M-H samplers.
+
+### Random walk M-H
+
+Let the candidate distribution be a *symmetric random walk*. Then this is called random walk M-H.
+
+\begin{equation}
+  q(y \mid x) = q_1(\lvert y - x \rvert)
+  (\#eq:symjump)
+\end{equation}
+
+Then
+
+$$q(y \mid x) = q(x \mid y)$$
+
+and hence the acceptance ratio becomes
+
+\begin{equation}
+  \alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y)}{\pi(x^{(j)})}, 1 \bigg)
+  (\#eq:symacc)
+\end{equation}
+
+Here, candidate number $y$ is generated in the form of
+
+\begin{equation}
+  y = x + z
+  (\#eq:symcandpt)
+\end{equation}
+
+with increment $z \sim q(\lvert z \rvert)$.
+
+```{example, mct, name = "Random walk metropolis"}
+Generate $t(\nu)$ using the random walk M-H.
+```
+
+Use the proposal distribution $N(X^{(j)}, \sigma^2)$. Denote that normal distribution is symmetric. Then
+
+$$q(x \mid y) = q(y \mid x)$$
+
+Thus,
+
+$$\alpha(x^{(j)}, y) = \min \bigg(\frac{\pi(y)}{\pi(x^{(j)})}, 1 \bigg) = \min \bigg( \frac{t(y)}{t(x^{(j)})}, 1 \bigg)$$
+
+### Independence M-H
+
+When the candidate distribution does not depend on the previous value of the chain, it is called the *independence sampler*.
+
+\begin{equation}
+  q(y \mid x) = q(y)
+  (\#eq:indepjump)
+\end{equation}
+
+Thus, the acceptance ratio is
+
+\begin{equation}
+  \alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)})}{\pi(x^{(j)}) q(y)}, 1 \bigg)
+  (\#eq:indepacc)
+\end{equation}
+
+The independence sampler is simple. Also, it gives a nice result provided that the jumping distribution is closed to the target. Otherwise, it does not perform well, which is the most case.
+
+
 ## Monitoring Convergence
 
 See Figure \@ref(fig:raymhpath), a chain generated by M-H sampling. Is this convergent?
 
 ### Gelman-Rubin method
 
-Geolman-Rubin method monitors convergence of a M-H chain. It requires *multiple chains and compare the behavior of them with respect to the variance of one or more scalar summary statistics*. The estimates of variance are similar to between- and within- mean squared erros in **one-way ANOVA**. Consider $k$ chains of length $n$, saying $\{ X_{ij} : 1 \le i \le k, 1 \le j \le n \}$. Let $\psi$ be a scalar summary statistic that estimates some parameter of the target distribution. Compute scalar summary statistic for each chain $\{ \psi_{in} = \psi(X_{i1}, \ldots, X_{in}) \}$. Then we expect that
+Geolman-Rubin method monitors convergence of a M-H chain. It requires *multiple chains and compare the behavior of them with respect to the variance of one or more scalar summary statistics*. The estimates of variance are similar to between- and within- mean squared erros in **one-way ANOVA**.
 
-<!-- \begin{algorithm}[H] \label{alg:gelmanalg} -->
-<!--   \SetAlgoLined -->
-<!--   \SetKwInOut{Input}{input} -->
-<!--   \SetKwInOut{Output}{output} -->
+Consider $k$ chains of length $n$, saying $\{ X_{ij} : 1 \le i \le n, 1 \le j \le k \}$. Let $\psi$ be a scalar summary statistic that estimates some parameter of the target distribution. Compute scalar summary statistic for each chain $\{ \psi_{nj} = \psi(X_{1j}, \ldots, X_{nj}) \}$. If the chains are converging to the target distribution, then the sampling distribution of $\{ \psi_{nj} \}$ should be *converging to a common distribution*.
 
-<!--   \caption{Gelman-Rubin method} -->
-<!-- \end{algorithm} -->
+```{definition, seqvar, name="Sequence mean and variance"}
+Given $\{ X_{ij} : 1 \le i \le n, 1 \le j \le k \}$ and corresponding $\{ \psi_{nj} \}$,
 
+\begin{itemize}
+  \item \textit{Overall mean} $$\overline{\psi}_{..} := \frac{1}{nk} \sum_{i,j} \psi_{ij}$$
+  \item \textit{Within-sequence mean} $$\overline{\psi}_{.j} := \frac{1}{n} \sum_i \psi_{ij}$$
+  \item \textit{Within-sequence variance} $$s_j^2 := \frac{1}{n - 1} \sum_{i = 1}^n (\psi_{ij} - \overline{\psi}_{.j})^2$$
+\end{itemize}
+```
 
+Using Notations in Definition \@ref(def:seqvar), we can get the **Gelman-rubin statistic** step-by-step as follows.
+
+\begin{algorithm}[H] \label{alg:gelmanalg}
+  \SetAlgoLined
+  \SetKwInOut{Input}{input}
+  \SetKwInOut{Output}{output}
+  \KwData{$k$ chains $\{ X_{ij} : 1 \le i \le n, 1 \le j \le k \}$ and corresponding statistic $\{ \psi_{nj} \}$}
+  Between-sequence variance $$B := \frac{n}{k -1}\sum_{j = 1}^k (\overline{\psi}_{.j} - \overline{\psi}_{..})^2$$\;
+  Within-sequence variance $$W := \frac{1}{k} \sum_{j = 1}^k s_j^2$$\;
+  Compute $$V = \frac{n - 1}{n} W + \frac{1}{n} B$$\; \label{alg:gelpostalg}
+  Potential scale reduction factor $$\hat{R} = \sqrt{\frac{V}{W}}$$\; \label{alg:gelpotalg}
+  \Output{$\hat{R}$}
+  \caption{Gelman-Rubin method}
+\end{algorithm}
+
+What does this mean? Each $B$ and $W$ computes between- and within- sequence variance as in one-way ANOVA. See Line $\ref{alg:gelpostalg}$. This estimates the marginal posterior variance of $\psi$ by a weighted average of $W$ and $B$.
+
+\begin{equation}
+  \widehat{Var}(\psi \mid x) = \frac{n - 1}{n} W + \frac{1}{n} B
+  (\#eq:gelmarg)
+\end{equation}
+
+Assuming that the starting distribution $q(\cdot \mid x^{(0)})$ is overdispersed, i.e. variance is larger than expectation, $V$ overestimates $Var(\psi \mid x)$. Under stationariy, however, starting distribution is indentical to the target, so it is unbiased. It is same for large $n$.
+
+For any $n \in \R$, $W$ underestimates $Var(\psi \mid x)$. This is because a single chain has less variability. As $n \rightarrow \infty$, its expectation finally goes to $Var(\psi \mid x)$.
+
+```{definition, gelstat, name="Gelman-Rubin statistic"}
+Gelman-Rubin statistic is the \textit{estimated potential scale reduction} by
+
+$$\hat{R} = \sqrt{\frac{V}{W}}$$
+
+which declines to $1$ as $n \rightarrow \infty$.
+```
+
+If this $\hat{R}$ is large, we might say that further simulations will improve the inference about target. On the other hand, we get $\hat{R}$ less than $1.1$ or $1.2$, the chain can be said to be converged to the target.
+
+Refer to Example \@ref(exm:mhray). Is this chain convergent?
 
 
 
