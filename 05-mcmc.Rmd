@@ -516,7 +516,7 @@ Here, candidate number $y$ is generated in the form of
 with increment $z \sim q(\lvert z \rvert)$.
 
 ```{example, mct, name = "Random walk metropolis"}
-Generate $t(\nu)$ using the random walk M-H.
+Generate $t(\nu = 4)$ using the random walk M-H.
 ```
 
 Use the proposal distribution $N(X^{(j)}, \sigma^2)$. Denote that normal distribution is symmetric. Then
@@ -526,6 +526,74 @@ $$q(x \mid y) = q(y \mid x)$$
 Thus,
 
 $$\alpha(x^{(j)}, y) = \min \bigg(\frac{\pi(y)}{\pi(x^{(j)})}, 1 \bigg) = \min \bigg( \frac{t(y)}{t(x^{(j)})}, 1 \bigg)$$
+
+When building the ratio, we do not need to multiply candidate in each numerator and denominator.
+
+```{r}
+acc_walk <- function(x, y, nu = 4) {
+  ( dt(y, 4) / dt(x, 4) ) %>% 
+    min(1)
+}
+```
+
+Just change a few part of `mc_ray()` though it is annoying.
+
+```{r}
+mc_dt <- function(N = 10000, x0, nu = 4, sd, burn = 1000) {
+  x <- numeric(N)
+  x[1] <- x0
+  y <- numeric(1L)
+  acc <- logical(N)
+  acc[1] <- TRUE
+  for (i in seq_len(N)[-1]) {
+    y[1] <- rnorm(1, x[i - 1], sd = sd) # changed here
+    acc[i] <- ( runif(1) <= acc_walk(x[i - 1], y, nu = nu) ) # changed here
+    x[i] <- ifelse(acc[i], y, x[i - 1])
+  }
+  data.table(
+    draw = seq_len(N),
+    acc = acc,
+    x = x
+  )[(burn + 1):(.N)]
+}
+```
+
+Try various $\sigma^2$.
+
+```{r}
+tchain <- 
+  lapply(
+    c(.05, .5, 2, 16), # sd
+    function(i) {
+      mc_dt(N = 2000, x0 = 25, sd = i, burn = 100)[, chain := i]
+    }
+  ) %>% 
+    rbindlist()
+```
+
+```{r}
+tchain[,
+       .N,
+       by = .(acc, chain)]
+```
+
+As $\sigma^2$ increases, acceptance rate decreases.
+
+```{r rwmhpath, fig.cap="Random walk M-H with different variances"}
+tchain %>% 
+  ggplot(aes(x = draw, y = x)) +
+  geom_path(aes(colour = acc, group = 1)) +
+  facet_grid(
+    chain ~., scales = "free_y"
+  ) +
+  labs(
+    x = "Draw",
+    colour = "Acceptance"
+  ) +
+  theme(legend.position = "bottom")
+```
+
+See Figure \@ref(fig:rwmhpath). Large $\sigma$ shows frequent horizontal section.
 
 ### Independence M-H
 
@@ -544,6 +612,103 @@ Thus, the acceptance ratio is
 \end{equation}
 
 The independence sampler is simple. Also, it gives a nice result provided that the jumping distribution is closed to the target. Otherwise, it does not perform well, which is the most case.
+
+```{example, indepmhmix, name = "Independence sampler"}
+Consider a mixture
+
+$$f(x) = p N(0, 1) + (1 - p) N(5, 1)$$
+
+Generate a chain following the posterior distribution of $p$ (which is the target). Use an independence sampler.
+```
+
+Note that $p \in (0, 1)$. It might be reasonable to use
+
+$$Beta(1, 1) \stackrel{d}{=} unif(0, 1)$$
+
+Now consider jumping distribution as
+
+$$p \sim q(\cdot) \equiv Beta(a, b)$$
+
+Then the acceptance rate is
+
+$$\alpha(x^{(j)}, y) := \min \bigg(\frac{f(y) q(x^{(j)})}{f(x^{(j)}) q(y)}, 1 \bigg)$$
+
+Given observed sample $x_i \iid f$,
+
+```{r, ref.label="mixturecode"}
+```
+
+```{r}
+x <- 
+  mix_norm( # see chapter 1
+    n = 30,
+    p1 = .2,
+    mean1 = 0,
+    sd1 = 1,
+    mean2 = 5,
+    sd2 = 1
+  )
+```
+
+$$\frac{f(y) q(x^{(j)})}{f(x^{(j)}) q(y)} = \frac{(x^{(j)})^{a - 1} (1 - x^{(j)})^{b - 1} \prod\limits_i \Big(y N(x_i \mid \mu_1, \sigma_1^2) + (1 - y) N(x_i \mid \mu_2, \sigma_2^2) \Big)}{y^{a - 1} (1 - y)^{b - 1} \prod\limits_i \Big(x^{(j)} N(x_i \mid \mu_1, \sigma_1^2) + (1 - x^{(j)}) N(x_i \mid \mu_2, \sigma_2^2) \Big)}$$
+
+```{r}
+acc_indep <- function(x, xj, y, a = 1, b = 1, mu, sig) {
+  # x - observed sample
+  fyi <- y * dnorm(x, mu[1], sig[1]) + (1 - y) * dnorm(x, mu[2], sig[2])
+  fxi <- xj * dnorm(x, mu[1], sig[1]) + (1 - xj) * dnorm(x, mu[2], sig[2])
+  fyx <- prod(fyi / fxi)
+  ( fyx * ( xj^(a - 1) * (1 - xj)^(b - 1) / (y^(a -1) * (1 - y)^(b - 1)) ) ) %>% 
+    min(1)
+}
+#----------------------------------------------------------
+mc_mixture <- function(N = 10000, x, x0, a = 1, b = 1, mu = c(0, 5), sig = c(1, 1), burn = 1000) {
+  xj <- numeric(N)
+  xj[1] <- x0
+  y <- numeric(1L)
+  acc <- logical(N)
+  acc[1] <- TRUE
+  for (i in seq_len(N)[-1]) {
+    y[1] <- rbeta(1, a, b) # changed here
+    acc[i] <- ( runif(1) <= acc_indep(x, xj[i - 1], y, a, b, mu, sig) ) # changed here
+    xj[i] <- ifelse(acc[i], y, xj[i - 1])
+  }
+  data.table(
+    draw = seq_len(N),
+    acc = acc,
+    x = xj
+  )[(burn + 1):(.N)]
+}
+#--------------------------------------------------------
+mixchain <- 
+  apply(
+    matrix(
+      c(1, 1, 5, 2),
+      nrow = 2
+    ),
+    2,
+    function(ab) {
+      mc_mixture(x = x, x0 = .5, a = ab[1], b = ab[2])[, chain := paste(ab[1], ab[2], sep = ",")]
+    }
+  ) %>% 
+  rbindlist()
+```
+
+Like previous section, try several hyperparameter $(a, b)$.
+
+```{r mixpathmh, fig.cap="Mixture chain from M-H sampling for different $(a, b)$"}
+mixchain %>% 
+  ggplot(aes(x = draw, y = x)) +
+  geom_path(aes(colour = acc, group = 1)) +
+  facet_grid(
+    chain ~., scales = "free_y"
+  ) +
+  labs(
+    x = "Draw",
+    colour = "Acceptance"
+  ) +
+  theme(legend.position = "bottom")
+```
 
 
 ## Monitoring Convergence
@@ -566,7 +731,7 @@ Given $\{ X_{ij} : 1 \le i \le n, 1 \le j \le k \}$ and corresponding $\{ \psi_{
 \end{itemize}
 ```
 
-Using Notations in Definition \@ref(def:seqvar), we can get the **Gelman-rubin statistic** step-by-step as follows.
+Using Notations in Definition \@ref(def:seqvar), we can get the **Gelman-rubin statistic** step-by-step as follows [@gimdalw:2013aa].
 
 \begin{algorithm}[H] \label{alg:gelmanalg}
   \SetAlgoLined
@@ -590,7 +755,7 @@ What does this mean? Each $B$ and $W$ computes between- and within- sequence var
 
 Assuming that the starting distribution $q(\cdot \mid x^{(0)})$ is overdispersed, i.e. variance is larger than expectation, $V$ overestimates $Var(\psi \mid x)$. Under stationariy, however, starting distribution is indentical to the target, so it is unbiased. It is same for large $n$.
 
-For any $n \in \R$, $W$ underestimates $Var(\psi \mid x)$. This is because a single chain has less variability. As $n \rightarrow \infty$, its expectation finally goes to $Var(\psi \mid x)$.
+For any $n \in \R$, $W$ underestimates $Var(\psi \mid x)$. This is because a single chain has less variability. As $n \rightarrow \infty$, its expectation finally goes to $Var(\psi \mid x)$ [@Gelman:2013aa].
 
 ```{definition, gelstat, name="Gelman-Rubin statistic"}
 Gelman-Rubin statistic is the \textit{estimated potential scale reduction} by
@@ -602,13 +767,170 @@ which declines to $1$ as $n \rightarrow \infty$.
 
 If this $\hat{R}$ is large, we might say that further simulations will improve the inference about target. On the other hand, we get $\hat{R}$ less than $1.1$ or $1.2$, the chain can be said to be converged to the target.
 
-Refer to Example \@ref(exm:mhray). Is this chain convergent?
+```{example, bvnconverge, name = "Gelman-rubin monitoring for normal jumping kernel"}
+Generate standard normal random numbers using Normal candidate distribution.
+
+$$
+\begin{cases}
+  \pi(x) = \phi(x \mid 0, 1) \\
+  q(y \mid x) = \phi(y \mid \mu = x, \sigma^2)
+\end{cases}
+$$
+```
+
+Just change `acc_mc()` and a few line of `mc_ray()` above.
+
+```{r}
+acc_norm <- function(x, y, sd) {
+  ( (dnorm(y) * dnorm(x, y, sd)) / (dnorm(x) * dnorm(y, x, sd)) ) %>% 
+    min(1)
+}
+#---------------------------------------------------------
+mc_norm <- function(N = 15000, x0, sd = .2, burn = 1000) {
+  x <- numeric(N)
+  x[1] <- x0
+  y <- numeric(1L)
+  acc <- logical(N)
+  acc[1] <- TRUE
+  for (i in seq_len(N)[-1]) {
+    y[1] <- rnorm(1, x[i - 1], sd) # change this
+    acc[i] <- ( runif(1) <= acc_norm(x[i - 1], y, sd) ) # change this
+    x[i] <- ifelse(acc[i], y, x[i - 1])
+  }
+  data.table(
+    draw = seq_len(N),
+    acc = acc,
+    x = x
+  )[(burn + 1):(.N)]
+}
+nchain <- mc_norm(x0 = 2)
+```
+
+```{r npathmh, fig.cap="Standard normal by M-H"}
+nchain %>% 
+  ggplot(aes(x = draw, y = x)) +
+  geom_path(aes(colour = acc, group = 1)) +
+  labs(
+    x = "Draw",
+    colour = "Acceptance"
+  ) +
+  theme(legend.position = "bottom")
+```
+
+As we can see in Figure \@ref(fig:npathmh), many are accepted.
+
+```{r nmixmh, fig.cap="Standard normal Mixing"}
+nchain %>% 
+  ggplot(aes(x = draw, y = x)) +
+  geom_jitter(aes(colour = x, alpha = abs(x)), show.legend = FALSE) +
+  scale_colour_gradient(low = "#0091ff", high = "#f0650e") +
+  xlab("Draw")
+```
+
+Is Figure \@ref(fig:nmixmh) mixed well? Not as previous example, but we cannot say it is awkward. Now we check gelman-rubin statistic. First make a custom function to compute this.
+
+1. `gen_chain`: generate multiple chains denoted column `chain`
+2. `compute_gelman`: input $\{ \psi_{nj} \}$, `data.table` with group `j`
+
+```{r}
+gen_chain <- function(N = 15000, x0 = c(-10, -5, 5, 10), sd = .2, burn = 1000, k = 4) {
+  lapply(
+    x0, 
+    function(i) mc_norm(N = N, x0 = i, sd = sd, burn = burn)[, chain := i]
+  ) %>% 
+    rbindlist() %>% 
+    .[,
+      .(draw, acc, x, psi = cumsum(x) / seq_along(x)), # scalar summary statistic
+      by = chain]
+}
+```
+
+Next, `compute_gelman()` function is applied to
+
+$$\psi(X_{1j}, \ldots, X_{nj}) = \frac{1}{n} \sum_{i = 1}^n X_{ij}$$
+
+```{r psimh, fig.cap="$\\psi$ generated by M-H - different initial values"}
+zmc <- gen_chain()
+#-----------------
+zmc %>% 
+  ggplot(aes(x = draw, y = psi)) +
+  geom_path(aes(colour = acc, group = 1)) +
+  facet_grid(
+    chain ~.
+  ) +
+  labs(
+    x = "Draw",
+    y = expression(psi),
+    colour = "Acceptance"
+  ) +
+  theme(legend.position = "bottom")
+```
 
 
+```{r}
+compute_gelman <- function(mc) {
+  nk <- 
+    mc[,
+       .N,
+       by = chain]
+  n <- nrow(nk)
+  k <- unique(nk[,N])
+  pbar <- mean(mc[,psi])
+  w <- 
+    mc[,
+       .(ave = mean(psi), s = var(psi)),
+       by = chain]
+  B <- n / (k - 1) * sum((w[,ave] - pbar)^2)
+  W <- sum(w[,s]^2) / k
+  V <- W * (n - 1) / n + B / n
+  sqrt(V / W)
+}
+```
 
+Put `zmc` into this function.
 
+```{r}
+(rhat <- compute_gelman(zmc))
+```
 
+We get $\hat{R} = `r rhat`$. It is not that far from $1$. Actually, we can get each $\hat{R}_i$ for each $i$ until $n$ and observe its convergence.
 
+```{r}
+update_gelman <- function(mc) {
+  k <- 
+    mc[,
+       .N,
+       by = chain][,N] %>% 
+    unique()
+  parallel::mclapply(
+    seq_len(k)[-1],
+    function(i) {
+      data.table(
+        draw = i,
+        r = compute_gelman(mc[, .SD[seq_len(i)], by = chain])
+      )
+    },
+    mc.cores = 2
+  ) %>% 
+    rbindlist() %>% 
+    .[order(draw)]
+}
+#--------------------------
+rhatk <- update_gelman(zmc)
+```
+
+Figure \@ref(fig:gelmanseq) presents that the value becomes almost 1 quite fast.
+
+```{r gelmanseq, fig.cap="Sequence of the gelman-rubin $\\hat{R}$"}
+rhatk %>% 
+  ggplot(aes(x = draw, y = r)) +
+  modelr::geom_ref_line(h = 1) + # close to 1
+  geom_path() +
+  labs(
+    x = "Draw",
+    y = expression(hat(R))
+  )
+```
 
 
 

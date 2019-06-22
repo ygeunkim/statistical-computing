@@ -878,7 +878,7 @@ $$
 \end{cases}
 $$
 
-```{r}
+```{r mixturecode}
 mix_norm <- function(n, p1, mean1, sd1, mean2, sd2) {
   x1 <- rnorm(n, mean = mean1, sd = sd1)
   x2 <- rnorm(n, mean = mean2, sd = sd2)

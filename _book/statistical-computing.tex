@@ -1885,7 +1885,7 @@ Then compute \(\hat\Phi(x)\) for various \(x\) values.
 \end{Shaded}
 
 \begin{longtable}{r|r|r}
-\caption{\label{tab:unnamed-chunk-39}Simple MC estimates of Normal cdf for each x}\\
+\caption{\label{tab:unnamed-chunk-38}Simple MC estimates of Normal cdf for each x}\\
 \hline
 x & pnorm & mc\\
 \hline
@@ -2175,7 +2175,7 @@ See Figure \ref{fig:simhit}. It is obvious that Hit-or-Miss estimate produces la
 In other words, if \(\hat\theta_1\) has smaller variance than \(\hat\theta_2\), then \(\hat\theta_1\) is said to be efficient, which is preferable.
 
 \begin{longtable}{r|r|l}
-\caption{\label{tab:unnamed-chunk-50}Simple MC versus Hit-or-Miss}\\
+\caption{\label{tab:unnamed-chunk-49}Simple MC versus Hit-or-Miss}\\
 \hline
 SimpleMC & Hit-or-Miss & SimpleMCefficiency\\
 \hline
@@ -2582,7 +2582,7 @@ It looks like control variate have less variance, but what is more important is 
 Both antithetic variate and control variate reduce variance using covariance between two random variables. Actually, \emph{antithetic variate is a special case of control variate}. See Equation \eqref{eq:controlest}.
 
 \BeginKnitrBlock{lemma}
-\protect\hypertarget{lem:unnamed-chunk-65}{}{\label{lem:unnamed-chunk-65} }Control variate estimator is a linear combination of unbiased estimators of \(\theta\).
+\protect\hypertarget{lem:unnamed-chunk-64}{}{\label{lem:unnamed-chunk-64} }Control variate estimator is a linear combination of unbiased estimators of \(\theta\).
 \EndKnitrBlock{lemma}
 
 Consider any two unbiased estimator \(\hat\theta_1\) and \(\hat\theta_2\) for \(\theta = Eg(X)\). Build control variate as following.
@@ -4306,7 +4306,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 1.98}
+\CommentTok{#> [1] 2.77}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4380,7 +4380,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 2.26}
+\CommentTok{#> [1] 2.19}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4693,7 +4693,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0097       0.118}
+\CommentTok{#> t1*    0.776 -0.0107       0.122}
 \end{Highlighting}
 \end{Shaded}
 
@@ -6758,7 +6758,7 @@ Here, candidate number \(y\) is generated in the form of
 with increment \(z \sim q(\lvert z \rvert)\).
 
 \BeginKnitrBlock{example}[Random walk metropolis]
-\protect\hypertarget{exm:mct}{}{\label{exm:mct} \iffalse (Random walk metropolis) \fi{} }Generate \(t(\nu)\) using the random walk M-H.
+\protect\hypertarget{exm:mct}{}{\label{exm:mct} \iffalse (Random walk metropolis) \fi{} }Generate \(t(\nu = 4)\) using the random walk M-H.
 \EndKnitrBlock{example}
 
 Use the proposal distribution \(N(X^{(j)}, \sigma^2)\). Denote that normal distribution is symmetric. Then
@@ -6768,6 +6768,102 @@ Use the proposal distribution \(N(X^{(j)}, \sigma^2)\). Denote that normal distr
 Thus,
 
 \[\alpha(x^{(j)}, y) = \min \bigg(\frac{\pi(y)}{\pi(x^{(j)})}, 1 \bigg) = \min \bigg( \frac{t(y)}{t(x^{(j)})}, 1 \bigg)\]
+
+When building the ratio, we do not need to multiply candidate in each numerator and denominator.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{acc_walk <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, y, }\DataTypeTok{nu =} \DecValTok{4}\NormalTok{) \{}
+\NormalTok{  ( }\KeywordTok{dt}\NormalTok{(y, }\DecValTok{4}\NormalTok{) }\OperatorTok{/}\StringTok{ }\KeywordTok{dt}\NormalTok{(x, }\DecValTok{4}\NormalTok{) ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{min}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Just change a few part of \texttt{mc\_ray()} though it is annoying.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mc_dt <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(}\DataTypeTok{N =} \DecValTok{10000}\NormalTok{, x0, }\DataTypeTok{nu =} \DecValTok{4}\NormalTok{, sd, }\DataTypeTok{burn =} \DecValTok{1000}\NormalTok{) \{}
+\NormalTok{  x <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(N)}
+\NormalTok{  x[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\NormalTok{x0}
+\NormalTok{  y <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(1L)}
+\NormalTok{  acc <-}\StringTok{ }\KeywordTok{logical}\NormalTok{(N)}
+\NormalTok{  acc[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\OtherTok{TRUE}
+  \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \KeywordTok{seq_len}\NormalTok{(N)[}\OperatorTok{-}\DecValTok{1}\NormalTok{]) \{}
+\NormalTok{    y[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1}\NormalTok{, x[i }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{], }\DataTypeTok{sd =}\NormalTok{ sd) }\CommentTok{# changed here}
+\NormalTok{    acc[i] <-}\StringTok{ }\NormalTok{( }\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<=}\StringTok{ }\KeywordTok{acc_walk}\NormalTok{(x[i }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{], y, }\DataTypeTok{nu =}\NormalTok{ nu) ) }\CommentTok{# changed here}
+\NormalTok{    x[i] <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(acc[i], y, x[i }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{])}
+\NormalTok{  \}}
+  \KeywordTok{data.table}\NormalTok{(}
+    \DataTypeTok{draw =} \KeywordTok{seq_len}\NormalTok{(N),}
+    \DataTypeTok{acc =}\NormalTok{ acc,}
+    \DataTypeTok{x =}\NormalTok{ x}
+\NormalTok{  )[(burn }\OperatorTok{+}\StringTok{ }\DecValTok{1}\NormalTok{)}\OperatorTok{:}\NormalTok{(.N)]}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Try various \(\sigma^2\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{tchain <-}\StringTok{ }
+\StringTok{  }\KeywordTok{lapply}\NormalTok{(}
+    \KeywordTok{c}\NormalTok{(.}\DecValTok{05}\NormalTok{, }\FloatTok{.5}\NormalTok{, }\DecValTok{2}\NormalTok{, }\DecValTok{16}\NormalTok{), }\CommentTok{# sd}
+    \ControlFlowTok{function}\NormalTok{(i) \{}
+      \KeywordTok{mc_dt}\NormalTok{(}\DataTypeTok{N =} \DecValTok{2000}\NormalTok{, }\DataTypeTok{x0 =} \DecValTok{25}\NormalTok{, }\DataTypeTok{sd =}\NormalTok{ i, }\DataTypeTok{burn =} \DecValTok{100}\NormalTok{)[, chain }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\NormalTok{i]}
+\NormalTok{    \}}
+\NormalTok{  ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{rbindlist}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{tchain[,}
+\NormalTok{       .N,}
+\NormalTok{       by =}\StringTok{ }\NormalTok{.(acc, chain)]}
+\CommentTok{#>      acc chain    N}
+\CommentTok{#> 1:  TRUE  0.05 1896}
+\CommentTok{#> 2: FALSE  0.05    4}
+\CommentTok{#> 3:  TRUE  0.50 1642}
+\CommentTok{#> 4: FALSE  0.50  258}
+\CommentTok{#> 5: FALSE  2.00  918}
+\CommentTok{#> 6:  TRUE  2.00  982}
+\CommentTok{#> 7: FALSE 16.00 1703}
+\CommentTok{#> 8:  TRUE 16.00  197}
+\end{Highlighting}
+\end{Shaded}
+
+As \(\sigma^2\) increases, acceptance rate decreases.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{tchain }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ acc, }\DataTypeTok{group =} \DecValTok{1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(}
+\NormalTok{    chain }\OperatorTok{~}\NormalTok{., }\DataTypeTok{scales =} \StringTok{"free_y"}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
+    \DataTypeTok{colour =} \StringTok{"Acceptance"}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/rwmhpath-1} 
+
+}
+
+\caption{Random walk M-H with different variances}\label{fig:rwmhpath}
+\end{figure}
+
+See Figure \ref{fig:rwmhpath}. Large \(\sigma\) shows frequent horizontal section.
 
 \hypertarget{independence-m-h}{%
 \subsection{Independence M-H}\label{independence-m-h}}
@@ -6787,6 +6883,126 @@ Thus, the acceptance ratio is
 \end{equation}
 
 The independence sampler is simple. Also, it gives a nice result provided that the jumping distribution is closed to the target. Otherwise, it does not perform well, which is the most case.
+
+\BeginKnitrBlock{example}[Independence sampler]
+\protect\hypertarget{exm:indepmhmix}{}{\label{exm:indepmhmix} \iffalse (Independence sampler) \fi{} }Consider a mixture
+
+\[f(x) = p N(0, 1) + (1 - p) N(5, 1)\]
+
+Generate a chain following the posterior distribution of \(p\) (which is the target). Use an independence sampler.
+\EndKnitrBlock{example}
+
+Note that \(p \in (0, 1)\). It might be reasonable to use
+
+\[Beta(1, 1) \stackrel{d}{=} unif(0, 1)\]
+
+Now consider jumping distribution as
+
+\[p \sim q(\cdot) \equiv Beta(a, b)\]
+
+Then the acceptance rate is
+
+\[\alpha(x^{(j)}, y) := \min \bigg(\frac{f(y) q(x^{(j)})}{f(x^{(j)}) q(y)}, 1 \bigg)\]
+
+Given observed sample \(x_i \stackrel{iid}{\sim}f\),
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mix_norm <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(n, p1, mean1, sd1, mean2, sd2) \{}
+\NormalTok{  x1 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(n, }\DataTypeTok{mean =}\NormalTok{ mean1, }\DataTypeTok{sd =}\NormalTok{ sd1)}
+\NormalTok{  x2 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(n, }\DataTypeTok{mean =}\NormalTok{ mean2, }\DataTypeTok{sd =}\NormalTok{ sd2)}
+\NormalTok{  k <-}\StringTok{ }\KeywordTok{as.integer}\NormalTok{(}\KeywordTok{runif}\NormalTok{(n) }\OperatorTok{<=}\StringTok{ }\NormalTok{p1)}
+\NormalTok{  k }\OperatorTok{*}\StringTok{ }\NormalTok{x1 }\OperatorTok{+}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{k) }\OperatorTok{*}\StringTok{ }\NormalTok{x2}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x <-}\StringTok{ }
+\StringTok{  }\KeywordTok{mix_norm}\NormalTok{( }\CommentTok{# see chapter 1}
+    \DataTypeTok{n =} \DecValTok{30}\NormalTok{,}
+    \DataTypeTok{p1 =} \FloatTok{.2}\NormalTok{,}
+    \DataTypeTok{mean1 =} \DecValTok{0}\NormalTok{,}
+    \DataTypeTok{sd1 =} \DecValTok{1}\NormalTok{,}
+    \DataTypeTok{mean2 =} \DecValTok{5}\NormalTok{,}
+    \DataTypeTok{sd2 =} \DecValTok{1}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\[\frac{f(y) q(x^{(j)})}{f(x^{(j)}) q(y)} = \frac{(x^{(j)})^{a - 1} (1 - x^{(j)})^{b - 1} \prod\limits_i \Big(y N(x_i \mid \mu_1, \sigma_1^2) + (1 - y) N(x_i \mid \mu_2, \sigma_2^2) \Big)}{y^{a - 1} (1 - y)^{b - 1} \prod\limits_i \Big(x^{(j)} N(x_i \mid \mu_1, \sigma_1^2) + (1 - x^{(j)}) N(x_i \mid \mu_2, \sigma_2^2) \Big)}\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{acc_indep <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, xj, y, }\DataTypeTok{a =} \DecValTok{1}\NormalTok{, }\DataTypeTok{b =} \DecValTok{1}\NormalTok{, mu, sig) \{}
+  \CommentTok{# x - observed sample}
+\NormalTok{  fyi <-}\StringTok{ }\NormalTok{y }\OperatorTok{*}\StringTok{ }\KeywordTok{dnorm}\NormalTok{(x, mu[}\DecValTok{1}\NormalTok{], sig[}\DecValTok{1}\NormalTok{]) }\OperatorTok{+}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{y) }\OperatorTok{*}\StringTok{ }\KeywordTok{dnorm}\NormalTok{(x, mu[}\DecValTok{2}\NormalTok{], sig[}\DecValTok{2}\NormalTok{])}
+\NormalTok{  fxi <-}\StringTok{ }\NormalTok{xj }\OperatorTok{*}\StringTok{ }\KeywordTok{dnorm}\NormalTok{(x, mu[}\DecValTok{1}\NormalTok{], sig[}\DecValTok{1}\NormalTok{]) }\OperatorTok{+}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{xj) }\OperatorTok{*}\StringTok{ }\KeywordTok{dnorm}\NormalTok{(x, mu[}\DecValTok{2}\NormalTok{], sig[}\DecValTok{2}\NormalTok{])}
+\NormalTok{  fyx <-}\StringTok{ }\KeywordTok{prod}\NormalTok{(fyi }\OperatorTok{/}\StringTok{ }\NormalTok{fxi)}
+\NormalTok{  ( fyx }\OperatorTok{*}\StringTok{ }\NormalTok{( xj}\OperatorTok{^}\NormalTok{(a }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{xj)}\OperatorTok{^}\NormalTok{(b }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{/}\StringTok{ }\NormalTok{(y}\OperatorTok{^}\NormalTok{(a }\DecValTok{-1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{y)}\OperatorTok{^}\NormalTok{(b }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{)) ) ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{min}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{\}}
+\CommentTok{#----------------------------------------------------------}
+\NormalTok{mc_mixture <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(}\DataTypeTok{N =} \DecValTok{10000}\NormalTok{, x, x0, }\DataTypeTok{a =} \DecValTok{1}\NormalTok{, }\DataTypeTok{b =} \DecValTok{1}\NormalTok{, }\DataTypeTok{mu =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{5}\NormalTok{), }\DataTypeTok{sig =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{), }\DataTypeTok{burn =} \DecValTok{1000}\NormalTok{) \{}
+\NormalTok{  xj <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(N)}
+\NormalTok{  xj[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\NormalTok{x0}
+\NormalTok{  y <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(1L)}
+\NormalTok{  acc <-}\StringTok{ }\KeywordTok{logical}\NormalTok{(N)}
+\NormalTok{  acc[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\OtherTok{TRUE}
+  \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \KeywordTok{seq_len}\NormalTok{(N)[}\OperatorTok{-}\DecValTok{1}\NormalTok{]) \{}
+\NormalTok{    y[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\KeywordTok{rbeta}\NormalTok{(}\DecValTok{1}\NormalTok{, a, b) }\CommentTok{# changed here}
+\NormalTok{    acc[i] <-}\StringTok{ }\NormalTok{( }\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<=}\StringTok{ }\KeywordTok{acc_indep}\NormalTok{(x, xj[i }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{], y, a, b, mu, sig) ) }\CommentTok{# changed here}
+\NormalTok{    xj[i] <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(acc[i], y, xj[i }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{])}
+\NormalTok{  \}}
+  \KeywordTok{data.table}\NormalTok{(}
+    \DataTypeTok{draw =} \KeywordTok{seq_len}\NormalTok{(N),}
+    \DataTypeTok{acc =}\NormalTok{ acc,}
+    \DataTypeTok{x =}\NormalTok{ xj}
+\NormalTok{  )[(burn }\OperatorTok{+}\StringTok{ }\DecValTok{1}\NormalTok{)}\OperatorTok{:}\NormalTok{(.N)]}
+\NormalTok{\}}
+\CommentTok{#--------------------------------------------------------}
+\NormalTok{mixchain <-}\StringTok{ }
+\StringTok{  }\KeywordTok{apply}\NormalTok{(}
+    \KeywordTok{matrix}\NormalTok{(}
+      \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{5}\NormalTok{, }\DecValTok{2}\NormalTok{),}
+      \DataTypeTok{nrow =} \DecValTok{2}
+\NormalTok{    ),}
+    \DecValTok{2}\NormalTok{,}
+    \ControlFlowTok{function}\NormalTok{(ab) \{}
+      \KeywordTok{mc_mixture}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{x0 =} \FloatTok{.5}\NormalTok{, }\DataTypeTok{a =}\NormalTok{ ab[}\DecValTok{1}\NormalTok{], }\DataTypeTok{b =}\NormalTok{ ab[}\DecValTok{2}\NormalTok{])[, chain }\OperatorTok{:}\ErrorTok{=}\StringTok{ }\KeywordTok{paste}\NormalTok{(ab[}\DecValTok{1}\NormalTok{], ab[}\DecValTok{2}\NormalTok{], }\DataTypeTok{sep =} \StringTok{","}\NormalTok{)]}
+\NormalTok{    \}}
+\NormalTok{  ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{rbindlist}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+Like previous section, try several hyperparameter \((a, b)\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mixchain }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ acc, }\DataTypeTok{group =} \DecValTok{1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(}
+\NormalTok{    chain }\OperatorTok{~}\NormalTok{., }\DataTypeTok{scales =} \StringTok{"free_y"}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
+    \DataTypeTok{colour =} \StringTok{"Acceptance"}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/mixpathmh-1} 
+
+}
+
+\caption{Mixture chain from M-H sampling for different $(a, b)$}\label{fig:mixpathmh}
+\end{figure}
 
 \hypertarget{monitoring-convergence}{%
 \section{Monitoring Convergence}\label{monitoring-convergence}}
@@ -6810,7 +7026,7 @@ Consider \(k\) chains of length \(n\), saying \(\{ X_{ij} : 1 \le i \le n, 1 \le
 \end{itemize}
 \EndKnitrBlock{definition}
 
-Using Notations in Definition \ref{def:seqvar}, we can get the \textbf{Gelman-rubin statistic} step-by-step as follows.
+Using Notations in Definition \ref{def:seqvar}, we can get the \textbf{Gelman-rubin statistic} step-by-step as follows \citep{gimdalw:2013aa}.
 
 \begin{algorithm}[H] \label{alg:gelmanalg}
   \SetAlgoLined
@@ -6834,7 +7050,7 @@ What does this mean? Each \(B\) and \(W\) computes between- and within- sequence
 
 Assuming that the starting distribution \(q(\cdot \mid x^{(0)})\) is overdispersed, i.e.~variance is larger than expectation, \(V\) overestimates \(Var(\psi \mid x)\). Under stationariy, however, starting distribution is indentical to the target, so it is unbiased. It is same for large \(n\).
 
-For any \(n \in \mathbb{R}\), \(W\) underestimates \(Var(\psi \mid x)\). This is because a single chain has less variability. As \(n \rightarrow \infty\), its expectation finally goes to \(Var(\psi \mid x)\).
+For any \(n \in \mathbb{R}\), \(W\) underestimates \(Var(\psi \mid x)\). This is because a single chain has less variability. As \(n \rightarrow \infty\), its expectation finally goes to \(Var(\psi \mid x)\) \citep{Gelman:2013aa}.
 
 \BeginKnitrBlock{definition}[Gelman-Rubin statistic]
 \protect\hypertarget{def:gelstat}{}{\label{def:gelstat} \iffalse (Gelman-Rubin statistic) \fi{} }Gelman-Rubin statistic is the \textit{estimated potential scale reduction} by
@@ -6846,7 +7062,230 @@ which declines to \(1\) as \(n \rightarrow \infty\).
 
 If this \(\hat{R}\) is large, we might say that further simulations will improve the inference about target. On the other hand, we get \(\hat{R}\) less than \(1.1\) or \(1.2\), the chain can be said to be converged to the target.
 
-Refer to Example \ref{exm:mhray}. Is this chain convergent?
+\BeginKnitrBlock{example}[Gelman-rubin monitoring for normal jumping kernel]
+\protect\hypertarget{exm:bvnconverge}{}{\label{exm:bvnconverge} \iffalse (Gelman-rubin monitoring for normal jumping kernel) \fi{} }Generate standard normal random numbers using Normal candidate distribution.
+
+\[
+\begin{cases}
+  \pi(x) = \phi(x \mid 0, 1) \\
+  q(y \mid x) = \phi(y \mid \mu = x, \sigma^2)
+\end{cases}
+\]
+\EndKnitrBlock{example}
+
+Just change \texttt{acc\_mc()} and a few line of \texttt{mc\_ray()} above.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{acc_norm <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, y, sd) \{}
+\NormalTok{  ( (}\KeywordTok{dnorm}\NormalTok{(y) }\OperatorTok{*}\StringTok{ }\KeywordTok{dnorm}\NormalTok{(x, y, sd)) }\OperatorTok{/}\StringTok{ }\NormalTok{(}\KeywordTok{dnorm}\NormalTok{(x) }\OperatorTok{*}\StringTok{ }\KeywordTok{dnorm}\NormalTok{(y, x, sd)) ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{min}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{\}}
+\CommentTok{#---------------------------------------------------------}
+\NormalTok{mc_norm <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(}\DataTypeTok{N =} \DecValTok{15000}\NormalTok{, x0, }\DataTypeTok{sd =} \FloatTok{.2}\NormalTok{, }\DataTypeTok{burn =} \DecValTok{1000}\NormalTok{) \{}
+\NormalTok{  x <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(N)}
+\NormalTok{  x[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\NormalTok{x0}
+\NormalTok{  y <-}\StringTok{ }\KeywordTok{numeric}\NormalTok{(1L)}
+\NormalTok{  acc <-}\StringTok{ }\KeywordTok{logical}\NormalTok{(N)}
+\NormalTok{  acc[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\OtherTok{TRUE}
+  \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \KeywordTok{seq_len}\NormalTok{(N)[}\OperatorTok{-}\DecValTok{1}\NormalTok{]) \{}
+\NormalTok{    y[}\DecValTok{1}\NormalTok{] <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1}\NormalTok{, x[i }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{], sd) }\CommentTok{# change this}
+\NormalTok{    acc[i] <-}\StringTok{ }\NormalTok{( }\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<=}\StringTok{ }\KeywordTok{acc_norm}\NormalTok{(x[i }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{], y, sd) ) }\CommentTok{# change this}
+\NormalTok{    x[i] <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(acc[i], y, x[i }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{])}
+\NormalTok{  \}}
+  \KeywordTok{data.table}\NormalTok{(}
+    \DataTypeTok{draw =} \KeywordTok{seq_len}\NormalTok{(N),}
+    \DataTypeTok{acc =}\NormalTok{ acc,}
+    \DataTypeTok{x =}\NormalTok{ x}
+\NormalTok{  )[(burn }\OperatorTok{+}\StringTok{ }\DecValTok{1}\NormalTok{)}\OperatorTok{:}\NormalTok{(.N)]}
+\NormalTok{\}}
+\NormalTok{nchain <-}\StringTok{ }\KeywordTok{mc_norm}\NormalTok{(}\DataTypeTok{x0 =} \DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{nchain }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ acc, }\DataTypeTok{group =} \DecValTok{1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
+    \DataTypeTok{colour =} \StringTok{"Acceptance"}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/npathmh-1} 
+
+}
+
+\caption{Standard normal by M-H}\label{fig:npathmh}
+\end{figure}
+
+As we can see in Figure \ref{fig:npathmh}, many are accepted.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{nchain }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ x)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_jitter}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ x, }\DataTypeTok{alpha =} \KeywordTok{abs}\NormalTok{(x)), }\DataTypeTok{show.legend =} \OtherTok{FALSE}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_colour_gradient}\NormalTok{(}\DataTypeTok{low =} \StringTok{"#0091ff"}\NormalTok{, }\DataTypeTok{high =} \StringTok{"#f0650e"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Draw"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/nmixmh-1} 
+
+}
+
+\caption{Standard normal Mixing}\label{fig:nmixmh}
+\end{figure}
+
+Is Figure \ref{fig:nmixmh} mixed well? Not as previous example, but we cannot say it is awkward. Now we check gelman-rubin statistic. First make a custom function to compute this.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \texttt{gen\_chain}: generate multiple chains denoted column \texttt{chain}
+\item
+  \texttt{compute\_gelman}: input \(\{ \psi_{nj} \}\), \texttt{data.table} with group \texttt{j}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{gen_chain <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(}\DataTypeTok{N =} \DecValTok{15000}\NormalTok{, }\DataTypeTok{x0 =} \KeywordTok{c}\NormalTok{(}\OperatorTok{-}\DecValTok{10}\NormalTok{, }\DecValTok{-5}\NormalTok{, }\DecValTok{5}\NormalTok{, }\DecValTok{10}\NormalTok{), }\DataTypeTok{sd =} \FloatTok{.2}\NormalTok{, }\DataTypeTok{burn =} \DecValTok{1000}\NormalTok{, }\DataTypeTok{k =} \DecValTok{4}\NormalTok{) \{}
+  \KeywordTok{lapply}\NormalTok{(}
+\NormalTok{    x0, }
+    \ControlFlowTok{function}\NormalTok{(i) }\KeywordTok{mc_norm}\NormalTok{(}\DataTypeTok{N =}\NormalTok{ N, }\DataTypeTok{x0 =}\NormalTok{ i, }\DataTypeTok{sd =}\NormalTok{ sd, }\DataTypeTok{burn =}\NormalTok{ burn)[, }\DataTypeTok{chain :=}\NormalTok{ i]}
+\NormalTok{  ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{rbindlist}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\NormalTok{.[,}
+\NormalTok{      .(draw, acc, x, }\DataTypeTok{psi =} \KeywordTok{cumsum}\NormalTok{(x) }\OperatorTok{/}\StringTok{ }\KeywordTok{seq_along}\NormalTok{(x)), }\CommentTok{# scalar summary statistic}
+\NormalTok{      by =}\StringTok{ }\NormalTok{chain]}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Next, \texttt{compute\_gelman()} function is applied to
+
+\[\psi(X_{1j}, \ldots, X_{nj}) = \frac{1}{n} \sum_{i = 1}^n X_{ij}\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{zmc <-}\StringTok{ }\KeywordTok{gen_chain}\NormalTok{()}
+\CommentTok{#-----------------}
+\NormalTok{zmc }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ psi)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{colour =}\NormalTok{ acc, }\DataTypeTok{group =} \DecValTok{1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(}
+\NormalTok{    chain }\OperatorTok{~}\NormalTok{.}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
+    \DataTypeTok{y =} \KeywordTok{expression}\NormalTok{(psi),}
+    \DataTypeTok{colour =} \StringTok{"Acceptance"}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/psimh-1} 
+
+}
+
+\caption{$\psi$ generated by M-H - different initial values}\label{fig:psimh}
+\end{figure}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{compute_gelman <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(mc) \{}
+\NormalTok{  nk <-}\StringTok{ }
+\StringTok{    }\NormalTok{mc[,}
+\NormalTok{       .N,}
+\NormalTok{       by =}\StringTok{ }\NormalTok{chain]}
+\NormalTok{  n <-}\StringTok{ }\KeywordTok{nrow}\NormalTok{(nk)}
+\NormalTok{  k <-}\StringTok{ }\KeywordTok{unique}\NormalTok{(nk[,N])}
+\NormalTok{  pbar <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(mc[,psi])}
+\NormalTok{  w <-}\StringTok{ }
+\StringTok{    }\NormalTok{mc[,}
+\NormalTok{       .(}\DataTypeTok{ave =} \KeywordTok{mean}\NormalTok{(psi), }\DataTypeTok{s =} \KeywordTok{var}\NormalTok{(psi)),}
+\NormalTok{       by =}\StringTok{ }\NormalTok{chain]}
+\NormalTok{  B <-}\StringTok{ }\NormalTok{n }\OperatorTok{/}\StringTok{ }\NormalTok{(k }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\KeywordTok{sum}\NormalTok{((w[,ave] }\OperatorTok{-}\StringTok{ }\NormalTok{pbar)}\OperatorTok{^}\DecValTok{2}\NormalTok{)}
+\NormalTok{  W <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(w[,s]}\OperatorTok{^}\DecValTok{2}\NormalTok{) }\OperatorTok{/}\StringTok{ }\NormalTok{k}
+\NormalTok{  V <-}\StringTok{ }\NormalTok{W }\OperatorTok{*}\StringTok{ }\NormalTok{(n }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{/}\StringTok{ }\NormalTok{n }\OperatorTok{+}\StringTok{ }\NormalTok{B }\OperatorTok{/}\StringTok{ }\NormalTok{n}
+  \KeywordTok{sqrt}\NormalTok{(V }\OperatorTok{/}\StringTok{ }\NormalTok{W)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Put \texttt{zmc} into this function.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(rhat <-}\StringTok{ }\KeywordTok{compute_gelman}\NormalTok{(zmc))}
+\CommentTok{#> [1] 2.4}
+\end{Highlighting}
+\end{Shaded}
+
+We get \(\hat{R} = 2.402\). It is not that far from \(1\). Actually, we can get each \(\hat{R}_i\) for each \(i\) until \(n\) and observe its convergence.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{update_gelman <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(mc) \{}
+\NormalTok{  k <-}\StringTok{ }
+\StringTok{    }\NormalTok{mc[,}
+\NormalTok{       .N,}
+\NormalTok{       by =}\StringTok{ }\NormalTok{chain][,N] }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{unique}\NormalTok{()}
+\NormalTok{  parallel}\OperatorTok{::}\KeywordTok{mclapply}\NormalTok{(}
+    \KeywordTok{seq_len}\NormalTok{(k)[}\OperatorTok{-}\DecValTok{1}\NormalTok{],}
+    \ControlFlowTok{function}\NormalTok{(i) \{}
+      \KeywordTok{data.table}\NormalTok{(}
+        \DataTypeTok{draw =}\NormalTok{ i,}
+        \DataTypeTok{r =} \KeywordTok{compute_gelman}\NormalTok{(mc[, .SD[}\KeywordTok{seq_len}\NormalTok{(i)], }\DataTypeTok{by =}\NormalTok{ chain])}
+\NormalTok{      )}
+\NormalTok{    \},}
+    \DataTypeTok{mc.cores =} \DecValTok{2}
+\NormalTok{  ) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{rbindlist}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\NormalTok{.[}\KeywordTok{order}\NormalTok{(draw)]}
+\NormalTok{\}}
+\CommentTok{#--------------------------}
+\NormalTok{rhatk <-}\StringTok{ }\KeywordTok{update_gelman}\NormalTok{(zmc)}
+\end{Highlighting}
+\end{Shaded}
+
+Figure \ref{fig:gelmanseq} presents that the value becomes almost 1 quite fast.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rhatk }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ draw, }\DataTypeTok{y =}\NormalTok{ r)) }\OperatorTok{+}
+\StringTok{  }\NormalTok{modelr}\OperatorTok{::}\KeywordTok{geom_ref_line}\NormalTok{(}\DataTypeTok{h =} \DecValTok{1}\NormalTok{) }\OperatorTok{+}\StringTok{ }\CommentTok{# close to 1}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}
+    \DataTypeTok{x =} \StringTok{"Draw"}\NormalTok{,}
+    \DataTypeTok{y =} \KeywordTok{expression}\NormalTok{(}\KeywordTok{hat}\NormalTok{(R))}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{statistical-computing_files/figure-latex/gelmanseq-1} 
+
+}
+
+\caption{Sequence of the gelman-rubin $\hat{R}$}\label{fig:gelmanseq}
+\end{figure}
 
 \bibliography{book.bib,packages.bib}
 
