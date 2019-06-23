@@ -3972,8 +3972,8 @@ Apply MC method to get \emph{empirical type I error}.
 \hypertarget{statistical-methods}{%
 \section{Statistical Methods}\label{statistical-methods}}
 
-\hypertarget{bootstrap}{%
-\section{Bootstrap}\label{bootstrap}}
+\hypertarget{bootest}{%
+\section{Bootstrap}\label{bootest}}
 
 \hypertarget{resampling}{%
 \subsection{Resampling}\label{resampling}}
@@ -4306,7 +4306,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.24}
+\CommentTok{#> [1] 2.36}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4380,7 +4380,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 1.97}
+\CommentTok{#> [1] 2.22}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4693,7 +4693,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0132       0.115}
+\CommentTok{#> t1*    0.776 -0.0115       0.117}
 \end{Highlighting}
 \end{Shaded}
 
@@ -5146,6 +5146,22 @@ Then the jackknife estimate of bias is
 
 i.e.~\(\frac{n}{n - 1}\) times the bootstrap bias for \(\hat\theta_Q\).
 \EndKnitrBlock{theorem}
+
+\hypertarget{jackknife-after-bootstrap}{%
+\section{Jackknife-after-Bootstrap}\label{jackknife-after-bootstrap}}
+
+In Section \ref{bootest}, bootstrap estimates standard error and bias of any estimator using resampling, denoted by \(\hat\sigma_B\) and \(\hat\beta_B\). Note that these two are random variables, too. We could wonder the variance of these estimators. For this, we use \emph{Jackknife}.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.7\linewidth]{images/jackafterboot} 
+
+}
+
+\caption{Jackknife-after-bootstrap}\label{fig:jabfig}
+\end{figure}
+
+See Figure \ref{fig:jabfig}. Each process is same as before. However, under jackknife structure, bootstrap is performed hierarhcically. For each jackknife sample, distinct bootstrap is conducted and gives different bootstrap standard error. These bootstrap standard errors are jackknife replicates, and jackknife will summarize this, i.e.~get the standard error and empirical distribution of those multiple standard errors.
 
 \hypertarget{bootstrap-confidence-intervals}{%
 \section{Bootstrap Confidence Intervals}\label{bootstrap-confidence-intervals}}

@@ -830,7 +830,7 @@ mc_data(rnorm, N = 20, M = 1000)[,
 ## Statistical Methods
 
 
-## Bootstrap
+## Bootstrap {#bootest}
 
 ### Resampling
 
@@ -1731,6 +1731,17 @@ $$\beta_J = \frac{n}{n - 1} \Big[ E(\hat\theta_Q (\mathbf{P}^{\ast}) - \hat\thet
 
 i.e. $\frac{n}{n - 1}$ times the bootstrap bias for $\hat\theta_Q$.
 ```
+
+
+## Jackknife-after-Bootstrap
+
+In Section \@ref(bootest), bootstrap estimates standard error and bias of any estimator using resampling, denoted by $\hat\sigma_B$ and $\hat\beta_B$. Note that these two are random variables, too. We could wonder the variance of these estimators. For this, we use *Jackknife*.
+
+```{r jabfig, echo=FALSE, fig.cap="Jackknife-after-bootstrap"}
+knitr::include_graphics("images/jackafterboot.png")
+```
+
+See Figure \@ref(fig:jabfig). Each process is same as before. However, under jackknife structure, bootstrap is performed hierarhcically. For each jackknife sample, distinct bootstrap is conducted and gives different bootstrap standard error. These bootstrap standard errors are jackknife replicates, and jackknife will summarize this, i.e. get the standard error and empirical distribution of those multiple standard errors.
 
 
 ## Bootstrap Confidence Intervals
