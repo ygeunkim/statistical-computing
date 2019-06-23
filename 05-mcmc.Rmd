@@ -240,16 +240,16 @@ Hence, we just iterate the above set of process until gaining $N$ draws.
   \KwData{Full conditional distribution $f$}
   \Input{Starting values $(x_1^{(0)}, x_2^{(0)})$, burn-in period $b$}
   \For{$i \leftarrow 1$ \KwTo $N$}{
-    Set $x_2^{\ast} = x_2^{(i - 1)}$\;
     \For{$j \leftarrow 1$ \KwTo $2$}{
-      Generate $x_j^{(i)} \sim f(x_j \mid x_{(-j)} = x_{(-j)}^{\ast})$\;
-      Set or update $x_j^{\ast} = x_j^{(i)}$\;
+      Generate $x_j^{(i)} \sim f(x_j \mid x_{(-j)} = x_{(-j)}^{(i - 1)})$\;
     }
   }
   Draw out the first $b \; x^{(j)}$ (Burn-in)\;
   \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
   \caption{Gibbs-sampler steps}
 \end{algorithm}
+
+Denote that Gibbs sampler accepts every candidate, while metropolis-hastings in the next section chooses one.
 
 Sometimes Gibbs sampler algorithm $\ref{alg:gibbalg}$ requires nested loop, whose efficiency becomes quite awful. In `R`, `C++` implementation can be a solution [@Wickham:2019aa]. The following code is executed in `Rcpp` environment in `rmd` document. In practice, this should be placed in `cpp` file. Or `cppFunction()` can also be used.
 

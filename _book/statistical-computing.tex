@@ -4306,7 +4306,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.68}
+\CommentTok{#> [1] 2.31}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4380,7 +4380,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 2.5}
+\CommentTok{#> [1] 2.65}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4693,7 +4693,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0126       0.123}
+\CommentTok{#> t1*    0.776 -0.0166       0.118}
 \end{Highlighting}
 \end{Shaded}
 
@@ -6579,16 +6579,16 @@ Hence, we just iterate the above set of process until gaining \(N\) draws.
   \KwData{Full conditional distribution $f$}
   \Input{Starting values $(x_1^{(0)}, x_2^{(0)})$, burn-in period $b$}
   \For{$i \leftarrow 1$ \KwTo $N$}{
-    Set $x_2^{\ast} = x_2^{(i - 1)}$\;
     \For{$j \leftarrow 1$ \KwTo $2$}{
-      Generate $x_j^{(i)} \sim f(x_j \mid x_{(-j)} = x_{(-j)}^{\ast})$\;
-      Set or update $x_j^{\ast} = x_j^{(i)}$\;
+      Generate $x_j^{(i)} \sim f(x_j \mid x_{(-j)} = x_{(-j)}^{(i - 1)})$\;
     }
   }
   Draw out the first $b \; x^{(j)}$ (Burn-in)\;
   \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
   \caption{Gibbs-sampler steps}
 \end{algorithm}
+
+Denote that Gibbs sampler accepts every candidate, while metropolis-hastings in the next section chooses one.
 
 Sometimes Gibbs sampler algorithm \(\ref{alg:gibbalg}\) requires nested loop, whose efficiency becomes quite awful. In \texttt{R}, \texttt{C++} implementation can be a solution \citep{Wickham:2019aa}. The following code is executed in \texttt{Rcpp} environment in \texttt{rmd} document. In practice, this should be placed in \texttt{cpp} file. Or \texttt{cppFunction()} can also be used.
 
