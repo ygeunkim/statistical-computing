@@ -932,5 +932,37 @@ rhatk %>%
   )
 ```
 
+<!-- Actually, there is a package called `coda` which includes in a function caculating potential scale reduction factor. -->
+
+<!-- ```{r} -->
+<!-- library(coda) -->
+<!-- ``` -->
+
+<!-- In this library, we will use -->
+
+<!-- - `coda::as.mcmc()` -->
+<!-- - `coda::gelman.diag()` -->
+<!-- - `coda::gelman.plot()` -->
+
+<!-- `gelman.diag()` computes $\hat{R}$. This function requires input `mcmc` object, so we need `as.mcmc()`. -->
+
+<!-- ```{r} -->
+<!-- gelman_mc <-  -->
+<!--   zmc[, -->
+<!--       .(psi_mcmc = as.mcmc(psi)), -->
+<!--       by = chain] %>%  -->
+<!--   split(by = "chain") %>%  -->
+<!--   lapply(function(x) x[,psi_mcmc]) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- gelman.diag(gelman_mc) -->
+<!-- ``` -->
+
+<!-- ```{r gelpt, fig.cap="$\\hat{R}$ using coda package"} -->
+<!-- gelman.plot(gelman_mc) -->
+<!-- ``` -->
+
+
 
 

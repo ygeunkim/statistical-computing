@@ -1735,6 +1735,10 @@ i.e. $\frac{n}{n - 1}$ times the bootstrap bias for $\hat\theta_Q$.
 
 ## Bootstrap Confidence Intervals
 
+> You can pull yourself up by your bootstraps and you don't need anything else.
+>
+> -- <cite>Bradley Efron</cite>
+
 Bootstrap gives empirical distribution of a estimator. Naturally, we want to get confidence interval of this estimator by using standard error or by just arranging replicates. See Figure \@ref(fig:xbarsemc) or \@ref(fig:bootrep). These are empirical distribution. 
 
 <!-- ```{r bootempci, fig.cap="Empirical distribution of bootstrap replicates"} -->
@@ -1876,7 +1880,7 @@ In other words, what we need is quantiles, not standard error.
   \caption{Bootstrap algorithm for basic bootstrap CI}
 \end{algorithm}
 
-### Percentile bootstrap confidence interval
+### Percentile bootstrap confidence interval {#percboot}
 
 Percentile bootstrap confidence interval is quite intuitive. It just finds upper and lower quantile of empirical distribution.
 
@@ -1939,9 +1943,74 @@ Like Algorithm $\ref{alg:algzbootci}$ of standard bootstrap normal CI, compute s
   \caption{Bootstrap algorithm for bootstrap t confidence interval}
 \end{algorithm}
 
-<!-- ### Better bootstrap confidence interval -->
+### Better bootstrap confidence interval
 
-<!-- Better bootstrap confidence interval is also called **BCa** for *biased corrected* and *adjusted for acceleration*. Let $\Phi(z)$ be a cdf of standard normal. -->
+Better bootstrap confidence interval is also called **BCa** for biased corrected and adjusted for acceleration. Consider percentile bootstrap CI \@ref(thm:percci) in Section \@ref(percboot). @Efron:1983bw expresses this in terms of an **putative central CI**.
+
+```{theorem, medci, name = "Putative central confidence interval"}
+Let
+
+$$\hat{C}(t) = \frac{1}{B} \sum_{b = 1}^B I(\hat\theta^{(b)} < t)$$
+
+be the ecdf of bootstrap replicates $\hat\theta^{(1)}, \ldots, \hat\theta^{B}$. Letting
+
+$$
+\begin{cases}
+  \hat\theta(\frac{\alpha}{2}) = \hat{C}^{-1}(\frac{\alpha}{2}) \\
+  \hat\theta(1 - \frac{\alpha}{2}) = \hat{C}^{-1}(1 - \frac{\alpha}{2})
+\end{cases}
+$$
+
+be the empirical $\frac{\alpha}{2}$ and $1 - \frac{\alpha}{2}$ quantiles, the $100(1 - \alpha) \%$ \textit{percentile boostrap CI} is
+
+$$\Big( \hat\theta(\frac{\alpha}{2}), \hat\theta(1 - \frac{\alpha}{2}) \Big)$$
+```
+
+
+For a better result, we adjust this to two factors mentioned - *correction for bias and a correction for skewness*. Skewness correction is also called acceleration adjustment. Corrections for bias and skewness (acceleration) are denoted by $z_0$ and $a$, respectively. Then there exists a monotone increasing transformation $g$ with $\phi = g(\theta)$ such that
+
+\begin{equation}
+  \hat\phi = \phi + \sigma_{\phi} (Z - z_0), \quad Z \sim N(0, 1) \; \text{and} \; \sigma_{\phi} = 1 + a \phi
+  (\#eq:percciadj)
+\end{equation}
+
+Before computing CI, we need to estimate these $z_0$ and $a$. Since we do not know $g$, we use $\Phi(z)$, the cdf of standard normal with $\Phi(z_\alpha) = \alpha$ [@Rizzo:2007aa]. We can check that above percentile CI results in the similar values to the standard normal bootstrap CI, by central limit theorem. Thus, we would use $\Phi^{-1}$ when estimating the bias.
+
+```{theorem, estz0bca, name = "Estimation of bias correction factor"}
+Bias can be corrected by $t = \hat\theta$, i.e.
+
+$$\hat{z}_0 = \Phi^{-1} \Big( \hat{C} (\hat\theta) \Big)$$
+```
+
+Denote that $\hat{z}_0 = 0$ if $\hat\theta$ is the median of the bootstrap replicates.
+
+```{theorem, estabca, name = "Estimation of acceleration factor"}
+Acceleration factor is estimated from \textit{Jackknife replicates}
+
+$$\hat{a} = SKEW_J = \frac{\sum\limits_{i = 1}^n (\overline{\theta}_{(.)} - \theta_{(i)})^3}{6 \bigg(\sum\limits_{i = 1}^n (\overline{\theta}_{(.)} - \theta_{(i)})^2 \bigg)^{\frac{3}{2}}}$$
+```
+
+From Equation \@ref(eq:percciadj), our goal is to get for each $z = z_{\frac{\alpha}{2}}, z_{1 - \frac{\alpha}{2}}$,
+
+\begin{equation}
+  z^{\ast} = z_0 + \frac{(z_0 + z)}{1 - a(z_0 + z)}
+  (\#eq:bcatrans)
+\end{equation}
+
+```{theorem, bcaci, name = "BCa confidence interval"}
+Let $\hat{z}_0$ be bias correction factor estimated by Thoerem \@ref(thm:estz0bca) and let $\hat{a}$ be acceleration factor estimated by Theorem \@ref(thm:estabca). Compute
+
+$$
+\begin{cases}
+  \alpha_1 = \Phi \bigg( \hat{z}_0 + \frac{(\hat{z}_0 + z_{\frac{\alpha}{2}})}{1 - \hat{a}(\hat{z}_0 + z_{\frac{\alpha}{2}})} \bigg) \\
+  \alpha_2 = \Phi \bigg( \hat{z}_0 + \frac{(\hat{z}_0 + z_{1 - \frac{\alpha}{2}})}{1 - \hat{a}(\hat{z}_0 + z_{1 - \frac{\alpha}{2}})} \bigg)
+\end{cases}
+$$
+
+Then $100(1 - \alpha) \%$ BCa CI is the percentile bootstrap CI for empirical $\alpha_1$ and $\alpha_2$ quantiles
+
+$$\Big( \hat{C}^{-1}(\alpha_1), \hat{C}^{-1}(\alpha_2) \Big)$$
+```
 
 ### Bootstrap CI in `R`
 
