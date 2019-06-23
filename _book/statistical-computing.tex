@@ -4306,7 +4306,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.36}
+\CommentTok{#> [1] 2.68}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4380,7 +4380,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 2.22}
+\CommentTok{#> [1] 2.5}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4693,7 +4693,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0115       0.117}
+\CommentTok{#> t1*    0.776 -0.0126       0.123}
 \end{Highlighting}
 \end{Shaded}
 
@@ -6662,7 +6662,7 @@ but we do not know the normalized constant
 \protect\hypertarget{def:mcnote}{}{\label{def:mcnote} \iffalse (Density) \fi{} }In Metropolis-hastings (M-H) algorithm, we take care about the following two densities. Denote that terms and process are similar to A-R process.
 
 \begin{enumerate}
-  \item Target density $\pi(\cdot)$ density that we try to generate sample from
+  \item (normalized) Target density $\pi(\cdot)$ density that we try to generate sample from
   \item Candidate-generating density $q(\cdot \mid \cdot)$ density that we will actually generate random sample from
 \end{enumerate}
 \EndKnitrBlock{definition}
@@ -6671,6 +6671,8 @@ Using these two target and candidate densities, we apply \textbf{A-R method} \(\
 
 \hypertarget{metropolis-hastings-sampler}{%
 \subsection{Metropolis-hastings sampler}\label{metropolis-hastings-sampler}}
+
+One proceeds M-H algorithm as follows.
 
 \begin{algorithm}[H] \label{alg:mhalg}
   \SetAlgoLined
@@ -6691,6 +6693,75 @@ Using these two target and candidate densities, we apply \textbf{A-R method} \(\
   \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
   \caption{Metropolis-Hastings algorithm with burn-in period}
 \end{algorithm}
+
+Why \(\alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)} \mid y)}{\pi(x^{(j)}) q(y \mid x^{(j)})}, 1 \bigg)\) for A-R method? It produces \emph{time reversible MC}, whose reversed process is also a MC.
+
+\begin{equation}
+  \pi_i P_{ij} = \pi_j P_{ji} \quad \text{if DTMC}
+  \label{eq:revdtmc}
+\end{equation}
+
+We have seen DTMC, but for more generality consider continuous state space. Let \(P(\mathbf{x}, A)\) be the transition kernel for \(\mathbf{x} \in \mathbb{R}^d\) and \(A \in \mathcal{B}\) borel set. There exists an invariant distribution
+
+\[\pi^{\ast}(d\mathbf{y}) = \int_{\mathbb{R}^d} P(\mathbf{x}, d\mathbf{y}) \pi(\mathbf{x}) d\mathbf{x}\]
+
+This \(P(\mathbf{x}, A)\) can be re-expressed by some other function \(p(\mathbf{x}, \mathbf{y})\)
+
+\begin{equation}
+  P(\mathbf{x}, d\mathbf{y}) = p(\mathbf{x}, \mathbf{y}) d \mathbf{y} + r(\mathbf{x}) \delta_{\mathbf{x}}(d \mathbf{y})
+  \label{eq:mhpxy}
+\end{equation}
+
+Then Equation \eqref{eq:revdtmc} becomes
+
+\begin{equation}
+  \pi(\mathbf{x}) p(\mathbf{x}, \mathbf{y}) = \pi(\mathbf{y}) p(\mathbf{y}, \mathbf{x})
+  \label{eq:revmc}
+\end{equation}
+
+Given \(\alpha(\mathbf{x}, \mathbf{y})\), now claim that \(\pi(\mathbf{x}) p(\mathbf{x}, \mathbf{y}) = \pi(\mathbf{y}) p(\mathbf{y}, \mathbf{x})\). By construction,
+
+\begin{equation}
+  p(\mathbf{x}, \mathbf{y}) = \begin{cases}
+    q(\mathbf{y} \mid \mathbf{x}) \alpha(\mathbf{x}, \mathbf{y}) & \mathbf{x} \neq \mathbf{y} \\
+    1 - \int_{\mathbb{R}^d} q(\mathbf{y} \mid \mathbf{x}) \alpha(\mathbf{x}, \mathbf{y}) d \mathbf{y} & \mathbf{x} = \mathbf{y}
+  \end{cases}
+  \label{eq:mhtransprob}
+\end{equation}
+
+\textbf{Case 1}: \(\alpha = 1\)
+
+From Equation \eqref{eq:mhpxy},
+
+\[
+\begin{cases}
+  p(\mathbf{x}, \mathbf{y}) = q(\mathbf{y} \mid \mathbf{x}) \\
+  p(\mathbf{y}, \mathbf{x}) = q(\mathbf{x} \mid \mathbf{y}) \frac{\pi(\mathbf{x}) q(\mathbf{y} \mid \mathbf{x})}{\pi(\mathbf{y}) q(\mathbf{x} \mid \mathbf{y})} = \frac{\pi(\mathbf{x}) q(\mathbf{y} \mid \mathbf{x})}{\pi(\mathbf{y})}
+\end{cases}
+\]
+
+Therefore,
+
+\[\pi(\mathbf{x}) p(\mathbf{x}, \mathbf{y}) = \pi(\mathbf{y}) p(\mathbf{y}, \mathbf{x})\]
+
+i.e.~time reversible.
+
+\textbf{Case 2}: \(\alpha < 1\)
+
+By symmetry,
+
+\[
+\begin{cases}
+  p(\mathbf{x}, \mathbf{y}) = q(\mathbf{y} \mid \mathbf{x}) \frac{\pi(\mathbf{y}) q(\mathbf{x} \mid \mathbf{y})}{\pi(\mathbf{x}) q(\mathbf{y} \mid \mathbf{x})} = \frac{\pi(\mathbf{y}) q(\mathbf{x} \mid \mathbf{y})}{\pi(\mathbf{x})} \\
+  p(\mathbf{y}, \mathbf{x}) = q(\mathbf{x} \mid \mathbf{y})
+\end{cases}
+\]
+
+and hence,
+
+\[\pi(\mathbf{x}) p(\mathbf{x}, \mathbf{y}) = \pi(\mathbf{y}) p(\mathbf{y}, \mathbf{x})\]
+
+Finally, \(\alpha(\mathbf{x}, \mathbf{y})\) of Algorithm \(\ref{alg:mhalg}\) results in time reversible MC.
 
 \BeginKnitrBlock{example}[Rayleigh density]
 \protect\hypertarget{exm:mhray}{}{\label{exm:mhray} \iffalse (Rayleigh density) \fi{} }Generate a sample from a Rayleigh density
