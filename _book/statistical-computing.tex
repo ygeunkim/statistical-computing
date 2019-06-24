@@ -4303,7 +4303,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.64}
+\CommentTok{#> [1] 2.15}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4377,7 +4377,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 2.46}
+\CommentTok{#> [1] 2.17}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4690,7 +4690,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776  -0.011       0.122}
+\CommentTok{#> t1*    0.776 -0.0106       0.118}
 \end{Highlighting}
 \end{Shaded}
 
@@ -6713,16 +6713,16 @@ One proceeds M-H algorithm as follows.
   \SetKwInOut{Output}{output}
   \Input{Starting point $x_0$, burn-in period $b$}
   \For{$i \leftarrow 1$ \KwTo $N$}{
-    Draw a candidate distribution $Y \sim q(\cdot \mid x^{(j)})$\;
+    Draw a candidate distribution $Y \sim q(\cdot \mid x^{(i)})$\;
     $U \sim unif(0, 1) \perp\!\!\!\perp Y$\;
-    Acceptance rate $$\alpha(x^{(j)}, y) := \min \bigg(\frac{\pi(y) q(x^{(j)} \mid y)}{\pi(x^{(j)}) q(y \mid x^{(j)})}, 1 \bigg)$$\;
-    \eIf{$U \le \alpha(x^{(j)}, y)$}{
-      Accept so that $x^{(j + 1)} = y$\;
+    Acceptance rate $$\alpha(x^{(i)}, y) := \min \bigg(\frac{\pi(y) q(x^{(i)} \mid y)}{\pi(x^{(i)}) q(y \mid x^{(i)})}, 1 \bigg)$$\;
+    \eIf{$U \le \alpha(x^{(i)}, y)$}{
+      Accept so that $x^{(i + 1)} = y$\;
     }{
-      Reject so that $x^{(j + 1)} = x^{(j)}$\;
+      Reject so that $x^{(i + 1)} = x^{(i)}$\;
     }
   }
-  Draw out the first $b \; x^{(j)}$ (Burn-in)\;
+  Draw out the first $b \; x^{(i)}$ (Burn-in)\;
   \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
   \caption{Metropolis-Hastings algorithm with burn-in period}
 \end{algorithm}
