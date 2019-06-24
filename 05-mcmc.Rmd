@@ -238,14 +238,16 @@ Hence, we just iterate the above set of process until gaining $N$ draws.
   \SetKwInOut{Input}{input}
   \SetKwInOut{Output}{output}
   \KwData{Full conditional distribution $f$}
-  \Input{Starting values $(x_1^{(0)}, x_2^{(0)})$, burn-in period $b$}
+  \Input{Starting values $\mathbf{x}^{(0)} = (x_1^{(0)}, \ldots, x_p^{(0)})^T$, burn-in period $b$}
   \For{$i \leftarrow 1$ \KwTo $N$}{
-    \For{$j \leftarrow 1$ \KwTo $2$}{
-      Generate $x_j^{(i)} \sim f(x_j \mid x_{(-j)} = x_{(-j)}^{(i - 1)})$\;
+    $\mathbf{x}^{\ast} = \mathbf{x}^{(i - 1)}$\;
+    \For{$j \leftarrow 1$ \KwTo $p$}{
+      Generate $x_j^{(i)} \sim f(x_j \mid \mathbf{x}_{(-j)} = \mathbf{x}_{(-j)}^{\ast})$\;
+      Set or update $x_j^{\ast} = x_j^{(i)}$\;
     }
   }
-  Draw out the first $b \; x^{(j)}$ (Burn-in)\;
-  \Output{$x^{(b + 1)}, \ldots, x^{(N)}$}
+  Draw out the first $b \; \mathbf{x}^{(j)}$ (Burn-in)\;
+  \Output{$\mathbf{x}^{(b + 1)}, \ldots, \mathbf{x}^{(N)}$}
   \caption{Gibbs-sampler steps}
 \end{algorithm}
 
