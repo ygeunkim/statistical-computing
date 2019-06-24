@@ -827,8 +827,7 @@ mc_data(rnorm, N = 20, M = 1000)[,
 ```
 
 
-## Statistical Methods
-
+<!-- ## Statistical Methods -->
 
 ## Bootstrap {#bootest}
 
@@ -1621,11 +1620,23 @@ Then we have
 
 $$\mathbf{P}^{\ast} \sim Multi(n, \mathbf{P}_0)$$
 
-with $\mathbf{P}_0 = \frac{1}{n}\mathbf{1} \in \R^n$. We already have seend that the bootstrap standard error is
+with $\mathbf{P}_0 = \frac{1}{n}\mathbf{1} \in \R^n$. We already have seen that the bootstrap standard error is
 
 $$\hat\sigma_B = \Big[ Var \hat\theta(\mathbf{P}^{\ast}) \Big]^{\frac{1}{2}}$$
 
-In comparison, the jackknife resamples leaving out one observation so that
+More specifically,
+
+\begin{equation}
+  Var\mathbf{P}^{\ast} = \frac{1}{n^2} \begin{bmatrix}
+    1 - \frac{1}{n} & -\frac{1}{n} & \cdots & - \frac{1}{n} \\
+    - \frac{1}{n} & 1 - \frac{1}{n} & \cdots & - \frac{1}{n} \\
+    \vdots & \vdots & \vdots & \vdots \\
+    - \frac{1}{n} & - \frac{1}{n} & \cdots & 1 - \frac{1}{n}
+  \end{bmatrix} = \frac{1}{n^2} \bigg(I - \frac{1}{n}J \bigg)
+  (\#eq:multicov)
+\end{equation}
+
+where $J = [ 1 ] \in \R^{n \times n}$. In comparison, the jackknife resamples leaving out one observation so that
 
 $$\mathbf{P}_{(i)} = \frac{1}{n - 1} (1, \ldots, 1, \overset{i\text{-th}}{0}, 1, \ldots, 1)^T, \quad i = 1, \ldots, n$$
 
@@ -1651,6 +1662,29 @@ Let $\hat\theta_L$ of Lemma \@ref(lem:jackboot) be the statistic of interest. Th
 $$\hat\sigma_J = \bigg[ \frac{n}{n - 1} Var \hat\theta_L(\mathbf{P}^{\ast}) \bigg]^{\frac{1}{2}}$$
 
 where $\hat\theta_L(\mathbf{P}^{\ast})$ is the bootstrap estimate.
+```
+
+
+These approximations \@ref(lem:jackboot) and \@ref(thm:jackse) imply that the jackknife is almost a bootstrap itself [@Efron:1983bw].
+
+```{theorem, jackse2, name = "Jackknife SE approximation"}
+Linear approximation by jackknife \@ref(lem:jackboot) has a standard error
+
+$$Var\hat\theta_L(\mathbf{P}^{\ast}) = Var(\mathbf{P}^{\ast} - \mathbf{P}_0)^T U = \frac{1}{n^2} \sum_{i = 1}^n U_i^2$$
+```
+
+```{proof}
+Note that $\sum\limits_i U_i = 0$. From Equation \@ref(eq:multicov) and Lemma \@ref(lem:jackboot),
+
+\begin{equation*}
+  \begin{split}
+    Var \hat\theta_L(\mathbf{P}^{\ast}) & = Var \Big[ \hat\theta_{(.)} + (\mathbf{P}^{\ast} - \mathbf{P}_0)^T U \Big] \\
+    & = U^T Var(\mathbf{P}^{\ast}) U \\
+    & = \frac{1}{n^2} U^T \bigg(I - \frac{1}{n}J \bigg) U \\
+    & = \frac{1}{n^2} \sum_{i = 1}^n (U_i - \overline{U})^2 \\
+    & = \frac{1}{n^2} \sum_{i = 1}^n U_i^2 \quad \because \sum_i U_i = 0
+  \end{split}
+\end{equation*}
 ```
 
 
@@ -1746,7 +1780,7 @@ See Figure \@ref(fig:jabfig). Each process is same as before. However, under jac
 
 ## Bootstrap Confidence Intervals
 
-> You can pull yourself up by your bootstraps and you don't need anything else.
+> *You can pull yourself up by your bootstraps and you don't need anything else.*
 >
 > -- <cite>Bradley Efron</cite>
 
@@ -1828,7 +1862,7 @@ Bias correction, however, is not just constant subtraction. $\hat\beta_B$ is als
 
 Instead of using bootstrap standard error for observed statistic, i.e. $\hat\theta$, the basic bootstrap CI transforms the distribution of $\hat\theta_b^{\ast}$ by subtracting $\hat\theta$. Consider $\frac{\alpha}{2}$ and $1 - \frac{\alpha}{2}$ quantile values $\hat\theta_{\frac{\alpha}{2}}^{\ast}$ and $\hat\theta_{1 - \frac{\alpha}{2}}^{\ast}$. Consider random variable $\hat\theta - \theta$.
 
-```{r quanfig, echo=FALSE, fig.cap="$P(\\hat\\theta - \\theta > \\alpha_{\\frac{\\alpha}{2}}) = 1 - \\alpha$"}
+```{r quanfig, echo=FALSE, fig.cap="$P(\\hat\\theta - \\theta > \\alpha_{\\frac{\\alpha}{2}}) = 1 - \\frac{\\alpha}{2}$"}
 tibble(x = seq(-3, 3, by = .01)) %>% 
   mutate(
     z = dnorm(x),
@@ -1849,7 +1883,7 @@ tibble(x = seq(-3, 3, by = .01)) %>%
 
 Let $\alpha_{\frac{\alpha}{2}}$ be the $\frac{\alpha}{2}$ quantile of $\hat\theta - \theta$. Then
 
-$$P(\hat\theta - \theta > \alpha_{\frac{\alpha}{2}}) = 1 - \alpha$$
+$$P(\hat\theta - \theta > \alpha_{\frac{\alpha}{2}}) = 1 - \frac{\alpha}{2}$$
 
 See Figure \@ref(fig:quanfig) for this. It follows that a $100(1 - \alpha)\%$ CI with symmetricity
 

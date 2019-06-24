@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{23 Jun, 2019}
+    \date{24 Jun, 2019}
 
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -3969,9 +3969,6 @@ Apply MC method to get \emph{empirical type I error}.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{statistical-methods}{%
-\section{Statistical Methods}\label{statistical-methods}}
-
 \hypertarget{bootest}{%
 \section{Bootstrap}\label{bootest}}
 
@@ -4306,7 +4303,7 @@ Bootstrap standard error is given by
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse)}
-\CommentTok{#> [1] 2.31}
+\CommentTok{#> [1] 1.8}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4380,7 +4377,7 @@ It gives boostrap standard error as
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{sd}\NormalTok{(Xse_foreach)}
-\CommentTok{#> [1] 2.65}
+\CommentTok{#> [1] 2.45}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4693,7 +4690,7 @@ To see how normal population work, we \emph{draw bootstrap sample from the param
 \CommentTok{#> }
 \CommentTok{#> Bootstrap Statistics :}
 \CommentTok{#>     original  bias    std. error}
-\CommentTok{#> t1*    0.776 -0.0166       0.118}
+\CommentTok{#> t1*    0.776 -0.0148       0.121}
 \end{Highlighting}
 \end{Shaded}
 
@@ -5013,11 +5010,23 @@ Then we have
 
 \[\mathbf{P}^{\ast} \sim Multi(n, \mathbf{P}_0)\]
 
-with \(\mathbf{P}_0 = \frac{1}{n}\mathbf{1} \in \mathbb{R}^n\). We already have seend that the bootstrap standard error is
+with \(\mathbf{P}_0 = \frac{1}{n}\mathbf{1} \in \mathbb{R}^n\). We already have seen that the bootstrap standard error is
 
 \[\hat\sigma_B = \Big[ Var \hat\theta(\mathbf{P}^{\ast}) \Big]^{\frac{1}{2}}\]
 
-In comparison, the jackknife resamples leaving out one observation so that
+More specifically,
+
+\begin{equation}
+  Var\mathbf{P}^{\ast} = \frac{1}{n^2} \begin{bmatrix}
+    1 - \frac{1}{n} & -\frac{1}{n} & \cdots & - \frac{1}{n} \\
+    - \frac{1}{n} & 1 - \frac{1}{n} & \cdots & - \frac{1}{n} \\
+    \vdots & \vdots & \vdots & \vdots \\
+    - \frac{1}{n} & - \frac{1}{n} & \cdots & 1 - \frac{1}{n}
+  \end{bmatrix} = \frac{1}{n^2} \bigg(I - \frac{1}{n}J \bigg)
+  \label{eq:multicov}
+\end{equation}
+
+where \(J = [ 1 ] \in \mathbb{R}^{n \times n}\). In comparison, the jackknife resamples leaving out one observation so that
 
 \[\mathbf{P}_{(i)} = \frac{1}{n - 1} (1, \ldots, 1, \overset{i\text{-th}}{0}, 1, \ldots, 1)^T, \quad i = 1, \ldots, n\]
 
@@ -5047,6 +5056,28 @@ where \(\hat\theta_{(.)} = \frac{1}{n} \sum_i \hat\theta_{(i)} = \frac{1}{n} \su
 
 where \(\hat\theta_L(\mathbf{P}^{\ast})\) is the bootstrap estimate.
 \EndKnitrBlock{theorem}
+
+These approximations \ref{lem:jackboot} and \ref{thm:jackse} imply that the jackknife is almost a bootstrap itself \citep{Efron:1983bw}.
+
+\BeginKnitrBlock{theorem}[Jackknife SE approximation]
+\protect\hypertarget{thm:jackse2}{}{\label{thm:jackse2} \iffalse (Jackknife SE approximation) \fi{} }Linear approximation by jackknife \ref{lem:jackboot} has a standard error
+
+\[Var\hat\theta_L(\mathbf{P}^{\ast}) = Var(\mathbf{P}^{\ast} - \mathbf{P}_0)^T U = \frac{1}{n^2} \sum_{i = 1}^n U_i^2\]
+\EndKnitrBlock{theorem}
+
+\BeginKnitrBlock{proof}
+\iffalse{} {Proof. } \fi{}Note that \(\sum\limits_i U_i = 0\). From Equation \eqref{eq:multicov} and Lemma \ref{lem:jackboot},
+
+\begin{equation*}
+  \begin{split}
+    Var \hat\theta_L(\mathbf{P}^{\ast}) & = Var \Big[ \hat\theta_{(.)} + (\mathbf{P}^{\ast} - \mathbf{P}_0)^T U \Big] \\
+    & = U^T Var(\mathbf{P}^{\ast}) U \\
+    & = \frac{1}{n^2} U^T \bigg(I - \frac{1}{n}J \bigg) U \\
+    & = \frac{1}{n^2} \sum_{i = 1}^n (U_i - \overline{U})^2 \\
+    & = \frac{1}{n^2} \sum_{i = 1}^n U_i^2 \quad \because \sum_i U_i = 0
+  \end{split}
+\end{equation*}
+\EndKnitrBlock{proof}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -5167,7 +5198,7 @@ See Figure \ref{fig:jabfig}. Each process is same as before. However, under jack
 \section{Bootstrap Confidence Intervals}\label{bootstrap-confidence-intervals}}
 
 \begin{quote}
-You can pull yourself up by your bootstraps and you don't need anything else.
+\emph{You can pull yourself up by your bootstraps and you don't need anything else.}
 
 -- Bradley Efron
 \end{quote}
@@ -5251,12 +5282,12 @@ Instead of using bootstrap standard error for observed statistic, i.e.~\(\hat\th
 
 }
 
-\caption{$P(\hat\theta - \theta > \alpha_{\frac{\alpha}{2}}) = 1 - \alpha$}\label{fig:quanfig}
+\caption{$P(\hat\theta - \theta > \alpha_{\frac{\alpha}{2}}) = 1 - \frac{\alpha}{2}$}\label{fig:quanfig}
 \end{figure}
 
 Let \(\alpha_{\frac{\alpha}{2}}\) be the \(\frac{\alpha}{2}\) quantile of \(\hat\theta - \theta\). Then
 
-\[P(\hat\theta - \theta > \alpha_{\frac{\alpha}{2}}) = 1 - \alpha\]
+\[P(\hat\theta - \theta > \alpha_{\frac{\alpha}{2}}) = 1 - \frac{\alpha}{2}\]
 
 See Figure \ref{fig:quanfig} for this. It follows that a \(100(1 - \alpha)\%\) CI with symmetricity
 
